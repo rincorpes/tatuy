@@ -127,6 +127,8 @@ dmypy.json
 
 examples/fundamentals/*
 !examples/fundamentals/001_backend
+!examples/fundamentals/002_running
+!examples/fundamentals/003_scenes
 !examples/fundamentals/__init__.py
 
 examples/games/*
