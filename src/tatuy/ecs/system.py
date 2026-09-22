@@ -48,7 +48,7 @@ from tatuy.graphics.bounds_border import BoundsBorderRenderer
 from tatuy.math.vec2 import Vec2
 from tatuy.physics.colliders import ColliderAccess
 from tatuy.physics.response import CollisionVelocityRule
-from tatuy.scenes.context import BaseTickContext, TContext, TIntent
+from tatuy.scenes.context import SceneTickContext, TContext, TIntent
 from tatuy.ui.intent import UiIntent
 from tatuy.ui.interaction import UiPointerController
 from tatuy.ui.layout import UiLayoutResolver
@@ -88,7 +88,7 @@ class BaseSystem(Generic[TContext]):
 class VelocityIntegrationSystem(BaseSystem[TContext]):
     phase = SystemPhase.SIMULATION
 
-    def step(self, ctx: BaseTickContext[TWorld, TIntent]) -> None:
+    def step(self, ctx: SceneTickContext[TWorld, TIntent]) -> None:
         for _, transform, velocity in ctx.world.query(
             Transform,
             Velocity,
@@ -103,7 +103,7 @@ class RenderSystem(BaseSystem[TContext]):
     def __init__(self) -> None:
         self._ui_renderer = UiRenderer()
 
-    def step(self, ctx: BaseTickContext[TWorld, TIntent]):
+    def step(self, ctx: SceneTickContext[TWorld, TIntent]):
         for _, transform, rect in ctx.world.query(Transform, Rect):
             if not rect.visible:
                 continue
@@ -146,7 +146,7 @@ class RenderSystem(BaseSystem[TContext]):
 
 
 class MovementControlSystem(BaseSystem[TContext]):
-    def step(self, ctx: BaseTickContext[TWorld, TIntent]):
+    def step(self, ctx: SceneTickContext[TWorld, TIntent]):
         for _, movement, controls, velocity in ctx.world.query(
             Movement,
             MovementControls,
@@ -182,7 +182,7 @@ class BoundsConstraintSystem(BaseSystem[TContext]):
 
     def step(
         self,
-        ctx: BaseTickContext[TWorld, TIntent],
+        ctx: SceneTickContext[TWorld, TIntent],
     ) -> None:
         bounds = ctx.world.get_resource(WorldBounds).bounds
 
@@ -267,7 +267,7 @@ class SpawnSystem(BaseSystem[TContext]):
 
     def step(
         self,
-        ctx: BaseTickContext[TWorld, TIntent],
+        ctx: SceneTickContext[TWorld, TIntent],
     ) -> None:
         queue = ctx.world.get_resource(LifecycleQueue)
         registry = ctx.world.get_resource(SpawnRegistry)
@@ -320,7 +320,7 @@ class SpawnSystem(BaseSystem[TContext]):
 class LifetimeSystem(BaseSystem[TContext]):
     def step(
         self,
-        ctx: BaseTickContext[TWorld, TIntent],
+        ctx: SceneTickContext[TWorld, TIntent],
     ) -> None:
         queue = ctx.world.get_resource(LifecycleQueue)
 
@@ -337,7 +337,7 @@ class LifetimeSystem(BaseSystem[TContext]):
 class DespawnSystem(BaseSystem[TContext]):
     def step(
         self,
-        ctx: BaseTickContext[TWorld, TIntent],
+        ctx: SceneTickContext[TWorld, TIntent],
     ) -> None:
         queue = ctx.world.get_resource(LifecycleQueue)
 
@@ -385,7 +385,7 @@ class CollisionDetectionSystem(BaseSystem[TContext]):
 
     def step(
         self,
-        ctx: BaseTickContext[TWorld, TIntent],
+        ctx: SceneTickContext[TWorld, TIntent],
     ) -> None:
         frame = ctx.world.get_resource(CollisionFrame)
         frame.contacts.clear()
@@ -452,7 +452,7 @@ class CollisionResponseSystem(BaseSystem[TContext]):
 
     def step(
         self,
-        ctx: BaseTickContext[TWorld, TIntent],
+        ctx: SceneTickContext[TWorld, TIntent],
     ) -> None:
         world = ctx.world
         frame = world.get_resource(CollisionFrame)
@@ -550,7 +550,7 @@ class CollisionResponseSystem(BaseSystem[TContext]):
 class UiLayoutSystem(BaseSystem[TContext]):
     phase = SystemPhase.CONTROL
 
-    def step(self, ctx: BaseTickContext[TWorld, TIntent]):
+    def step(self, ctx: SceneTickContext[TWorld, TIntent]):
         UiLayoutResolver(ctx.world, ctx.scene_context.viewport).layout()
 
 
@@ -560,7 +560,7 @@ class UiPointerSystem(BaseSystem[TContext]):
     def __init__(self) -> None:
         self._controller = UiPointerController()
 
-    def step(self, ctx: BaseTickContext[TWorld, TIntent]):
+    def step(self, ctx: SceneTickContext[TWorld, TIntent]):
         if not isinstance(ctx.intent, UiIntent):
             raise TypeError(
                 "UiPointerSystem requires an intent derived from UiIntent"
@@ -581,7 +581,7 @@ class WorldBoundsRenderSystem(BaseSystem[TContext]):
 
     def step(
         self,
-        ctx: BaseTickContext[TWorld, TIntent],
+        ctx: SceneTickContext[TWorld, TIntent],
     ) -> None:
         bounds = ctx.world.get_resource(WorldBounds)
         border = ctx.world.get_resource(WorldBoundsBorder)
@@ -596,7 +596,7 @@ class WorldBoundsRenderSystem(BaseSystem[TContext]):
 class PaddleMotionCaptureSystem(BaseSystem[TContext]):
     phase = SystemPhase.SIMULATION
 
-    def step(self, ctx: BaseTickContext[TWorld, TIntent]):
+    def step(self, ctx: SceneTickContext[TWorld, TIntent]):
         for _, _, transform, sample in ctx.world.query(
             Paddle,
             Transform,
@@ -611,7 +611,7 @@ class PaddleMotionCaptureSystem(BaseSystem[TContext]):
 class PaddleMotionMeasureSystem(BaseSystem[TContext]):
     phase = SystemPhase.SIMULATION
 
-    def step(self, ctx: BaseTickContext[TWorld, TIntent]):
+    def step(self, ctx: SceneTickContext[TWorld, TIntent]):
         for _, _, transform, velocity, sample in ctx.world.query(
             Paddle,
             Transform,

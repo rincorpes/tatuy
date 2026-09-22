@@ -28,3 +28,5 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 - Replace BaseWorld with World in multiple files
 - Rename BaseIntent to Intent for consistency across context and UI
+- Rename BaseTickContext to SceneTickContext for improved clarity and consistency
+- Change scene world and intent to composition introducing types and cache

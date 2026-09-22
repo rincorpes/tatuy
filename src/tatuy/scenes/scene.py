@@ -12,8 +12,8 @@ from tatuy.scenes.context import SceneContext, TContext, TIntent
 
 class Scene(Generic[TWorld, TIntent, TContext]):
 
-    world: TWorld
-    intent: TIntent
+    world_type: Type[TWorld]
+    intent_type: Type[TIntent]
     systems: Sequence[BaseSystem[TContext]] = ()
 
     entity_factory: EntityFactory
@@ -26,6 +26,23 @@ class Scene(Generic[TWorld, TIntent, TContext]):
     )
 
     PRESENTATION_PHASES = (SystemPhase.PRESENTATION,)
+
+    _world_cache: TWorld | None = None
+    _intent_cache: TIntent | None = None
+
+    @property
+    def world(self) -> TWorld:
+        if self._world_cache:
+            return self._world_cache
+        self._world_cache = self.world_type()
+        return self._world_cache
+
+    @property
+    def intent(self) -> TIntent:
+        if self._intent_cache:
+            return self._intent_cache
+        self._intent_cache = self.intent_type()
+        return self._intent_cache
 
     def create_tick_context(
         self,

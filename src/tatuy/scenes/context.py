@@ -14,7 +14,7 @@ from tatuy.input.frame import InputFrame
 from tatuy.resources import ResourceStore
 
 TIntent = TypeVar("TIntent", bound="Intent")
-TContext = TypeVar("TContext", bound="BaseTickContext")
+TContext = TypeVar("TContext", bound="SceneTickContext")
 
 
 @dataclass
@@ -44,7 +44,7 @@ class SceneContext:
 
 
 @dataclass
-class BaseTickContext(Generic[TWorld, TIntent]):
+class SceneTickContext(Generic[TWorld, TIntent]):
     dt: float
     world: TWorld
     intent: TIntent
