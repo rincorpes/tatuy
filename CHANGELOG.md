@@ -27,3 +27,4 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 ### Change
 
 - Replace BaseWorld with World in multiple files
+- Rename BaseIntent to Intent for consistency across context and UI

@@ -13,12 +13,12 @@ from tatuy.graphics.viewport.state import ViewportState
 from tatuy.input.frame import InputFrame
 from tatuy.resources import ResourceStore
 
-TIntent = TypeVar("TIntent", bound="BaseIntent")
+TIntent = TypeVar("TIntent", bound="Intent")
 TContext = TypeVar("TContext", bound="BaseTickContext")
 
 
 @dataclass
-class BaseIntent:
+class Intent:
 
     move_up: bool = False
     move_down: bool = False

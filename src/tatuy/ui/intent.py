@@ -3,11 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from tatuy.input.frame import InputFrame
-from tatuy.scenes.context import BaseIntent
+from tatuy.scenes.context import Intent
 
 
 @dataclass
-class UiIntent(BaseIntent):
+class UiIntent(Intent):
     pointer_position: tuple[int, int] = (0, 0)
     pointer_inside: bool = False
 
