@@ -1214,7 +1214,7 @@ This is useful when audio resources need to be prepared manually.
 
 ### Audio Autoload
 
-[`001_backend/014_audio/001_autoload/app.py`](../../examples/fundamentals/001_backend/014_audio/001_autoload/app.py)
+[`008_audio/001_autoload/app.py`](../../examples/fundamentals/001_backend/008_audio/001_autoload/app.py)
 
 Sounds can also be declared in configuration.
 
@@ -1392,3 +1392,5 @@ image processing
 Normal gameplay code should generally not need raw framebuffer bytes.
 
 If Pong starts manually inspecting BGRA buffers, something has gone terribly wrong.
+
+The backend examples stop at platform operations. Continue with [Running Tatuy](../002_running/index.md) to see how the engine uses them each frame.

@@ -78,3 +78,5 @@ without rewriting:
 That is the point: The backend is not there because abstracting everything is automatically good architecture.
 
 Sometimes abstraction is just procrastination wearing glasses. It exists because **this particular boundary represents something Tatuy genuinely intends to replace**. And if one day Pong runs through a native SDL2 backend without Pong knowing or caring that the backend changed, then the abstraction did its job.
+
+Continue with [Running Tatuy](../002_running/index.md) to see how the engine drives the backend.

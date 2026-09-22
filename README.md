@@ -4,11 +4,11 @@ Build small 2D games in Python with code you can follow.
 
 Tatuy is a Python 2D game engine built around scenes, an Entity Component System (ECS), and separate gameplay and rendering stages. It provides reusable systems for movement, collisions, entity lifecycles, and UI, with Pygame as its current backend.
 
-The repository includes fundamental examples, Pong, and Breakout, plus built-in screenshot, replay, and video recording tools.
+The repository includes fundamental examples for the backend, runtime, and scenes, plus built-in screenshot, replay, and video recording tools.
 
 ## Status
 
-Tatuy is in early development, currently version 0.0.1. APIs and examples may change as the engine evolves.
+Tatuy is in early development, currently version 0.1.0. APIs and examples may change as the engine evolves.
 
 ## Get started
 
@@ -18,7 +18,7 @@ From the repository root:
 
 ```bash
 poetry install
-poetry run python manage.py run game pong
+poetry run python manage.py run example scenes.on_present
 ```
 
 A desktop environment is required to display the game window. FFmpeg is required for MP4 video encoding.
@@ -75,7 +75,7 @@ Scenes can also draw directly during `on_present`, using their canvas or render 
 
 ## Capture and replay
 
-Screenshot and video hotkeys are enabled by default. Replay hotkeys require replay to be enabled in the game settings; the Pong example enables them.
+Screenshot and video hotkeys are enabled by default. Replay hotkeys require replay to be enabled in the game settings.
 
 | Key | Action |
 | --- | --- |
@@ -104,18 +104,18 @@ Video recording captures rendered frames and encodes them with FFmpeg. Game audi
 
 ## Explore the examples
 
-Fundamental examples cover backend initialization, windows, events, input, the runtime loop, scenes, ECS, movement, bounds, spawning, and collisions.
+Fundamental examples cover backend initialization, windows, events, input, the runtime loop, scenes, and a moving rectangle.
 
 Run an example using its logical folder names, without numeric prefixes:
 
 ```bash
-poetry run python manage.py run example scenes.render
+poetry run python manage.py run example scenes.on_present
 ```
 
 Use dots to address nested examples:
 
 ```bash
-poetry run python manage.py run example ecs.components.query
+poetry run python manage.py run example backend.renderer.shapes
 ```
 
 The numbered folders preserve the examples' organization while the CLI accepts readable names.
@@ -140,7 +140,7 @@ src/
 
 examples/
 ├── fundamentals/      Focused examples of individual concepts
-└── games/             Pong and Breakout
+└── games/             Place for larger game examples
 ```
 
 ## Current scope
@@ -149,4 +149,4 @@ Pygame is the only implemented backend. Entity-to-entity collision detection cur
 
 Rendering includes layers for lighting and effects, but advanced lighting, post-processing, and viewport scaling are still developing.
 
-Start with the reference games to see how the current pieces fit together.
+Start with the [moving rectangle tutorial](docs/tutorials/moving_rectangle.md) to see how the current pieces fit together.

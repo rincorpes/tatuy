@@ -22,3 +22,8 @@
         1. [Pygame](./001_backend/implementations/pygame.md)
     8. [Development](./001_backend/development.md)
     9. [Examples](./001_backend/examples.md)
+2. [Running Tatuy](./002_running/index.md)
+    1. [Running Examples](./002_running/examples.md)
+3. [Scenes](./003_scenes/index.md)
+    1. [Scene Examples](./003_scenes/examples.md)
+4. [Make a Moving Rectangle](./tutorials/moving_rectangle.md)
