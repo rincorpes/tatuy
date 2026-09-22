@@ -1,0 +1,89 @@
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[project]
+name = "tatuy"
+version = "0.1.0"
+description = "Tatuy is a Python 2D game engine built around scenes, an Entity Component System (ECS), and separate gameplay and rendering stages. It provides reusable systems for movement, collisions, entity lifecycles, and UI."
+authors = [{ name = "Santiago Rincón" }]
+readme = "README.md"
+license = "LICENSE"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    "onomasticon (>=0.2.0,<0.3.0)",
+    "relict (>=0.1.1,<0.2.0)",
+    "pygame (>=2.6.1,<3.0.0)",
+    "pillow (>=12.3.0,<13.0.0)",
+    "rincorpes-limen (>=0.1.1,<0.2.0)"
+]
+
+
+[project.optional-dependencies]
+dev = [
+    "pytest~=8.3",
+    "pytest-cov~=6.0",
+    "black~=24.10",
+    "isort~=5.13",
+    "mypy~=1.5",
+    "pylint~=3.3",
+]
+
+[tool.poetry]
+packages = [
+  { include = "tatuy_cli", from = "src" },
+  { include = "tatuy", from = "src" },
+]
+
+[tool.black]
+line-length = 79
+target-version = ["py310"]
+extend-exclude = '''/(
+    docs
+  | tests
+)/'''
+
+[tool.isort]
+profile = "black"
+line_length = 79
+known_tatuy = ["tatuy", "tatuy_cli"]
+sections = [
+    "FUTURE",
+    "STDLIB",
+    "THIRDPARTY",
+    "TATUY",
+    "FIRSTPARTY",
+    "LOCALFOLDER",
+]
+src_paths = ["src"]
+skip = [".venv", "venv", "env", "build", "dist", "docs", "tests"]
+
+[tool.mypy]
+python_version = "3.10"
+packages = ["tatuy", "tatuy_cli"]
+ignore_missing_imports = true
+strict = false
+
+[tool.pylint.messages_control]
+disable = [
+    # Justification: Classes with few public methods are common, specially interfaces,
+    # data containers and base classes.
+    "too-few-public-methods",
+    # Justification: f-strings are preferred for logging.
+    "logging-fstring-interpolation",
+    # Justification: Broad exceptions are sometimes necessary for simplicity.
+    "broad-exception-caught",
+    # Justification: TODOs are acceptable during development.
+    "fixme",
+]
+
+[tool.pylint.MAIN]
+ignore-paths = [
+  "^\\.venv",
+  "^venv",
+  "^tests",
+  "^env",
+  "^build",
+  "^dist",
+  "^docs",
+]
