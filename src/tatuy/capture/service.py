@@ -167,7 +167,7 @@ class CaptureService:
             return
 
         # Backend access remains on the engine thread.
-        width, height, pixels = self._backend.capture.argb8888_bytes()
+        width, height, pixels = self._backend.capture.bgra8888_bytes()
 
         # Immutable bytes can be shared by screenshot and video jobs.
         for request in requests:

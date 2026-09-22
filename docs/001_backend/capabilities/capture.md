@@ -14,7 +14,7 @@ The current frame can also be retrieved as raw pixel data:
 
 ```python
 width, height, data = (
-    backend.capture.argb8888_bytes()
+    backend.capture.bgra8888_bytes()
 )
 ```
 

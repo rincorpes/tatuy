@@ -19,3 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - **Capture & Replay System:** Built a custom replay recorder/player with background workers and video encoding capabilities.
 - **Tatuy CLI:** Created a command-line interface to run internal examples, experiments, and games.
 - **Documentation & Examples:** Added comprehensive architectural docs and interactive fundamental examples for every core module.
+
+### Fix
+
+- Update pixel format from ``argb8888`` to ``bgra8888`` in capture functionality

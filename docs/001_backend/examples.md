@@ -1357,7 +1357,7 @@ def main():
     backend.renderer.end_frame()
 
     width, height, data = (
-        backend.capture.argb8888_bytes()
+        backend.capture.bgra8888_bytes()
     )
 
     print(
