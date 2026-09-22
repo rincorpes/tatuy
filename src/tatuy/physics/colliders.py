@@ -7,7 +7,7 @@ from tatuy.ecs.component import (
     Transform,
 )
 from tatuy.ecs.entity import EntityId
-from tatuy.ecs.world import BaseWorld
+from tatuy.ecs.world import World
 from tatuy.geometry.aabb import AABB
 from tatuy.geometry.disk import Disk
 from tatuy.geometry.shapes import (
@@ -25,7 +25,7 @@ class ColliderAccess:
 
     def find(
         self,
-        world: BaseWorld,
+        world: World,
         entity: EntityId,
     ) -> Collider | None:
         found: list[Collider] = []
@@ -45,7 +45,7 @@ class ColliderAccess:
 
     def get(
         self,
-        world: BaseWorld,
+        world: World,
         entity: EntityId,
     ) -> Collider:
         collider = self.find(world, entity)
@@ -87,7 +87,7 @@ class ColliderAccess:
 
     def geometry(
         self,
-        world: BaseWorld,
+        world: World,
         entity: EntityId,
     ) -> ShapeGeometry:
         collider = self.get(world, entity)

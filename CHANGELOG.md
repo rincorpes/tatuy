@@ -23,3 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 ### Fix
 
 - Update pixel format from ``argb8888`` to ``bgra8888`` in capture functionality
+
+### Change
+
+- Replace BaseWorld with World in multiple files

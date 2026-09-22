@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import (
-    Generic,
-)
+from typing import Generic
 
 from tatuy.ecs.entity import EntityId
-from tatuy.ecs.world import BaseWorld, TWorld
+from tatuy.ecs.world import TWorld, World
 
 
 class EntityBlueprint(
@@ -26,7 +24,7 @@ class EntityFactory:
 
     def __init__(
         self,
-        world: BaseWorld,
+        world: World,
     ) -> None:
         self._world = world
 

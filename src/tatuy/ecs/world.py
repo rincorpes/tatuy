@@ -2,16 +2,12 @@ from __future__ import annotations
 
 from collections import defaultdict
 from collections.abc import Iterator
-from typing import (
-    Any,
-    TypeVar,
-    overload,
-)
+from typing import Any, TypeVar, overload
 
 from tatuy.ecs.component import TComponent
 from tatuy.ecs.entity import EntityId
 
-TWorld = TypeVar("TWorld", bound="BaseWorld")
+TWorld = TypeVar("TWorld", bound="World")
 TResource = TypeVar("TResource")
 
 C1 = TypeVar("C1")
@@ -36,7 +32,7 @@ C19 = TypeVar("C19")
 C20 = TypeVar("C20")
 
 
-class BaseWorld:
+class World:
     def __init__(self) -> None:
         self._next_entity_id = 1
 

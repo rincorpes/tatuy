@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 from tatuy.ecs.resources import CollisionContact
-from tatuy.ecs.world import BaseWorld
+from tatuy.ecs.world import World
 from tatuy.math.vec2 import Vec2
 
 
@@ -18,7 +18,7 @@ class CollisionVelocityRule(ABC):
     @abstractmethod
     def resolve(
         self,
-        world: BaseWorld,
+        world: World,
         contact: CollisionContact,
     ) -> CollisionVelocities | None:
         """

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from tatuy.commands import EngineCommandQueue, SetCursor
-from tatuy.ecs.world import BaseWorld
+from tatuy.ecs.world import World
 from tatuy.ui.intent import UiIntent
 from tatuy.ui.layout import ButtonAppearanceResolver, PanelGeometry
 from tatuy.ui.model import (
@@ -21,7 +21,7 @@ class UiPointerController:
 
     def update(
         self,
-        world: BaseWorld,
+        world: World,
         intent: UiIntent,
         commands: EngineCommandQueue,
     ) -> None:
