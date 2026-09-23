@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Generic, Sequence, Type
 
-from tatuy.ecs.entity_factory import EntityFactory
+from tatuy.ecs.entity.factory import EntityFactory
 from tatuy.ecs.system import BaseSystem, SystemPhase
 from tatuy.ecs.world import TWorld
 from tatuy.graphics.canvas import Canvas
@@ -14,11 +14,10 @@ class Scene(Generic[TWorld, TIntent, TContext]):
 
     world_type: Type[TWorld]
     intent_type: Type[TIntent]
-    systems: Sequence[BaseSystem[TContext]] = ()
-
-    entity_factory: EntityFactory
-
     tick_context_type: Type[TContext]
+    factory_type: Type[EntityFactory] = EntityFactory
+
+    systems: Sequence[BaseSystem[TContext]] = ()
 
     UPDATE_PHASES = (
         SystemPhase.CONTROL,
@@ -29,6 +28,7 @@ class Scene(Generic[TWorld, TIntent, TContext]):
 
     _world_cache: TWorld | None = None
     _intent_cache: TIntent | None = None
+    _factory_cache: EntityFactory | None = None
 
     @property
     def world(self) -> TWorld:
@@ -43,6 +43,13 @@ class Scene(Generic[TWorld, TIntent, TContext]):
             return self._intent_cache
         self._intent_cache = self.intent_type()
         return self._intent_cache
+
+    @property
+    def factory(self) -> EntityFactory:
+        if self._factory_cache:
+            return self._factory_cache
+        self._factory_cache = self.factory_type(self.world)
+        return self._factory_cache
 
     def create_tick_context(
         self,

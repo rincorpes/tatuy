@@ -17,13 +17,17 @@ class Vec2:
     x: float
     y: float
 
-    def __add__(self, other: Vec2) -> Vec2:
+    def __add__(self, other: Vec2 | float) -> Vec2:
+        if isinstance(other, (int, float)):
+            return Vec2(self.x + other, self.y + other)
         return Vec2(
             self.x + other.x,
             self.y + other.y,
         )
 
-    def __sub__(self, other: Vec2) -> Vec2:
+    def __sub__(self, other: Vec2 | float) -> Vec2:
+        if isinstance(other, (int, float)):
+            return Vec2(self.x - other, self.y - other)
         return Vec2(
             self.x - other.x,
             self.y - other.y,

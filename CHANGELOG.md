@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+## - 2026-09-23
+
+### Added
+
+- Enhance Vec2 operations to support scalar addition and subtraction
+
+### Changed
+
+- Update entity factory import path for consistency
+- Update built-in components, resources and systems import paths as features
+
 ## - 2026-09-22
 
 ### Added
