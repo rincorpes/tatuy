@@ -1,17 +1,17 @@
 from __future__ import annotations
 
-from tatuy.ecs.component import Text
 from tatuy.ecs.world import TWorld
-from tatuy.ui.layout import ButtonAppearanceResolver, PanelGeometry
-from tatuy.ui.model import (
+from tatuy.graphics.components.text import Text
+from tatuy.ui.components import (
     Button,
     ButtonAppearance,
     ButtonState,
     Panel,
     PanelShape,
-    UIFrame,
     UiNode,
 )
+from tatuy.ui.layout import ButtonAppearanceResolver, PanelGeometry
+from tatuy.ui.resources import UIFrame
 
 
 class UiRenderer:

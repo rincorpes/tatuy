@@ -2,16 +2,10 @@ from __future__ import annotations
 
 from tatuy.commands import EngineCommandQueue, SetCursor
 from tatuy.ecs.world import World
+from tatuy.ui.components import Button, ButtonState, Panel, UiNode
 from tatuy.ui.intent import UiIntent
 from tatuy.ui.layout import ButtonAppearanceResolver, PanelGeometry
-from tatuy.ui.model import (
-    Button,
-    ButtonState,
-    Panel,
-    UIFrame,
-    UIInteraction,
-    UiNode,
-)
+from tatuy.ui.resources import UIFrame, UIInteraction
 
 
 class UiPointerController:

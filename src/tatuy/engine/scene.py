@@ -96,7 +96,7 @@ class SceneService:
                 return
             factory = SceneRegistry.get(scene_id)
         scene = factory()
-        scene.on_enter(scene_context)
+        scene.enter(scene_context)
         self._stack.append(
             StackItem(
                 entry=SceneEntry(

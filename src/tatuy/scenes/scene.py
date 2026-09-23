@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Generic, Sequence, Type
+from typing import Any, ClassVar, Generic, Sequence, Type
 
 from tatuy.ecs.entity.factory import EntityFactory
 from tatuy.ecs.system import BaseSystem, SystemPhase
@@ -18,6 +18,8 @@ class Scene(Generic[TWorld, TIntent, TContext]):
     factory_type: Type[EntityFactory] = EntityFactory
 
     systems: Sequence[BaseSystem[TContext]] = ()
+
+    shared_resource_types: ClassVar[tuple[type[object], ...]] = ()
 
     UPDATE_PHASES = (
         SystemPhase.CONTROL,
@@ -72,6 +74,13 @@ class Scene(Generic[TWorld, TIntent, TContext]):
 
     def replay_options(self, ctx: SceneContext) -> dict[str, Any]:
         return {}
+
+    def enter(self, ctx: SceneContext) -> None:
+        for resource_type in self.shared_resource_types:
+            resource = ctx.resources.get(resource_type)
+            self.world.add_resource(resource)
+
+        self.on_enter(ctx)
 
     def on_enter(self, ctx: SceneContext):
         raise NotImplementedError

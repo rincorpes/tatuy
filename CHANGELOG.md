@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 - Update entity factory import path for consistency
 - Update built-in components, resources and systems import paths as features
+- Introduce UI components and resources for enhanced interface management
 
 ## - 2026-09-22
 

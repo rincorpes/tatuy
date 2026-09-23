@@ -4,29 +4,36 @@ from tatuy.ecs.world import TWorld
 from tatuy.geometry.size import Size
 from tatuy.graphics.viewport.state import ViewportState
 from tatuy.math.vec2 import Vec2
-from tatuy.ui.model import (
+from tatuy.ui.components import (
     Button,
     ButtonAppearance,
     ButtonState,
     Panel,
     PanelShape,
-    ResolvedNode,
-    UIFrame,
     UiNode,
 )
+from tatuy.ui.model import ResolvedNode
+from tatuy.ui.resources import UIFrame
 
 
 class UiLayoutResolver:
     def __init__(self, world: TWorld, viewport: ViewportState):
         self._world = world
         self._viewport = viewport
+        self._supported = True
 
-        self._frame = world.get_resource(UIFrame)
-        self._nodes = dict(world.query(UiNode))
+        try:
+            self._frame = world.get_resource(UIFrame)
+            self._nodes = dict(world.query(UiNode))
+        except KeyError:
+            print("No UI Support")
+            self._supported = False
 
         self._visiting: set = set()
 
     def layout(self) -> None:
+        if not self._supported:
+            return
         self._frame.nodes.clear()
         self._visiting.clear()
 
