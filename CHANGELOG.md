@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+## - 2026-09-24
+
+### Added
+
+- Implement movement system with velocity calculation and desired movement handling
+
 ## - 2026-09-23
 
 ### Added

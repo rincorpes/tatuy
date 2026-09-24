@@ -77,3 +77,18 @@ class Vec2:
             self.x / length,
             self.y / length,
         )
+
+    def move_towards(
+        self,
+        target: Vec2,
+        max_delta: float,
+    ) -> Vec2:
+        delta = target - self
+
+        if delta.length_squared() == 0:
+            return target
+
+        if delta.length() <= max_delta:
+            return target
+
+        return self + delta.normalized() * max_delta
