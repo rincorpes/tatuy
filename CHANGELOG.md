@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 - Update MovementControls integration in movement systems
 - Reorganize imports and update WorldBoundsBorder class definition
+- Clean up import statements in lifecycle and bounds systems
 
 ## - 2026-09-23
 

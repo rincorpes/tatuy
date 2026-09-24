@@ -1,17 +1,14 @@
 from __future__ import annotations
 
-from tatuy.features.bounds.components import (
-    BoundsBehavior,
-    BoundsConstraint,
-)
+from tatuy.ecs.system import BaseSystem, SystemPhase
+from tatuy.ecs.world import TWorld
+from tatuy.features.bounds.components import BoundsBehavior, BoundsConstraint
 from tatuy.features.bounds.resources import (
     BoundsBounceEvent,
     BoundsFrame,
     WorldBounds,
     WorldBoundsBorder,
 )
-from tatuy.ecs.system import BaseSystem, SystemPhase
-from tatuy.ecs.world import TWorld
 from tatuy.features.lifecycle.components import DespawnReason
 from tatuy.features.lifecycle.resources import LifecycleQueue
 from tatuy.features.movement.components import (

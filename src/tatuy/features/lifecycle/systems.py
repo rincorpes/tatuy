@@ -1,18 +1,15 @@
 from __future__ import annotations
 
 from tatuy.ecs.entity.factory import EntityFactory
+from tatuy.ecs.system import BaseSystem
+from tatuy.ecs.world import TWorld
 from tatuy.features.lifecycle.components import (
     DespawnReason,
     Lifetime,
     Respawn,
     SpawnOrigin,
 )
-from tatuy.features.lifecycle.resources import (
-    LifecycleQueue,
-    SpawnRegistry,
-)
-from tatuy.ecs.system.base import BaseSystem
-from tatuy.ecs.world import TWorld
+from tatuy.features.lifecycle.resources import LifecycleQueue, SpawnRegistry
 from tatuy.scenes.context import SceneTickContext, TContext, TIntent
 
 

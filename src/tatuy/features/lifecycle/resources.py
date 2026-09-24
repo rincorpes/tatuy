@@ -10,7 +10,7 @@ from tatuy.features.lifecycle.components import DespawnReason, Respawn
 @dataclass(frozen=True)
 class SpawnDefinition:
     blueprint: str
-    make_kwargs: Callable[[], dict[str, Any]]
+    make_kwargs: Callable[[], dict[str, Any]] = field(default=lambda: {})
     respawn: Respawn | None = None
     lifetime: float | None = None
 
