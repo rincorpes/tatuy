@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 - Implement movement system with velocity calculation and desired movement handling
 - Direction systems for collisions and bounds
+- Add debug overlay pass for FPS display and integrate into render pipeline
 
 ### Changed
 

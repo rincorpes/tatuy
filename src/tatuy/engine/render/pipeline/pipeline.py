@@ -6,6 +6,7 @@ from tatuy.backend import Backend
 from tatuy.engine.loop.frame_packet import FramePacket
 from tatuy.engine.render.pipeline.passes.base import FramePacketPass
 from tatuy.engine.render.pipeline.passes.begin_frame import BeginFramePass
+from tatuy.engine.render.pipeline.passes.debug_overlay import DebugOverlayPass
 from tatuy.engine.render.pipeline.passes.end_frame import EndFramePass
 from tatuy.engine.render.pipeline.passes.lighting import LightingPass
 
@@ -50,6 +51,7 @@ class RenderPipeline:
                 layers=("debug",),
                 include_overlays=False,
             ),
+            DebugOverlayPass(),
             EndFramePass(),
         ]
     )

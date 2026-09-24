@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from time import sleep
+from time import perf_counter, sleep
 
 from tatuy.engine.engine import Engine
 from tatuy.engine.timing import FrameClock
@@ -13,14 +13,18 @@ class PythonLoop:
 
     def run(self, engine: Engine) -> None:
         engine.start()
-
         clock = FrameClock()
 
         try:
             while engine.running:
+                frame_start = perf_counter()
+
                 clock.step_time()
                 engine.step(clock.dt, clock.frame_index)
-                self._wait(clock.dt)
+
+                processing_time = perf_counter() - frame_start
+                self._wait(processing_time)
+
                 clock.frame_index += 1
         finally:
             engine.stop()

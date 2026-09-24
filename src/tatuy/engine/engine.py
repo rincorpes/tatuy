@@ -45,6 +45,7 @@ from tatuy.window.service import WindowService
 class EngineConfig:
     start_scene: str = "main"
     fps: int = 60
+    debug_overlay: bool = False
 
     @classmethod
     def from_dict(cls, config: dict[str, Any]) -> EngineConfig:
@@ -265,12 +266,15 @@ class FrameRenderer:
         viewport: ViewportService,
         window: WindowService,
         capture: CaptureService,
+        *,
+        debug_overlay: bool = False,
     ) -> None:
         self._backend = backend
         self._pipeline = pipeline
         self._viewport = viewport
         self._window = window
         self._capture = capture
+        self._debug_overlay = debug_overlay
 
     def render(
         self,
@@ -285,6 +289,7 @@ class FrameRenderer:
 
         context = RenderContext(
             viewport=self._viewport.state,
+            debug_overlay=self._debug_overlay,
             frame_ms=dt * 1000,
         )
 
@@ -335,6 +340,7 @@ class Engine:
             self.services.viewport,
             self.services.window,
             self.services.capture,
+            debug_overlay=self.config.debug_overlay,
         )
 
         self.running = False
