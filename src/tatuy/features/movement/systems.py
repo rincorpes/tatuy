@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from tatuy.ecs.system import BaseSystem, SystemPhase
 from tatuy.ecs.world import TWorld
-from tatuy.features.movement.components import (
+from tatuy.features.movement.components import (  # MovementControls,
     DesiredMovement,
     Movement,
-    # MovementControls,
+    MovementControls,
     Velocity,
 )
 from tatuy.features.movement.motor import MovementMotor
@@ -18,7 +18,9 @@ class MovementControlSystem(BaseSystem[TContext]):
     phase = SystemPhase.CONTROL
 
     def step(self, ctx: SceneTickContext[TWorld, TIntent]) -> None:
-        for _, desired in ctx.world.query(DesiredMovement):
+        for _, __, desired in ctx.world.query(
+            MovementControls, DesiredMovement
+        ):
             direction = Vec2.zero()
 
             if ctx.intent.move_up:

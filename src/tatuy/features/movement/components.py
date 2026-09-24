@@ -32,5 +32,4 @@ class Movement:
 
 
 @dataclass
-class MovementControls:
-    normalize: bool = True
+class MovementControls: ...
