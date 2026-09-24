@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-
-from tatuy.ecs.resources import CollisionContact
 from tatuy.ecs.world import World
+from tatuy.features.collision.resources import CollisionContact
 from tatuy.math.vec2 import Vec2
 
 

@@ -10,11 +10,15 @@ from tatuy.features.bounds.resources import (
     WorldBounds,
     WorldBoundsBorder,
 )
-from tatuy.ecs.system.base import BaseSystem, SystemPhase
+from tatuy.ecs.system import BaseSystem, SystemPhase
 from tatuy.ecs.world import TWorld
 from tatuy.features.lifecycle.components import DespawnReason
 from tatuy.features.lifecycle.resources import LifecycleQueue
-from tatuy.features.movement.components import Velocity
+from tatuy.features.movement.components import (
+    DesiredMovement,
+    MovementControls,
+    Velocity,
+)
 from tatuy.features.spatial.components import Transform
 from tatuy.geometry.bounds import (
     BoundsBounce,
@@ -115,6 +119,29 @@ class BoundsConstraintSystem(BaseSystem[TContext]):
                             entity,
                             DespawnReason.OUT_OF_BOUNDS,
                         )
+
+
+class BoundsDirectionSystem(BaseSystem[TContext]):
+    phase = SystemPhase.SIMULATION
+
+    def step(self, ctx: SceneTickContext[TWorld, TIntent]):
+        frame = ctx.world.get_resource(BoundsFrame)
+
+        for event in frame.bounces:
+            entity = event.entity
+
+            # Player input remains responsible for controlled entities.
+            if ctx.world.has_component(entity, MovementControls):
+                continue
+
+            if not ctx.world.has_component(entity, DesiredMovement):
+                continue
+
+            velocity = ctx.world.get_component(entity, Velocity)
+            desired = ctx.world.get_component(entity, DesiredMovement)
+
+            if velocity.value.length_squared() > 0:
+                desired.direction = velocity.value.normalized()
 
 
 class WorldBoundsRenderSystem(BaseSystem[TContext]):

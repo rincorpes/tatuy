@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from tatuy.ecs.resources import WorldBoundsBorder
+from tatuy.features.bounds.resources import WorldBoundsBorder
 from tatuy.geometry.border import BoundsBorderGeometry
 from tatuy.geometry.bounds import Bounds
 from tatuy.geometry.size import Size

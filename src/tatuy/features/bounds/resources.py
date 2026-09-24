@@ -12,15 +12,6 @@ class WorldBounds:
     bounds: Bounds
 
 
-@dataclass
-class WorldBoundsBorder:
-    color: Color = (220, 220, 220)
-    thickness: int = 6
-    sides: BoundsSide = BoundsSide.ALL
-    enabled: bool = True
-    z: int = 0
-
-
 @dataclass(frozen=True)
 class BoundsBounceEvent:
     entity: EntityId
@@ -30,3 +21,12 @@ class BoundsBounceEvent:
 @dataclass
 class BoundsFrame:
     bounces: list[BoundsBounceEvent] = field(default_factory=list)
+
+
+@dataclass
+class WorldBoundsBorder:
+    color: Color = (220, 220, 220)
+    thickness: int = 6
+    sides: BoundsSide = BoundsSide.ALL
+    enabled: bool = True
+    z: int = 0

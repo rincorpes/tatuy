@@ -12,10 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 ### Added
 
 - Implement movement system with velocity calculation and desired movement handling
+- Direction systems for collisions and bounds
 
 ### Changed
 
 - Update MovementControls integration in movement systems
+- Reorganize imports and update WorldBoundsBorder class definition
 
 ## - 2026-09-23
 

@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from tatuy.ecs.component import (
+from tatuy.ecs.entity import EntityId
+from tatuy.ecs.world import World
+from tatuy.features.collision.components import (
     BoxCollider,
     CircleCollider,
     PolygonCollider,
-    Transform,
 )
-from tatuy.ecs.entity import EntityId
-from tatuy.ecs.world import World
+from tatuy.features.spatial.components import Transform
 from tatuy.geometry.aabb import AABB
 from tatuy.geometry.disk import Disk
 from tatuy.geometry.shapes import (
