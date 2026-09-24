@@ -26,7 +26,7 @@ class DesiredMovement:
 @dataclass
 class Movement:
     speed: float = 38.0
-    acceleration: float = 100.0
+    acceleration: float | None = 100.0
     deceleration: float | None = None
     max_speed: float | None = None
 

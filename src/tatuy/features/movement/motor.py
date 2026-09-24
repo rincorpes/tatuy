@@ -22,9 +22,8 @@ class MovementMotor:
             movement,
         )
 
-        velocity = current.move_towards(
-            target,
-            rate * dt,
+        velocity = (
+            target if rate is None else current.move_towards(target, rate * dt)
         )
 
         return self._clamp_velocity(
