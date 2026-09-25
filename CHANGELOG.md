@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+## - 2026-09-25
+
+### Added
+
+- Implement resource management methods in World class
+
 ## - 2026-09-24
 
 ### Added

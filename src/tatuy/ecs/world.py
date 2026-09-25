@@ -83,6 +83,23 @@ class World:
                 f"Resource {resource_type.__name__} does not exists"
             ) from exc
 
+    def has_resource(
+        self,
+        resource_type: type,
+    ) -> bool:
+        return resource_type in self._resources
+
+    def remove_resource(
+        self,
+        resource_type: type[TResource],
+    ) -> TResource:
+        try:
+            return self._resources.pop(resource_type)
+        except KeyError as exc:
+            raise KeyError(
+                f"Resource {resource_type.__name__} does not exist"
+            ) from exc
+
     def add_component(
         self,
         entity: EntityId,
@@ -116,6 +133,27 @@ class World:
             component_type,
             {},
         )
+
+    def remove_component(
+        self,
+        entity: EntityId,
+        component_type: type[TComponent],
+    ) -> TComponent:
+        if entity not in self._entities:
+            raise KeyError(f"Unknown entity: {entity}")
+
+        store = self._components.get(component_type)
+
+        if store is None or entity not in store:
+            raise KeyError(f"Entity {entity} has no {component_type.__name__}")
+
+        component = store.pop(entity)
+
+        # Avoid retaining empty component stores.
+        if not store:
+            del self._components[component_type]
+
+        return component
 
     @overload
     def query(
