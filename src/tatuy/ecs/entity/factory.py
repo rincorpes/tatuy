@@ -8,7 +8,10 @@ from onomasticon import ImplementationRegistry
 from tatuy.ecs.entity import EntityId
 from tatuy.ecs.world import TWorld, World
 from tatuy.features.spatial.components import Transform
+from tatuy.geometry.size import Size
+from tatuy.graphics.color import Color
 from tatuy.graphics.components.shape import Rect
+from tatuy.math.vec2 import Vec2
 
 
 class EntityBlueprint(
@@ -27,12 +30,20 @@ class RectBlueprint(EntityBlueprint[TWorld]):
         if entity is None:
             entity = world.create_entity()
 
-        world.add_component(entity, Transform(kwargs.get("position")))
-        world.add_component(
-            entity, Rect(kwargs.get("size"), kwargs.get("color"))
-        )
+        self.build(world, entity, **kwargs)
 
         return entity
+
+    def build(
+        self,
+        world: TWorld,
+        entity: EntityId,
+        position: Vec2,
+        size: Size,
+        color: Color,
+    ):
+        world.add_component(entity, Transform(position))
+        world.add_component(entity, Rect(size, color))
 
 
 class _BlueprintRegistry(ImplementationRegistry[EntityBlueprint]):

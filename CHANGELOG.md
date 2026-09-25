@@ -15,10 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Implementation based registry for entity factory
 - Introduce Base blueprint for rectangles
 
-
 ### Changed
 
 - Enhance entity creation in EntityFactory and RectBlueprint with optional entity parameter
+- Move entity creation logic to build method in RectBlueprint
 
 ## - 2026-09-24
 
