@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-from typing import Callable, ClassVar, Generic
+from abc import ABC
+from dataclasses import dataclass
+from typing import Any, Callable, ClassVar, Generic, TypeVar, cast
 
 from onomasticon import ImplementationRegistry
 
@@ -18,32 +19,105 @@ class EntityBlueprint(
     ABC,
     Generic[TWorld],
 ):
-    @abstractmethod
+    identity: ClassVar[type[Any] | None] = None
+
     def create(
-        self, world: TWorld, entity: EntityId | None = None, **kwargs
-    ) -> EntityId: ...
-
-
-class RectBlueprint(EntityBlueprint[TWorld]):
-
-    def create(self, world: TWorld, entity: EntityId | None = None, **kwargs):
+        self,
+        world: TWorld,
+        entity: EntityId | None = None,
+        **kwargs,
+    ) -> EntityId:
         if entity is None:
             entity = world.create_entity()
 
         self.build(world, entity, **kwargs)
+        self._build_identity(world, entity)
 
         return entity
+
+    def _build_identity(
+        self,
+        world: TWorld,
+        entity: EntityId,
+    ) -> None:
+        if self.identity is not None:
+            world.add_component(
+                entity,
+                self.identity(),
+            )
 
     def build(
         self,
         world: TWorld,
         entity: EntityId,
-        position: Vec2,
-        size: Size,
-        color: Color,
+        **kwargs,
     ):
-        world.add_component(entity, Transform(position))
-        world.add_component(entity, Rect(size, color))
+        raise NotImplementedError
+
+
+TAttrs = TypeVar("TAttrs")
+
+
+class TypedEntityBlueprint(
+    EntityBlueprint[TWorld],
+    Generic[TWorld, TAttrs],
+):
+    attrs_type: ClassVar[type[Any]]
+
+    def build(
+        self,
+        world: TWorld,
+        entity: EntityId,
+        **kwargs: Any,
+    ) -> None:
+        attrs = cast(
+            TAttrs,
+            self.attrs_type(**kwargs),
+        )
+
+        self.build_attrs(
+            world,
+            entity,
+            attrs,
+        )
+
+    def build_attrs(
+        self,
+        world: TWorld,
+        entity: EntityId,
+        attrs: TAttrs,
+    ) -> None:
+        raise NotImplementedError
+
+
+@dataclass(frozen=True, kw_only=True)
+class RectBlueprintAttrs:
+    position: Vec2
+    size: Size
+    color: Color
+
+
+class RectBlueprint(TypedEntityBlueprint[TWorld, RectBlueprintAttrs]):
+
+    attrs_type = RectBlueprintAttrs
+
+    def build_attrs(
+        self,
+        world: TWorld,
+        entity: EntityId,
+        attrs: RectBlueprintAttrs,
+    ) -> None:
+        world.add_component(
+            entity,
+            Transform(attrs.position),
+        )
+        world.add_component(
+            entity,
+            Rect(
+                attrs.size,
+                attrs.color,
+            ),
+        )
 
 
 class _BlueprintRegistry(ImplementationRegistry[EntityBlueprint]):
