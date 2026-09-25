@@ -12,6 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 ### Added
 
 - Implement resource management methods in World class
+- Implementation based registry for entity factory
+- Introduce Base blueprint for rectangles
+
+
+### Changed
+
+- Enhance entity creation in EntityFactory and RectBlueprint with optional entity parameter
 
 ## - 2026-09-24
 
