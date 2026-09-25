@@ -24,11 +24,9 @@ class EntityBlueprint(
     def create(
         self,
         world: TWorld,
-        entity: EntityId | None = None,
         **kwargs,
     ) -> EntityId:
-        if entity is None:
-            entity = world.create_entity()
+        entity = world.create_entity()
 
         self.build(world, entity, **kwargs)
         self._build_identity(world, entity)
@@ -179,10 +177,8 @@ class EntityFactory:
             raise ValueError(f"Unknown entity blueprint: {name}")
 
         blueprint = blueprint_type()
-        entity = self._world.create_entity()
 
         return blueprint.create(
             self._world,
-            entity=entity,
             **kwargs,
         )

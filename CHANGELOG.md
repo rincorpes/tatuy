@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 - Enhance entity creation in EntityFactory and RectBlueprint with optional entity parameter
 - Move entity creation logic to build method in RectBlueprint
+- Entity creation in blue print moved to the base blueprint class
 
 ## - 2026-09-24
 
