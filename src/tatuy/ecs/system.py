@@ -3,12 +3,8 @@ from __future__ import annotations
 from enum import IntEnum
 from typing import Generic
 
-from tatuy.ecs.component import Paddle, PaddleMotionSample
-from tatuy.ecs.world import TWorld
-from tatuy.features.movement.components import Velocity
-from tatuy.features.spatial.components import Transform
 from tatuy.math.vec2 import Vec2
-from tatuy.scenes.context import SceneTickContext, TContext, TIntent
+from tatuy.scenes.context import TContext
 
 
 class SystemPhase(IntEnum):
@@ -39,37 +35,3 @@ class BaseSystem(Generic[TContext]):
 
     def step(self, ctx: TContext):
         raise NotImplementedError
-
-
-class PaddleMotionCaptureSystem(BaseSystem[TContext]):
-    phase = SystemPhase.SIMULATION
-
-    def step(self, ctx: SceneTickContext[TWorld, TIntent]):
-        for _, _, transform, sample in ctx.world.query(
-            Paddle,
-            Transform,
-            PaddleMotionSample,
-        ):
-            sample.start_position = Vec2(
-                transform.position.x,
-                transform.position.y,
-            )
-
-
-class PaddleMotionMeasureSystem(BaseSystem[TContext]):
-    phase = SystemPhase.SIMULATION
-
-    def step(self, ctx: SceneTickContext[TWorld, TIntent]):
-        for _, _, transform, velocity, sample in ctx.world.query(
-            Paddle,
-            Transform,
-            Velocity,
-            PaddleMotionSample,
-        ):
-            if sample.start_position is None or ctx.dt <= 0:
-                velocity.value = Vec2.zero()
-                continue
-
-            velocity.value = (
-                transform.position - sample.start_position
-            ) / ctx.dt

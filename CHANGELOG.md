@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 ### Changed
 
 - Make blueprints reusable and composable.
+- Remove Paddle and PaddleMotionSample classes from component and system modules
 
 ## - 2026-09-25
 
