@@ -9,7 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 ## - 2026-09-28
 
-## Changed
+### Added
+
+- Circle and Text blueprints with attributes for entity creation
+
+### Changed
 
 - Make blueprints reusable and composable.
 

@@ -134,6 +134,9 @@ examples/fundamentals/*
 examples/games/*
 !examples/games/__init__.py
 
+examples/experiments/*
+!examples/experiments/__init__.py
+
 recordings/
 replays/
 screenshots/
