@@ -25,7 +25,7 @@ from tatuy.geometry.bounds import (
     BoundsWrap,
 )
 from tatuy.graphics.bounds_border import BoundsBorderRenderer
-from tatuy.physics.colliders import ColliderAccess
+from tatuy.features.collision.collider_access import ColliderAccess
 from tatuy.scenes.context import SceneTickContext, TContext, TIntent
 
 

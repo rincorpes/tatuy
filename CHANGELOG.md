@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 - Make blueprints reusable and composable.
 - Remove Paddle and PaddleMotionSample classes from component and system modules
+- Restructure collision and visual components, removing obsolete files and introducing new collider access and velocity rule classes
 
 ## - 2026-09-25
 

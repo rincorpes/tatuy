@@ -30,13 +30,12 @@ class ColliderAccess:
     ) -> Collider | None:
         found: list[Collider] = []
 
-        for collider_type in (
-            BoxCollider,
-            CircleCollider,
-            PolygonCollider,
-        ):
-            if world.has_component(entity, collider_type):
-                found.append(world.get_component(entity, collider_type))
+        if world.has_component(entity, BoxCollider):
+            found.append(world.get_component(entity, BoxCollider))
+        if world.has_component(entity, CircleCollider):
+            found.append(world.get_component(entity, CircleCollider))
+        if world.has_component(entity, PolygonCollider):
+            found.append(world.get_component(entity, PolygonCollider))
 
         if len(found) > 1:
             raise ValueError(f"Entity {entity} has multiple collider shapes")

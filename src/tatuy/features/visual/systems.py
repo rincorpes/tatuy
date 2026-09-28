@@ -3,8 +3,7 @@ from __future__ import annotations
 from tatuy.ecs.system import BaseSystem, SystemPhase
 from tatuy.ecs.world import TWorld
 from tatuy.features.spatial.components import Transform
-from tatuy.graphics.components.shape import Circle, Rect
-from tatuy.graphics.components.text import Text
+from tatuy.features.visual.components import Circle, Rect, Text
 from tatuy.scenes.context import SceneTickContext, TContext, TIntent
 from tatuy.ui.render import UiRenderer
 

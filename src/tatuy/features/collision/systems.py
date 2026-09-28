@@ -17,8 +17,8 @@ from tatuy.features.movement.components import (
 )
 from tatuy.features.spatial.components import Transform
 from tatuy.geometry.collision import CollisionGeometry
-from tatuy.physics.colliders import ColliderAccess
-from tatuy.physics.response import CollisionVelocityRule
+from tatuy.features.collision.collider_access import ColliderAccess
+from tatuy.features.collision.velocity_rule import CollisionVelocityRule
 from tatuy.scenes.context import SceneTickContext, TContext, TIntent
 
 
