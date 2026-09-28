@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 ### Added
 
 - Circle and Text blueprints with attributes for entity creation
+- Add AttachmentSystem to manage entity attachments and position updates
 
 ### Changed
 
