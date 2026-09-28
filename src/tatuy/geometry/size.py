@@ -27,3 +27,7 @@ class Size:
         :rtype: tuple[int, int]
         """
         return (self.width, self.height)
+
+    @classmethod
+    def zero(cls) -> Size:
+        return cls(width=0, height=0)

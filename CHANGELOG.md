@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+## - 2026-09-28
+
+## Changed
+
+- Make blueprints reusable and composable.
+
 ## - 2026-09-25
 
 ### Added

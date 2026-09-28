@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from abc import ABC
-from dataclasses import dataclass
-from typing import Any, Callable, ClassVar, Generic, TypeVar, cast
+from dataclasses import dataclass, field
+from typing import Any, Callable, ClassVar, Generic, Iterable, TypeVar, cast
 
 from onomasticon import ImplementationRegistry
 
+from tatuy.ecs.component import TComponent
 from tatuy.ecs.entity import EntityId
 from tatuy.ecs.world import TWorld, World
 from tatuy.features.spatial.components import Transform
@@ -79,6 +80,9 @@ class TypedEntityBlueprint(
             attrs,
         )
 
+        for component in self.compose(attrs):
+            world.add_component(entity, component)
+
     def build_attrs(
         self,
         world: TWorld,
@@ -87,23 +91,32 @@ class TypedEntityBlueprint(
     ) -> None:
         raise NotImplementedError
 
+    def compose(self, attrs: TAttrs) -> Iterable[TComponent]:
+        return ()
+
 
 @dataclass(frozen=True, kw_only=True)
 class RectBlueprintAttrs:
-    position: Vec2
-    size: Size
-    color: Color
+    position: Vec2 = field(default_factory=Vec2.zero)
+    size: Size = field(default_factory=Size.zero)
+    color: Color = (255, 255, 255)
 
 
-class RectBlueprint(TypedEntityBlueprint[TWorld, RectBlueprintAttrs]):
+TRectAttrs = TypeVar(
+    "TRectAttrs",
+    bound=RectBlueprintAttrs,
+)
 
-    attrs_type = RectBlueprintAttrs
+
+class RectBlueprintBase(
+    TypedEntityBlueprint[TWorld, TRectAttrs], Generic[TWorld, TRectAttrs]
+):
 
     def build_attrs(
         self,
         world: TWorld,
         entity: EntityId,
-        attrs: RectBlueprintAttrs,
+        attrs: TRectAttrs,
     ) -> None:
         world.add_component(
             entity,
@@ -116,6 +129,16 @@ class RectBlueprint(TypedEntityBlueprint[TWorld, RectBlueprintAttrs]):
                 attrs.color,
             ),
         )
+
+
+class RectBlueprint(
+    RectBlueprintBase[
+        TWorld,
+        RectBlueprintAttrs,
+    ],
+    Generic[TWorld],
+):
+    attrs_type = RectBlueprintAttrs
 
 
 class _BlueprintRegistry(ImplementationRegistry[EntityBlueprint]):
