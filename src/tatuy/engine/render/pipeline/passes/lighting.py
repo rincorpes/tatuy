@@ -8,10 +8,9 @@ from dataclasses import dataclass
 
 from tatuy.backend import Backend
 from tatuy.engine.loop.frame_packet import FramePacket
-from tatuy.geometry.size import Size
+from tatuy.engine.render.view import world_drawing_scope
 from tatuy.graphics.render.context import RenderContext
 from tatuy.graphics.render.packets import DrawOp, RenderPacket
-from tatuy.math.vec2 import Vec2
 
 
 @dataclass
@@ -56,32 +55,17 @@ class LightingPass:
         packet: RenderPacket,
         ops: tuple[DrawOp, ...],
     ) -> None:
+        if not ops:
+            return
+
         ctx.stats.packets += 1
         ctx.stats.renderables += len(ops)
         ctx.stats.draw_groups += 1
 
-        # world_transform = viewport_transform_for_packet(ctx.viewport, packet)
-
-        backend.renderer.viewport_transform.set(
-            ctx.viewport.offset_x,
-            ctx.viewport.offset_y,
-            ctx.viewport.scale,
-        )
-        backend.renderer.clip.set(
-            Vec2(0, 0),
-            Size(
-                ctx.viewport.virtual_w,
-                ctx.viewport.virtual_h,
-            ),
-        )
-        try:
-            # backend.set_viewport_transform(
-            #     world_transform.ox,
-            #     world_transform.oy,
-            #     world_transform.s,
-            # )
+        with world_drawing_scope(
+            backend,
+            ctx.viewport,
+            packet.world_view,
+        ):
             for op in ops:
                 op(backend)
-        finally:
-            backend.renderer.clip.clear()
-            backend.renderer.viewport_transform.clear()

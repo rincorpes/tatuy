@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from typing import Callable
 
 from tatuy.backend import Backend
+from tatuy.graphics.camera.transform import ViewTransform
 from tatuy.graphics.render.overlays import ScreenOverlay
 
 DrawOp = Callable[[Backend], None]
@@ -23,6 +24,7 @@ class RenderPacket:
     ops: tuple[DrawOp, ...] = ()
     screen_overlays: tuple[ScreenOverlay, ...] = ()
     meta: dict[str, object] = field(default_factory=dict)
+    world_view: ViewTransform = field(default_factory=ViewTransform)
 
     @staticmethod
     def from_ops(ops: Iterable[DrawOp], **meta: object) -> "RenderPacket":

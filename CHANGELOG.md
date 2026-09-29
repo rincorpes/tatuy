@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Implement particle effects with ParticleEmitter, components, and systems
 - Add dataclass_from_dict utility for converting dictionaries to dataclass instances
 - Implement screen effects system with ScreenEffectStack and FlashEffect
+- Add camera effects system with CameraFX and integrate into Scene
 
 ### Changed
 

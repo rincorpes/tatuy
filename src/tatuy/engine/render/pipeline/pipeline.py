@@ -35,8 +35,6 @@ class RenderPipeline:
             BeginFramePass(),
             WorldPass(),
             LightingPass(),
-            # Basic UI
-            UIPass(include_overlays=False),
             # FXs
             WorldPass(name="EffectsPass", layers=("effects",)),
             PostFXPass(),

@@ -96,6 +96,8 @@ class SceneUpdater:
 
             scene = entry.scene
             scene.screen_fx.update(dt)
+            scene.camera_fx.update(dt)
+
             queue = RenderQueue()
             canvas = QueuedCanvas(queue)
 
@@ -191,6 +193,7 @@ class ScenePresenter:
             packet = replace(
                 compile_queue(queue),
                 screen_overlays=scene.screen_fx.snapshot(),
+                world_view=scene.camera_fx.snapshot(),
             )
 
             packets.append(
