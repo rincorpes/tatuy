@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 ## - 2026-09-29
 
+### Added
+
+- Implement match_contact function for collision detection between entities
+
 ### Changed
 
 - Update import statements for visual components in factory and render modules
