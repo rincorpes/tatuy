@@ -5,6 +5,7 @@ from typing import Any, ClassVar, Generic, Sequence, Type
 from tatuy.ecs.entity.factory import EntityFactory
 from tatuy.ecs.system import BaseSystem, SystemPhase
 from tatuy.ecs.world import TWorld
+from tatuy.features.fx.particles import ParticleEmitter
 from tatuy.graphics.canvas import Canvas
 from tatuy.graphics.render.queue import RenderQueue
 from tatuy.scenes.context import SceneContext, TContext, TIntent
@@ -16,6 +17,8 @@ class Scene(Generic[TWorld, TIntent, TContext]):
     intent_type: Type[TIntent]
     tick_context_type: Type[TContext]
     factory_type: Type[EntityFactory] = EntityFactory
+
+    particles: ParticleEmitter
 
     systems: Sequence[BaseSystem[TContext]] = ()
 
@@ -72,9 +75,6 @@ class Scene(Generic[TWorld, TIntent, TContext]):
             render_queue=render_queue,
         )
 
-    def replay_options(self, ctx: SceneContext) -> dict[str, Any]:
-        return {}
-
     def enter(self, ctx: SceneContext) -> None:
         for resource_type in self.shared_resource_types:
             resource = ctx.resources.get(resource_type)
@@ -92,3 +92,6 @@ class Scene(Generic[TWorld, TIntent, TContext]):
         pass
 
     def on_exit(self): ...
+
+    def replay_options(self, ctx: SceneContext) -> dict[str, Any]:
+        return {}
