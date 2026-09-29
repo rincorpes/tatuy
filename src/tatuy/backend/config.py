@@ -6,6 +6,7 @@ from types import UnionType
 from typing import Any, TypeVar, Union, get_args, get_origin, get_type_hints
 
 from tatuy.backend.exceptions import BackendError
+from tatuy.dataclass_utils import dataclass_from_dict
 from tatuy.graphics.color import Color
 
 ConfigT = TypeVar(
@@ -137,61 +138,6 @@ class BackendConfig:
     @classmethod
     def from_dict(cls, data: dict) -> BackendConfig:
         try:
-            return cls._dataclass_from_dict(cls, data)
+            return dataclass_from_dict(cls, data)
         except (TypeError, ValueError) as error:
             raise BackendConfigError(str(error)) from error
-
-    @classmethod
-    def _decode(cls, value: Any, annotation: Any) -> Any:
-        if value is None:
-            return None
-
-        if isinstance(annotation, type) and issubclass(annotation, Enum):
-            return annotation(value)
-
-        origin = get_origin(annotation)
-        arguments = get_args(annotation)
-
-        if origin in (Union, UnionType):
-            valid_types = [
-                item for item in arguments if item is not type(None)
-            ]
-            for item_type in valid_types:
-                try:
-                    return cls._decode(value, item_type)
-                except (TypeError, ValueError):
-                    pass
-            return value
-
-        if origin is tuple:
-            item_type = arguments[0] if arguments else Any
-            return tuple(cls._decode(item, item_type) for item in value)
-
-        if origin is list:
-            item_type = arguments[0] if arguments else Any
-            return [cls._decode(item, item_type) for item in value]
-
-        if origin is dict:
-            key_type, item_type = arguments or (Any, Any)
-            return {
-                cls._decode(key, key_type): cls._decode(item, item_type)
-                for key, item in value.items()
-            }
-
-        if isinstance(annotation, type) and is_dataclass(annotation):
-            return cls._dataclass_from_dict(annotation, value)
-
-        return value
-
-    @classmethod
-    def _dataclass_from_dict(
-        cls, config_type: type, data: dict[str, Any]
-    ) -> Any:
-        annotations = get_type_hints(config_type)
-
-        kwargs = {
-            field.name: cls._decode(data[field.name], annotations[field.name])
-            for field in fields(config_type)
-            if field.init and field.name in data
-        }
-        return config_type(**kwargs)

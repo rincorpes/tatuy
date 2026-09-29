@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Add rotation and dot product methods to Vec2 class
 - Add MotionSample component and integrate it into KinematicVelocitySystem
 - Implement particle effects with ParticleEmitter, components, and systems
+- Add dataclass_from_dict utility for converting dictionaries to dataclass instances
 
 ### Changed
 
