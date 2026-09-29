@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 ### Added
 
 - Implement match_contact function for collision detection between entities
+- Add rotation and dot product methods to Vec2 class
 
 ### Changed
 

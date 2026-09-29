@@ -4,8 +4,8 @@ Module for Vec2 class.
 
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass
+from math import cos, sin, sqrt
 
 
 @dataclass
@@ -65,7 +65,7 @@ class Vec2:
         return self.x * self.x + self.y * self.y
 
     def length(self) -> float:
-        return math.sqrt(self.length_squared())
+        return sqrt(self.length_squared())
 
     def normalized(self) -> Vec2:
         length = self.length()
@@ -92,3 +92,13 @@ class Vec2:
             return target
 
         return self + delta.normalized() * max_delta
+
+    def rotated(self, angle: float):
+        c, s = cos(angle), sin(angle)
+        return Vec2(
+            self.x * c - self.y * s,
+            self.x * s + self.y * c,
+        )
+
+    def dot(self, b: Vec2) -> float:
+        return self.x * b.x + self.y * b.y
