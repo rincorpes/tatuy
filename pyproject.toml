@@ -8,8 +8,20 @@ version = "0.1.0"
 description = "Tatuy is a Python 2D game engine built around scenes, an Entity Component System (ECS), and separate gameplay and rendering stages. It provides reusable systems for movement, collisions, entity lifecycles, and UI."
 authors = [{ name = "Santiago Rincón" }]
 readme = "README.md"
-license = "LICENSE"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.10,<3.13"
+
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Games/Entertainment",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+]
+
 dependencies = [
     "onomasticon (>=0.2.0,<0.3.0)",
     "relict (>=0.1.1,<0.2.0)",
