@@ -33,3 +33,8 @@ class Movement:
 
 @dataclass
 class MovementControls: ...
+
+
+@dataclass
+class MotionSample:
+    start_position: Vec2 | None = None

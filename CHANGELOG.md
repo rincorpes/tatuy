@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 - Implement match_contact function for collision detection between entities
 - Add rotation and dot product methods to Vec2 class
+- Add MotionSample component and integrate it into KinematicVelocitySystem
 
 ### Changed
 

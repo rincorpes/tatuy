@@ -4,6 +4,7 @@ from tatuy.ecs.system import BaseSystem, SystemPhase
 from tatuy.ecs.world import TWorld
 from tatuy.features.movement.components import (  # MovementControls,
     DesiredMovement,
+    MotionSample,
     Movement,
     MovementControls,
     Velocity,
@@ -67,3 +68,17 @@ class VelocityIntegrationSystem(BaseSystem[TContext]):
             Velocity,
         ):
             transform.position += velocity.value * ctx.dt
+
+
+class KinematicVelocitySystem(BaseSystem[TContext]):
+    phase = SystemPhase.SIMULATION
+
+    def step(self, ctx: SceneTickContext[TWorld, TIntent]):
+        for _, transform, sample in ctx.world.query(
+            Transform,
+            MotionSample,
+        ):
+            sample.start_position = Vec2(
+                transform.position.x,
+                transform.position.y,
+            )
