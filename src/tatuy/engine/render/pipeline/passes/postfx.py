@@ -8,7 +8,10 @@ from dataclasses import dataclass
 
 from tatuy.backend import Backend
 from tatuy.engine.loop.frame_packet import FramePacket
+from tatuy.engine.render.pipeline.passes.world import WorldPass
+from tatuy.geometry.size import Size
 from tatuy.graphics.render.context import RenderContext
+from tatuy.math.vec2 import Vec2
 
 
 @dataclass
@@ -25,83 +28,47 @@ class PostFXPass:
         self, backend: Backend, ctx: RenderContext, packets: list[FramePacket]
     ) -> None:
         """Run the post-processing effects render pass."""
+        renderer = backend.renderer
+        viewport = ctx.viewport
+        origin = Vec2(0, 0)
+        size = Size(
+            viewport.virtual_w,
+            viewport.virtual_h,
+        )
 
-    #     self._draw_effect_layer(backend, ctx, packets)
-    #     self._apply_screen_effects(backend, ctx)
+        try:
+            # Logical screen coordinates, without a camera transform.
+            renderer.viewport_transform.set(
+                viewport.offset_x,
+                viewport.offset_y,
+                viewport.scale,
+            )
+            renderer.clip.set(origin, size)
 
-    # def _draw_effect_layer(
-    #     self, backend: Backend, ctx: RenderContext, packets: list[FramePacket]
-    # ) -> None:
-    #     for fp in packets:
-    #         if fp.is_overlay:
-    #             continue
-    #         ops = self._layer_ops(fp.packet, "effects")
-    #         if ops is None or not ops:
-    #             continue
+            for frame in packets:
+                if frame.is_overlay:
+                    continue
 
-    #         ctx.stats.packets += 1
-    #         ctx.stats.renderables += len(ops)
-    #         ctx.stats.draw_groups += 1
+                packet = frame.packet
+                ops = WorldPass._layer_ops(packet, "postfx") or ()
+                overlays = packet.screen_overlays
 
-    #         world_transform = viewport_transform_for_packet(
-    #             ctx.viewport,
-    #             fp.packet,
-    #         )
+                if not ops and not overlays:
+                    continue
 
-    #         backend.set_viewport_transform(
-    #             ctx.viewport.offset_x,
-    #             ctx.viewport.offset_y,
-    #             ctx.viewport.scale,
-    #         )
-    #         backend.render.set_clip_rect(
-    #             0,
-    #             0,
-    #             ctx.viewport.virtual_w,
-    #             ctx.viewport.virtual_h,
-    #         )
-    #         try:
-    #             backend.set_viewport_transform(
-    #                 world_transform.ox,
-    #                 world_transform.oy,
-    #                 world_transform.s,
-    #             )
-    #             for op in ops:
-    #                 op(backend)
-    #         finally:
-    #             backend.render.clear_clip_rect()
-    #             backend.clear_viewport_transform()
+                ctx.stats.packets += 1
+                ctx.stats.renderables += len(ops) + len(overlays)
+                ctx.stats.draw_groups += 1
 
-    # def _apply_screen_effects(
-    #     self, backend: Backend, ctx: RenderContext
-    # ) -> None:
-    #     stack = ctx.meta.get("effects_stack")
-    #     if stack is None or not stack.is_active():
-    #         return
+                for op in ops:
+                    op(backend)
 
-    #     # Screen space: no transforms
-    #     backend.clear_viewport_transform()
-    #     backend.render.clear_clip_rect()
-
-    #     reg = self.registry
-    #     if reg is None:
-    #         return
-
-    #     for effect_id in list(stack.active):
-    #         effect = reg.get(effect_id)
-    #         if effect is None:
-    #             continue
-    #         effect.apply(backend, ctx)
-
-    # @staticmethod
-    # def _layer_ops(
-    #     packet: RenderPacket, key: str
-    # ) -> tuple[DrawOp, ...] | None:
-    #     if not packet:
-    #         return None
-    #     raw = packet.meta.get("pass_ops")
-    #     if not isinstance(raw, dict):
-    #         return None
-    #     ops = raw.get(key)
-    #     if ops is None:
-    #         return tuple()
-    #     return tuple(ops)
+                for overlay in overlays:
+                    renderer.shape.rect(
+                        origin,
+                        size,
+                        overlay.color,
+                    )
+        finally:
+            renderer.clip.clear()
+            renderer.viewport_transform.clear()

@@ -46,9 +46,9 @@ class DrawOperation:
 _LAYER_ORDER: dict[Layer, int] = {
     "world": 0,
     "lighting": 1,
-    "ui": 2,
-    "effects": 3,
-    "postfx": 4,
+    "effects": 2,
+    "postfx": 3,
+    "ui": 4,
     "debug": 5,
 }
 

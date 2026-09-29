@@ -8,6 +8,7 @@ from tatuy.ecs.world import TWorld
 from tatuy.features.fx.particles import ParticleEmitter
 from tatuy.graphics.canvas import Canvas
 from tatuy.graphics.render.queue import RenderQueue
+from tatuy.graphics.screenfx.stack import ScreenEffectStack
 from tatuy.scenes.context import SceneContext, TContext, TIntent
 
 
@@ -19,6 +20,7 @@ class Scene(Generic[TWorld, TIntent, TContext]):
     factory_type: Type[EntityFactory] = EntityFactory
 
     particles: ParticleEmitter
+    screen_fx: ScreenEffectStack
 
     systems: Sequence[BaseSystem[TContext]] = ()
 
@@ -76,6 +78,8 @@ class Scene(Generic[TWorld, TIntent, TContext]):
         )
 
     def enter(self, ctx: SceneContext) -> None:
+        self.screen_fx = ScreenEffectStack()
+
         for resource_type in self.shared_resource_types:
             resource = ctx.resources.get(resource_type)
             self.world.add_resource(resource)

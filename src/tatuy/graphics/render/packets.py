@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from typing import Callable
 
 from tatuy.backend import Backend
+from tatuy.graphics.render.overlays import ScreenOverlay
 
 DrawOp = Callable[[Backend], None]
 
@@ -20,6 +21,7 @@ class RenderPacket:
     """
 
     ops: tuple[DrawOp, ...] = ()
+    screen_overlays: tuple[ScreenOverlay, ...] = ()
     meta: dict[str, object] = field(default_factory=dict)
 
     @staticmethod

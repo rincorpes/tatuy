@@ -10,7 +10,7 @@ from tatuy.engine.render.pipeline.passes.debug_overlay import DebugOverlayPass
 from tatuy.engine.render.pipeline.passes.end_frame import EndFramePass
 from tatuy.engine.render.pipeline.passes.lighting import LightingPass
 
-# from tatuy.graphics.passes.postfx import PostFXPass
+from tatuy.engine.render.pipeline.passes.postfx import PostFXPass
 from tatuy.engine.render.pipeline.passes.ui import UIPass
 from tatuy.engine.render.pipeline.passes.world import WorldPass
 from tatuy.graphics.render.context import RenderContext
@@ -39,7 +39,7 @@ class RenderPipeline:
             UIPass(include_overlays=False),
             # FXs
             WorldPass(name="EffectsPass", layers=("effects",)),
-            WorldPass(name="PostFXPass", layers=("postfx",)),
+            PostFXPass(),
             # Overlays
             UIPass(
                 name="OverlayPass",

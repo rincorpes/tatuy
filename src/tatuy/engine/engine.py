@@ -95,6 +95,7 @@ class SceneUpdater:
             )
 
             scene = entry.scene
+            scene.screen_fx.update(dt)
             queue = RenderQueue()
             canvas = QueuedCanvas(queue)
 
@@ -187,11 +188,16 @@ class ScenePresenter:
                     phases=scene.PRESENTATION_PHASES,
                 )
 
+            packet = replace(
+                compile_queue(queue),
+                screen_overlays=scene.screen_fx.snapshot(),
+            )
+
             packets.append(
                 FramePacket(
                     scene_id=entry.scene_id,
                     is_overlay=entry.is_overlay,
-                    packet=compile_queue(queue),
+                    packet=packet,
                 )
             )
 

@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Add MotionSample component and integrate it into KinematicVelocitySystem
 - Implement particle effects with ParticleEmitter, components, and systems
 - Add dataclass_from_dict utility for converting dictionaries to dataclass instances
+- Implement screen effects system with ScreenEffectStack and FlashEffect
 
 ### Changed
 
