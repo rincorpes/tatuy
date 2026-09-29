@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+## - 2026-09-29
+
+### Changed
+
+- Update import statements for visual components in factory and render modules
+
 ## - 2026-09-28
 
 ### Added

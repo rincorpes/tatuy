@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from tatuy.ecs.world import TWorld
-from tatuy.graphics.components.text import Text
+from tatuy.features.visual.components import Text
 from tatuy.ui.components import (
     Button,
     ButtonAppearance,

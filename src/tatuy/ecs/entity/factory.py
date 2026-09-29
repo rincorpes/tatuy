@@ -10,10 +10,15 @@ from tatuy.ecs.component import TComponent
 from tatuy.ecs.entity import EntityId
 from tatuy.ecs.world import TWorld, World
 from tatuy.features.spatial.components import Transform
+from tatuy.features.visual.components import (
+    Circle,
+    Rect,
+    Text,
+    TextAlign,
+    TextVAlign,
+)
 from tatuy.geometry.size import Size
 from tatuy.graphics.color import Color
-from tatuy.graphics.components.shape import Circle, Rect
-from tatuy.graphics.components.text import Text, TextAlign, TextVAlign
 from tatuy.math.vec2 import Vec2
 
 
