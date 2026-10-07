@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 
+from tatuy.engine.pipelines import SystemPipelineFactory
 from tatuy.scenes.context import SceneContext
 from tatuy.scenes.registry import SceneRegistry
 from tatuy.scenes.scene import Scene
@@ -48,6 +49,7 @@ class SceneService:
     def __init__(self):
         self._stack: list[StackItem] = []
         self._factories: dict[str, SceneFactory] = {}
+        self._system_pipeline_factory = SystemPipelineFactory()
 
     def register_factory(self, scene_id: str, factory: SceneFactory):
         self._factories[scene_id] = factory
@@ -97,6 +99,12 @@ class SceneService:
             factory = SceneRegistry.get(scene_id)
         scene = factory()
         scene.enter(scene_context)
+
+        scene.system_pipeline = self._system_pipeline_factory.create(
+            scene,
+            scene_context,
+        )
+
         self._stack.append(
             StackItem(
                 entry=SceneEntry(
@@ -162,3 +170,9 @@ class SceneService:
             if entry.policy.blocks_update:
                 break
         return list(reversed(out))  # bottom->top order
+
+    def set_system_pipeline_factory(
+        self,
+        factory: SystemPipelineFactory,
+    ) -> None:
+        self._system_pipeline_factory = factory

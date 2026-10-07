@@ -7,14 +7,15 @@ from tatuy.audio.service import AudioService
 from tatuy.backend.backend import Backend
 from tatuy.backend.factory import BackendFactory
 from tatuy.capture.service import CaptureService
-from tatuy.capture.settings import CaptureSettings, ReplaySettingsBuilder
+from tatuy.capture.settings import (  # pylint: disable=unused-import
+    CaptureSettings,
+    ReplaySettingsBuilder,
+)
 from tatuy.engine.engine import Engine, EngineConfig, EnginePipelines
 from tatuy.engine.loop.python_loop import PythonLoop
-from tatuy.engine.render.pipeline.pipeline import RenderPipeline
 from tatuy.engine.runtime.runtime import Runtime
 from tatuy.engine.runtime.services import RuntimeServices
 from tatuy.engine.scene import SceneService
-from tatuy.engine.system import SystemPipeline
 from tatuy.events.service import EventsService
 from tatuy.graphics.viewport.service import ViewportService
 from tatuy.input.service import InputService
@@ -116,9 +117,7 @@ class TatuyApp:
             backend=backend,
             config=EngineConfig.from_dict(self.config.get("engine", {})),
             resources=self.resources,
-            pipelines=EnginePipelines(
-                system=SystemPipeline(), render=RenderPipeline()
-            ),
+            pipelines=EnginePipelines(),
             services=RuntimeServices(
                 SceneService(),
                 ViewportService(),

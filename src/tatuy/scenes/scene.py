@@ -1,16 +1,21 @@
 from __future__ import annotations
 
-from typing import Any, ClassVar, Generic, Sequence, Type
+from collections.abc import Generator
+from typing import Any, ClassVar, Generic, Iterable, Mapping, Sequence, Type
 
 from tatuy.ecs.entity.factory import EntityFactory
-from tatuy.ecs.system import BaseSystem, SystemPhase
+from tatuy.ecs.structural import StructuralCommandBuffer
+from tatuy.ecs.system import BaseSystem, GameSystem
 from tatuy.ecs.world import TWorld
+from tatuy.engine.system import SystemPipeline, SystemRegistration
 from tatuy.features.fx.particles import ParticleEmitter
 from tatuy.graphics.camera.fx import CameraFX
 from tatuy.graphics.canvas import Canvas
 from tatuy.graphics.render.queue import RenderQueue
 from tatuy.graphics.screenfx.stack import ScreenEffectStack
 from tatuy.scenes.context import SceneContext, TContext, TIntent
+
+# pylint: disable=unused-argument
 
 
 class Scene(Generic[TWorld, TIntent, TContext]):
@@ -22,17 +27,14 @@ class Scene(Generic[TWorld, TIntent, TContext]):
 
     particles: ParticleEmitter
     screen_fx: ScreenEffectStack
+    camera_fx: CameraFX
 
     systems: Sequence[BaseSystem[TContext]] = ()
 
     shared_resource_types: ClassVar[tuple[type[object], ...]] = ()
 
-    UPDATE_PHASES = (
-        SystemPhase.CONTROL,
-        SystemPhase.SIMULATION,
-    )
-
-    PRESENTATION_PHASES = (SystemPhase.PRESENTATION,)
+    system_pipeline: SystemPipeline[TContext]
+    structural_commands: StructuralCommandBuffer[TContext]
 
     _world_cache: TWorld | None = None
     _intent_cache: TIntent | None = None
@@ -79,6 +81,10 @@ class Scene(Generic[TWorld, TIntent, TContext]):
         )
 
     def enter(self, ctx: SceneContext) -> None:
+        self.configure(ctx)
+        self.on_enter(ctx)
+
+    def configure(self, ctx: SceneContext):
         self.screen_fx = ScreenEffectStack()
         self.camera_fx = CameraFX()
 
@@ -86,7 +92,28 @@ class Scene(Generic[TWorld, TIntent, TContext]):
             resource = ctx.resources.get(resource_type)
             self.world.add_resource(resource)
 
-        self.on_enter(ctx)
+        for resource in self.resources(ctx):
+            self.world.add_resource(resource)
+
+        self.structural_commands = StructuralCommandBuffer()
+        self.world.add_resource(self.structural_commands)
+
+    def resources(self, ctx: SceneContext) -> Iterable[object]:
+        return ()
+
+    def game_systems(
+        self, ctx: SceneContext
+    ) -> Iterable[BaseSystem | GameSystem]:
+        return ()
+
+    def builtin_overrides(
+        self,
+        ctx: SceneContext,
+    ) -> Mapping[str, SystemRegistration[TContext] | None]:
+        return {}
+
+    def entities(self, ctx: SceneContext) -> Generator[object, None, None]:
+        yield None
 
     def on_enter(self, ctx: SceneContext):
         raise NotImplementedError

@@ -17,7 +17,6 @@ from tatuy.commands import (
     StopReplay,
     StopVideoRecording,
 )
-from tatuy.ecs.system import SystemPhase
 from tatuy.engine.command_processor import EngineCommandProcessor
 from tatuy.engine.loop.frame_packet import FramePacket
 from tatuy.engine.pipelines import EnginePipelines
@@ -25,7 +24,6 @@ from tatuy.engine.render.compiler import compile_queue
 from tatuy.engine.render.pipeline.pipeline import RenderPipeline
 from tatuy.engine.runtime.services import RuntimeServices
 from tatuy.engine.scene import SceneService
-from tatuy.engine.system import SystemPipeline
 from tatuy.events import EventCategory
 from tatuy.events.bus import event_bus
 from tatuy.geometry.size import Size
@@ -73,10 +71,8 @@ class SceneUpdater:
     def __init__(
         self,
         scene_service: SceneService,
-        system_pipeline: SystemPipeline,
     ) -> None:
         self._scenes = scene_service
-        self._systems = system_pipeline
 
     def update(
         self,
@@ -113,37 +109,15 @@ class SceneUpdater:
                 canvas=canvas,
             )
             scene.on_tick(ctx)
-
-            # Custom system contexts are only needed when there are
-            # systems participating in this phase.
-            update_systems = [
-                system
-                for system in scene.systems
-                if hasattr(scene, "systems")
-                and system.phase in scene.UPDATE_PHASES
-            ]
-
-            if not update_systems:
-                continue
-
-            self._systems.step(
-                scene.systems if hasattr(scene, "systems") else [],
-                ctx,
-                phases=(
-                    SystemPhase.CONTROL,
-                    SystemPhase.SIMULATION,
-                ),
-            )
+            scene.system_pipeline.update(ctx)
 
 
 class ScenePresenter:
     def __init__(
         self,
         scene_service: SceneService,
-        system_pipeline: SystemPipeline,
     ) -> None:
         self._scenes = scene_service
-        self._systems = system_pipeline
 
     def present(
         self,
@@ -168,27 +142,7 @@ class ScenePresenter:
                 canvas=canvas,
             )
             scene.on_present(ctx)
-
-            presentation_systems = [
-                system
-                for system in scene.systems
-                if hasattr(scene, "systems")
-                and system.phase in scene.PRESENTATION_PHASES
-            ]
-
-            if presentation_systems:
-                system_context = scene.create_tick_context(
-                    dt=dt,
-                    render_queue=queue,
-                    scene_context=scene_context,
-                    canvas=canvas,
-                )
-
-                self._systems.step(
-                    presentation_systems,
-                    system_context,
-                    phases=scene.PRESENTATION_PHASES,
-                )
+            scene.system_pipeline.present(ctx)
 
             packet = replace(
                 compile_queue(queue),
@@ -339,6 +293,8 @@ class Engine:
         self.pipelines = pipelines or EnginePipelines()
         self.services = services or RuntimeServices.defaults(backend)
 
+        self.services.scene.set_system_pipeline_factory(self.pipelines.system)
+
         self.frame_input_collector = FrameInputCollector(self.services)
 
         self.scene_updater: SceneUpdater
@@ -394,11 +350,9 @@ class Engine:
 
         self.scene_updater = SceneUpdater(
             self.services.scene,
-            self.pipelines.system,
         )
         self.scene_presenter = ScenePresenter(
             self.services.scene,
-            self.pipelines.system,
         )
 
     def step(self, dt: float, _frame_index: int) -> None:
