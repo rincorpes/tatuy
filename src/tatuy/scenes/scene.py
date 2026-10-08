@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Generator
 from dataclasses import dataclass, field
 from typing import Any, ClassVar, Generic, Iterable, Mapping, Sequence, Type
 
@@ -9,12 +8,18 @@ from tatuy.ecs.structural import StructuralCommandBuffer
 from tatuy.ecs.system import BaseSystem, GameSystem
 from tatuy.ecs.world import TWorld
 from tatuy.engine.system import SystemPipeline, SystemRegistration
+from tatuy.features.bounds.resources import (
+    BoundsFrame,
+    WorldBounds,
+    WorldBoundsBorder,
+)
 from tatuy.features.fx.particles import ParticleEmitter
 from tatuy.features.lifecycle.resources import (
     LifecycleQueue,
     SpawnDefinition,
     SpawnRegistry,
 )
+from tatuy.geometry.bounds import Bounds
 from tatuy.graphics.camera.fx import CameraFX
 from tatuy.graphics.canvas import Canvas
 from tatuy.graphics.render.queue import RenderQueue
@@ -145,6 +150,22 @@ class Scene(Generic[TWorld, TIntent, TContext]):
                 delay=placement.delay,
                 kwargs=placement.kwargs,
             )
+
+        # pylint: disable=assignment-from-none
+        bounds = self.bounds(ctx)
+        if bounds is not None:
+            self.world.add_resource(WorldBounds(bounds))
+            self.world.add_resource(BoundsFrame())
+
+        bounds_border = self.bounds_border(ctx)
+        if bounds_border is not None:
+            self.world.add_resource(bounds_border)
+
+    def bounds(self, ctx: SceneContext) -> Bounds | None:
+        return None
+
+    def bounds_border(self, ctx: SceneContext) -> WorldBoundsBorder | None:
+        return None
 
     def resources(self, ctx: SceneContext) -> Iterable[object]:
         return ()

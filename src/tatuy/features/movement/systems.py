@@ -40,7 +40,7 @@ class MovementControlSystem(BaseSystem[TContext]):
 
 
 class MovementSystem(BaseSystem[TContext]):
-    phase = SystemPhase.SIMULATION
+    phase = SystemPhase.PRE_SIMULATION
 
     def __init__(self, motor: MovementMotor | None = None):
         self._motor = motor or MovementMotor()

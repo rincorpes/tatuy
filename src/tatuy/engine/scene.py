@@ -98,8 +98,8 @@ class SceneService:
                 return
             factory = SceneRegistry.get(scene_id)
         scene = factory()
-        scene.enter(scene_context)
 
+        scene.enter(scene_context)
         scene.system_pipeline = self._system_pipeline_factory.create(
             scene,
             scene_context,

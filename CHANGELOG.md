@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 - Implement lifecycle management with LifecycleCommitter and associated systems; add spawn and despawn handling
 - Enhance lifecycle management with dynamic kwargs handling in SpawnRequest and add EntitySpawn class for improved spawn definition management
+- Introduce movement and bounds systems; enhance scene management with resource handling and diagnostics
 
 #### Changed
 

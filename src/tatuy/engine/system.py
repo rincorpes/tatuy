@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from enum import Enum
 from typing import (
     Any,
     Callable,
@@ -135,6 +136,105 @@ class SceneStructuralCommitter(Generic[TContext]):
         self._lifecycle.commit(ctx)
 
 
+class StepState(Enum):
+    NOT_CHECKED = "not checked"
+    INACTIVE = "inactive"
+    DISABLED = "disabled"
+    RUNNING = "running"
+    RAN = "ran"
+    FAILED = "failed"
+
+
+@dataclass
+class StepDiagnostics:
+    state: StepState = StepState.NOT_CHECKED
+    reason: str = ""
+
+    def record(
+        self,
+        state: StepState,
+        reason: str = "",
+    ) -> None:
+        self.state = state
+        self.reason = reason
+
+
+@dataclass(frozen=True)
+class ScheduledStep(Generic[TContext]):
+    owner: BaseSystem[TContext] | GameSystem[TContext]
+    callback: Callable[[TContext], None]
+    order: int
+    sequence: int
+    active: Callable[[TContext], bool] | None = None
+
+    _diagnostics: StepDiagnostics = field(
+        default_factory=StepDiagnostics,
+        init=False,
+        repr=False,
+        compare=False,
+    )
+
+    @property
+    def name(self) -> str:
+        method = getattr(
+            self.callback,
+            "__name__",
+            type(self.callback).__name__,
+        )
+        return f"{self.owner.name}.{method}"
+
+    def execute(self, ctx: TContext) -> None:
+        stage = "activation check"
+
+        try:
+            if self.active is not None and not self.active(ctx):
+                self._diagnostics.record(
+                    StepState.INACTIVE,
+                    "activation predicate returned False",
+                )
+                return
+
+            stage = "enabled check"
+
+            if not self.owner.enabled(ctx):
+                self._diagnostics.record(
+                    StepState.DISABLED,
+                    "enabled(ctx) returned False",
+                )
+                return
+
+            stage = "callback"
+            self._diagnostics.record(StepState.RUNNING)
+
+            self.callback(ctx)
+
+            self._diagnostics.record(StepState.RAN)
+
+        except Exception as exc:
+            self._diagnostics.record(
+                StepState.FAILED,
+                f"{stage}: {type(exc).__name__}: {exc}",
+            )
+            raise
+
+    def debug_line(self) -> str:
+        diagnostics = self._diagnostics
+
+        line = (
+            f"  [{diagnostics.state.value}] "
+            f"{self.name} "
+            f"(order={self.order})"
+        )
+
+        if diagnostics.reason:
+            line += f"\n      {diagnostics.reason}"
+
+        return line
+
+    def sort_key(self) -> tuple[int, str, int]:
+        return self.order, self.owner.name, self.sequence
+
+
 class SystemPipeline(Generic[TContext]):
     UPDATE_PHASES = (
         SystemPhase.CONTROL,
@@ -215,3 +315,21 @@ class SystemPipeline(Generic[TContext]):
     def _sort(self) -> None:
         for steps in self._steps.values():
             steps.sort(key=ScheduledStep.sort_key)
+
+    def debug_report(self) -> str:
+        lines = ["System pipeline — latest result per step"]
+
+        for phase in SystemPhase:
+            lines.append(f"\n{phase.name}")
+
+            steps = self._steps[phase]
+
+            for step in steps:
+                lines.append(step.debug_line())
+
+            if phase in self.COMMIT_PHASES:
+                lines.append("  structural commit barrier")
+            elif not steps:
+                lines.append("  (no scheduled systems)")
+
+        return "\n".join(lines)
