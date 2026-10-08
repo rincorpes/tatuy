@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any, Callable, Mapping
 
 from tatuy.ecs.entity import EntityId
 from tatuy.features.lifecycle.components import DespawnReason, Respawn
@@ -24,6 +24,7 @@ class SpawnRegistry:
 class SpawnRequest:
     definition: str
     remaining: float = 0.0
+    kwargs: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -42,11 +43,14 @@ class LifecycleQueue:
         self,
         definition: str,
         delay: float = 0.0,
+        *,
+        kwargs: Mapping[str, Any] | None = None,
     ) -> None:
         self.spawns.append(
             SpawnRequest(
                 definition=definition,
                 remaining=max(0.0, delay),
+                kwargs={} if kwargs is None else dict(kwargs),
             )
         )
 

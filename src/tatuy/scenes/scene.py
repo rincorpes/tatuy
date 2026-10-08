@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Generator
+from dataclasses import dataclass, field
 from typing import Any, ClassVar, Generic, Iterable, Mapping, Sequence, Type
 
 from tatuy.ecs.entity.factory import EntityFactory
@@ -9,7 +10,11 @@ from tatuy.ecs.system import BaseSystem, GameSystem
 from tatuy.ecs.world import TWorld
 from tatuy.engine.system import SystemPipeline, SystemRegistration
 from tatuy.features.fx.particles import ParticleEmitter
-from tatuy.features.lifecycle.resources import LifecycleQueue
+from tatuy.features.lifecycle.resources import (
+    LifecycleQueue,
+    SpawnDefinition,
+    SpawnRegistry,
+)
 from tatuy.graphics.camera.fx import CameraFX
 from tatuy.graphics.canvas import Canvas
 from tatuy.graphics.render.queue import RenderQueue
@@ -17,6 +22,13 @@ from tatuy.graphics.screenfx.stack import ScreenEffectStack
 from tatuy.scenes.context import SceneContext, TContext, TIntent
 
 # pylint: disable=unused-argument
+
+
+@dataclass(frozen=True)
+class EntitySpawn:
+    definition: str
+    kwargs: Mapping[str, Any] = field(default_factory=dict)
+    delay: float = 0.0
 
 
 class Scene(Generic[TWorld, TIntent, TContext]):
@@ -102,7 +114,51 @@ class Scene(Generic[TWorld, TIntent, TContext]):
         if not self.world.has_resource(LifecycleQueue):
             self.world.add_resource(LifecycleQueue())
 
+        if not self.world.has_resource(SpawnRegistry):
+            self.world.add_resource(SpawnRegistry())
+
+        registry = self.world.get_resource(SpawnRegistry)
+        queue = self.world.get_resource(LifecycleQueue)
+
+        definitions = dict(self.spawn_definitions(ctx))
+
+        duplicates = registry.definitions.keys() & definitions.keys()
+        if duplicates:
+            raise ValueError(
+                f"Duplicate spawn definitions: {sorted(duplicates)}"
+            )
+
+        registry.definitions.update(definitions)
+
+        placements = tuple(self.entities(ctx))
+
+        # Validate the complete population before queueing it.
+        for placement in placements:
+            if placement.definition not in registry.definitions:
+                raise ValueError(
+                    f"Unknown spawn definition: " f"{placement.definition}"
+                )
+
+        for placement in placements:
+            queue.request_spawn(
+                placement.definition,
+                delay=placement.delay,
+                kwargs=placement.kwargs,
+            )
+
     def resources(self, ctx: SceneContext) -> Iterable[object]:
+        return ()
+
+    def spawn_definitions(
+        self,
+        ctx: SceneContext,
+    ) -> Mapping[str, SpawnDefinition]:
+        return {}
+
+    def entities(
+        self,
+        ctx: SceneContext,
+    ) -> Iterable[EntitySpawn]:
         return ()
 
     def game_systems(
@@ -115,9 +171,6 @@ class Scene(Generic[TWorld, TIntent, TContext]):
         ctx: SceneContext,
     ) -> Mapping[str, SystemRegistration[TContext] | None]:
         return {}
-
-    def entities(self, ctx: SceneContext) -> Generator[object, None, None]:
-        yield None
 
     def on_enter(self, ctx: SceneContext):
         raise NotImplementedError

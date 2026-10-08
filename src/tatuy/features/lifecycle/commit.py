@@ -47,9 +47,12 @@ class LifecycleCommitter(Generic[TContext]):
                 f"Unknown spawn definition: " f"{request.definition}"
             )
 
+        kwargs = dict(definition.make_kwargs())
+        kwargs.update(request.kwargs)
+
         entity = self._factory.create(
             definition.blueprint,
-            **definition.make_kwargs(),
+            **kwargs,
         )
 
         ctx.world.add_component(
