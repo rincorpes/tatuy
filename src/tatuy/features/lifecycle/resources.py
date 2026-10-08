@@ -67,3 +67,36 @@ class LifecycleQueue:
         # overrides an earlier request that allowed respawning.
         if entity not in self.despawns or not allow_respawn:
             self.despawns[entity] = request
+
+    def advance_spawn_delays(self, dt: float) -> None:
+        for request in self.spawns:
+            request.remaining = max(
+                0.0,
+                request.remaining - dt,
+            )
+
+    def take_ready_batch(self) -> LifecycleBatch:
+        ready: list[SpawnRequest] = []
+        waiting: list[SpawnRequest] = []
+
+        for request in self.spawns:
+            if request.remaining <= 0:
+                ready.append(request)
+            else:
+                waiting.append(request)
+
+        batch = LifecycleBatch(
+            spawns=tuple(ready),
+            despawns=tuple(self.despawns.values()),
+        )
+
+        self.spawns = waiting
+        self.despawns = {}
+
+        return batch
+
+
+@dataclass(frozen=True)
+class LifecycleBatch:
+    spawns: tuple[SpawnRequest, ...]
+    despawns: tuple[DespawnRequest, ...]

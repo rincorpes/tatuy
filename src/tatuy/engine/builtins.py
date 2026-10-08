@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from tatuy.ecs.world import TWorld
 from tatuy.engine.system import SystemRegistration
+from tatuy.features.lifecycle.systems import LifetimeSystem, SpawnDelaySystem
 from tatuy.features.spatial.components import Transform
 from tatuy.features.visual.components import Circle, Rect, Text
 from tatuy.features.visual.systems import RenderSystem
@@ -40,5 +41,11 @@ class BuiltinSystemCatalog:
             "render": SystemRegistration(
                 system=RenderSystem(),
                 active=activation.matches,
+            ),
+            "spawn_delay": SystemRegistration(
+                system=SpawnDelaySystem(),
+            ),
+            "lifetime": SystemRegistration(
+                system=LifetimeSystem(),
             ),
         }

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from tatuy.ecs.entity.factory import EntityFactory
-from tatuy.ecs.system import BaseSystem
+from tatuy.ecs.system import BaseSystem, SystemPhase
 from tatuy.ecs.world import TWorld
 from tatuy.features.lifecycle.components import (
     DespawnReason,
@@ -13,6 +13,19 @@ from tatuy.features.lifecycle.resources import LifecycleQueue, SpawnRegistry
 from tatuy.scenes.context import SceneTickContext, TContext, TIntent
 
 
+class SpawnDelaySystem(BaseSystem[TContext]):
+    phase = SystemPhase.PRE_SIMULATION
+    order = -1000
+
+    def enabled(self, ctx: SceneTickContext[TWorld, TIntent]) -> bool:
+        return ctx.world.has_resource(LifecycleQueue)
+
+    def step(self, ctx: SceneTickContext[TWorld, TIntent]) -> None:
+        queue = ctx.world.get_resource(LifecycleQueue)
+        queue.advance_spawn_delays(ctx.dt)
+
+
+# NOTE> might be removed in the future
 class SpawnSystem(BaseSystem[TContext]):
     def __init__(self, factory: EntityFactory) -> None:
         self._factory = factory
@@ -70,6 +83,9 @@ class SpawnSystem(BaseSystem[TContext]):
 
 
 class LifetimeSystem(BaseSystem[TContext]):
+    phase = SystemPhase.POST_SIMULATION
+    order = 1000
+
     def step(
         self,
         ctx: SceneTickContext[TWorld, TIntent],
@@ -86,6 +102,7 @@ class LifetimeSystem(BaseSystem[TContext]):
                 )
 
 
+# NOTE> might be removed in the future
 class DespawnSystem(BaseSystem[TContext]):
     def step(
         self,

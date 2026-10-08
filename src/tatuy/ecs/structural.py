@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections import deque
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Generic
 
 from tatuy.ecs.entity import EntityId
@@ -13,29 +13,6 @@ class StructuralCommand(ABC, Generic[TContext]):
     @abstractmethod
     def execute(self, ctx: TContext) -> None:
         raise NotImplementedError
-
-
-@dataclass
-class CreateEntity(StructuralCommand[TContext]):
-    components: tuple[object, ...] = ()
-    entity: EntityId | None = field(default=None, init=False)
-
-    def execute(self, ctx: TContext) -> None:
-        if self.entity is not None:
-            raise RuntimeError("CreateEntity command already executed")
-
-        self.entity = ctx.world.create_entity()
-
-        for component in self.components:
-            ctx.world.add_component(self.entity, component)
-
-
-@dataclass(frozen=True)
-class DestroyEntity(StructuralCommand[TContext]):
-    entity: EntityId
-
-    def execute(self, ctx: TContext) -> None:
-        ctx.world.destroy_entity(self.entity)
 
 
 @dataclass(frozen=True)

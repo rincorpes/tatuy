@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+### - 2026-10-08
+
+#### Added
+
+- Implement lifecycle management with LifecycleCommitter and associated systems; add spawn and despawn handling
+
+#### Changed
+
+- Refactor engine and scene systems; introduce structural command system and built-in system catalog
+
 ## - [0.1.0] 2026-09-30
 
 First public alpha release

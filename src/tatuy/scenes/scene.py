@@ -9,6 +9,7 @@ from tatuy.ecs.system import BaseSystem, GameSystem
 from tatuy.ecs.world import TWorld
 from tatuy.engine.system import SystemPipeline, SystemRegistration
 from tatuy.features.fx.particles import ParticleEmitter
+from tatuy.features.lifecycle.resources import LifecycleQueue
 from tatuy.graphics.camera.fx import CameraFX
 from tatuy.graphics.canvas import Canvas
 from tatuy.graphics.render.queue import RenderQueue
@@ -97,6 +98,9 @@ class Scene(Generic[TWorld, TIntent, TContext]):
 
         self.structural_commands = StructuralCommandBuffer()
         self.world.add_resource(self.structural_commands)
+
+        if not self.world.has_resource(LifecycleQueue):
+            self.world.add_resource(LifecycleQueue())
 
     def resources(self, ctx: SceneContext) -> Iterable[object]:
         return ()

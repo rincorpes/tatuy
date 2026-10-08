@@ -11,7 +11,9 @@ from typing import (
     TypeVar,
 )
 
+from tatuy.ecs.structural import StructuralCommandBuffer
 from tatuy.ecs.system import BaseSystem, GameSystem, SystemPhase
+from tatuy.features.lifecycle.commit import LifecycleCommitter
 from tatuy.scenes.context import SceneTickContext, TContext
 
 TContext_contra = TypeVar(
@@ -19,23 +21,6 @@ TContext_contra = TypeVar(
     bound=SceneTickContext[Any, Any],
     contravariant=True,
 )
-
-PHASE_METHODS = {
-    SystemPhase.CONTROL: "on_control",
-    SystemPhase.PRE_SIMULATION: "on_pre_simulation",
-    SystemPhase.SIMULATION: "on_simulation",
-    SystemPhase.POST_SIMULATION: "on_post_simulation",
-    SystemPhase.PRESENTATION: "on_presentation",
-}
-
-UPDATE_PHASES = tuple(
-    phase for phase in SystemPhase if phase != SystemPhase.PRESENTATION
-)
-
-COMMIT_PHASES = {
-    SystemPhase.PRE_SIM_COMMIT,
-    SystemPhase.POST_SIM_COMMIT,
-}
 
 
 @dataclass(frozen=True)
@@ -134,6 +119,20 @@ class ScheduledStep(Generic[TContext]):
 
 class StructuralCommitter(Protocol[TContext_contra]):
     def commit(self, ctx: TContext_contra) -> None: ...
+
+
+class SceneStructuralCommitter(Generic[TContext]):
+    def __init__(
+        self,
+        components: StructuralCommandBuffer[TContext],
+        lifecycle: LifecycleCommitter[TContext],
+    ) -> None:
+        self._components = components
+        self._lifecycle = lifecycle
+
+    def commit(self, ctx: TContext) -> None:
+        self._components.commit(ctx)
+        self._lifecycle.commit(ctx)
 
 
 class SystemPipeline(Generic[TContext]):

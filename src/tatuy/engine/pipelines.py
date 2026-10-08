@@ -6,7 +6,12 @@ from typing import TYPE_CHECKING
 from tatuy.ecs.world import TWorld
 from tatuy.engine.builtins import BuiltinSystemCatalog
 from tatuy.engine.render.pipeline import RenderPipeline
-from tatuy.engine.system import SystemPipeline, SystemRegistration
+from tatuy.engine.system import (
+    SceneStructuralCommitter,
+    SystemPipeline,
+    SystemRegistration,
+)
+from tatuy.features.lifecycle.commit import LifecycleCommitter
 from tatuy.scenes.context import SceneContext, TContext, TIntent
 
 if TYPE_CHECKING:
@@ -46,8 +51,13 @@ class SystemPipelineFactory:
             SystemRegistration(system) for system in scene.game_systems(ctx)
         )
 
+        committer = SceneStructuralCommitter[TContext](
+            components=scene.structural_commands,
+            lifecycle=LifecycleCommitter[TContext](scene.factory),
+        )
+
         return SystemPipeline(
-            committer=scene.structural_commands,
+            committer=committer,
             registrations=registrations,
         )
 
