@@ -3,7 +3,7 @@ from __future__ import annotations
 from tatuy.ecs.system import BaseSystem, SystemPhase
 from tatuy.ecs.world import TWorld
 from tatuy.features.spatial.components import Transform
-from tatuy.features.visual.components import Circle, Rect, Text
+from tatuy.features.visual.components import Circle, Polygon, Rect, Text
 from tatuy.scenes.context import SceneTickContext, TContext, TIntent
 from tatuy.ui.render import UiRenderer
 
@@ -52,5 +52,17 @@ class RenderSystem(BaseSystem[TContext]):
                 layer=circle.layer,
                 z=circle.z,
             )
+        for _, transform, polygon in ctx.world.query(Transform, Polygon):
+            if not polygon.visible:
+                continue
 
+            ctx.render_queue.poly(
+                points=[
+                    transform.position + vertex for vertex in polygon.vertices
+                ],
+                fill=polygon.color,
+                stroke=None,
+                layer=polygon.layer,
+                z=polygon.z,
+            )
         self._ui_renderer.submit(ctx.world, ctx.render_queue)

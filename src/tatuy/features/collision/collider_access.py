@@ -76,8 +76,15 @@ class ColliderAccess:
         self,
         position: Vec2,
         collider: BoxCollider | CircleCollider,
-    ) -> AABB | Disk:
-        self.half_extents(collider)  # Validate dimensions.
+    ) -> AABB | Disk | PolygonGeometry:
+        if isinstance(collider, PolygonCollider):
+            return PolygonGeometry(
+                world_vertices=tuple(
+                    position + vertex for vertex in collider.vertices
+                ),
+            )
+
+        self.half_extents(collider)
 
         if isinstance(collider, CircleCollider):
             return Disk(position, collider.radius)

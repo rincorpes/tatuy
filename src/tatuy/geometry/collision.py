@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from tatuy.geometry.aabb import AABB, find_aabb_contact
 from tatuy.geometry.disk import Disk
+from tatuy.geometry.shapes import PolygonGeometry
 from tatuy.math.scalar import clamp
 from tatuy.math.vec2 import Vec2
 
@@ -9,9 +10,14 @@ from tatuy.math.vec2 import Vec2
 class CollisionGeometry:
     def find(
         self,
-        first: AABB | Disk,
+        first: AABB | Disk | PolygonGeometry,
         second: AABB | Disk,
     ) -> tuple[Vec2, float] | None:
+        if isinstance(first, PolygonGeometry) or isinstance(
+            second, PolygonGeometry
+        ):
+            return self._sat(first, second)
+
         if isinstance(first, Disk):
             if isinstance(second, Disk):
                 return self._circle_circle(first, second)
@@ -95,3 +101,88 @@ class CollisionGeometry:
             outward * -1,
             circle.radius + distance_to_face,
         )
+
+    def _vertices(
+        self,
+        shape: AABB | PolygonGeometry,
+    ) -> tuple[Vec2, ...]:
+        if isinstance(shape, PolygonGeometry):
+            return shape.vertices
+
+        x, y = shape.center.x, shape.center.y
+        hw = shape.size.width / 2
+        hh = shape.size.height / 2
+        return (
+            Vec2(x - hw, y - hh),
+            Vec2(x + hw, y - hh),
+            Vec2(x + hw, y + hh),
+            Vec2(x - hw, y + hh),
+        )
+
+    def _project(
+        self,
+        shape: AABB | Disk | PolygonGeometry,
+        axis: Vec2,
+    ) -> tuple[float, float]:
+        if isinstance(shape, Disk):
+            center = shape.center.dot(axis)
+            return center - shape.radius, center + shape.radius
+
+        values = [vertex.dot(axis) for vertex in self._vertices(shape)]
+        return min(values), max(values)
+
+    def _sat(
+        self,
+        first: AABB | Disk | PolygonGeometry,
+        second: AABB | Disk | PolygonGeometry,
+    ) -> tuple[Vec2, float] | None:
+        axes: list[Vec2] = []
+
+        for shape in (first, second):
+            if isinstance(shape, Disk):
+                continue
+
+            vertices = self._vertices(shape)
+            for index, start in enumerate(vertices):
+                end = vertices[(index + 1) % len(vertices)]
+                edge = end - start
+                if edge.length_squared() > 0:
+                    axes.append(Vec2(-edge.y, edge.x).normalized())
+
+        # Edge normals alone miss circle-to-corner separation.
+        for circle, other in ((first, second), (second, first)):
+            if not isinstance(circle, Disk) or isinstance(other, Disk):
+                continue
+
+            nearest = min(
+                self._vertices(other),
+                key=lambda vertex: (vertex - circle.center).length_squared(),
+            )
+            axis = nearest - circle.center
+            if axis.length_squared() > 0:
+                axes.append(axis.normalized())
+
+        best_normal = Vec2(1, 0)
+        best_depth = float("inf")
+
+        for axis in axes:
+            min_a, max_a = self._project(first, axis)
+            min_b, max_b = self._project(second, axis)
+
+            # Moving B in either direction until the intervals separate.
+            # These distances also handle one shape containing the other.
+            positive = max_a - min_b
+            negative = max_b - min_a
+
+            if positive <= 0 or negative <= 0:
+                return None
+
+            if positive <= negative:
+                normal, depth = axis, positive
+            else:
+                normal, depth = axis * -1, negative
+
+            if depth < best_depth:
+                best_normal, best_depth = normal, depth
+
+        return best_normal, best_depth

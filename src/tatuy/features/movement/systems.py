@@ -19,7 +19,7 @@ class MovementControlSystem(BaseSystem[TContext]):
     phase = SystemPhase.CONTROL
 
     def step(self, ctx: SceneTickContext[TWorld, TIntent]) -> None:
-        for _, __, desired in ctx.world.query(
+        for _, _, desired in ctx.world.query(
             MovementControls, DesiredMovement
         ):
             direction = Vec2.zero()
@@ -70,8 +70,8 @@ class VelocityIntegrationSystem(BaseSystem[TContext]):
             transform.position += velocity.value * ctx.dt
 
 
-class KinematicVelocitySystem(BaseSystem[TContext]):
-    phase = SystemPhase.SIMULATION
+class MotionSnapshotSystem(BaseSystem[TContext]):
+    phase = SystemPhase.PRE_SIMULATION
 
     def step(self, ctx: SceneTickContext[TWorld, TIntent]):
         for _, transform, sample in ctx.world.query(

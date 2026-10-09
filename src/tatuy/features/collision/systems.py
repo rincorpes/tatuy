@@ -4,12 +4,10 @@ from itertools import combinations
 
 from tatuy.ecs.system import BaseSystem, SystemPhase
 from tatuy.ecs.world import TWorld
-from tatuy.features.collision.components import (
-    BoxCollider,
-    CircleCollider,
-    CollisionBody,
-)
+from tatuy.features.collision.collider_access import ColliderAccess
+from tatuy.features.collision.components import CollisionBody
 from tatuy.features.collision.resources import CollisionContact, CollisionFrame
+from tatuy.features.collision.velocity_rule import CollisionVelocityRule
 from tatuy.features.movement.components import (
     DesiredMovement,
     MovementControls,
@@ -17,8 +15,6 @@ from tatuy.features.movement.components import (
 )
 from tatuy.features.spatial.components import Transform
 from tatuy.geometry.collision import CollisionGeometry
-from tatuy.features.collision.collider_access import ColliderAccess
-from tatuy.features.collision.velocity_rule import CollisionVelocityRule
 from tatuy.scenes.context import SceneTickContext, TContext, TIntent
 
 
@@ -46,14 +42,6 @@ class CollisionDetectionSystem(BaseSystem[TContext]):
 
             if collider is None:
                 continue
-
-            if not isinstance(
-                collider,
-                (BoxCollider, CircleCollider),
-            ):
-                raise NotImplementedError(
-                    "Entity collisions currently support boxes and circles"
-                )
 
             shape = self._colliders.shape(
                 transform.position,

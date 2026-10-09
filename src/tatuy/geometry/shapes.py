@@ -56,6 +56,10 @@ class PolygonGeometry(ShapeGeometry):
 
         self._vertices = world_vertices
 
+    @property
+    def vertices(self) -> tuple[Vec2, ...]:
+        return self._vertices
+
     def support(self, direction: Vec2) -> Vec2:
         return max(
             self._vertices,

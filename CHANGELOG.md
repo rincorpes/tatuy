@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+### - 2026-10-09
+
+#### Added
+
+- Implement collision system enhancements; add polygon collider support and improve collision detection mechanisms
+
 ### - 2026-10-08
 
 #### Added

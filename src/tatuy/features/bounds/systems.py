@@ -9,6 +9,7 @@ from tatuy.features.bounds.resources import (
     WorldBounds,
     WorldBoundsBorder,
 )
+from tatuy.features.collision.collider_access import ColliderAccess
 from tatuy.features.lifecycle.components import DespawnReason
 from tatuy.features.lifecycle.resources import LifecycleQueue
 from tatuy.features.movement.components import (
@@ -25,7 +26,6 @@ from tatuy.geometry.bounds import (
     BoundsWrap,
 )
 from tatuy.graphics.bounds_border import BoundsBorderRenderer
-from tatuy.features.collision.collider_access import ColliderAccess
 from tatuy.scenes.context import SceneTickContext, TContext, TIntent
 
 
@@ -119,7 +119,7 @@ class BoundsConstraintSystem(BaseSystem[TContext]):
 
 
 class BoundsDirectionSystem(BaseSystem[TContext]):
-    phase = SystemPhase.SIMULATION
+    phase = SystemPhase.POST_SIMULATION
 
     def step(self, ctx: SceneTickContext[TWorld, TIntent]):
         frame = ctx.world.get_resource(BoundsFrame)

@@ -9,9 +9,16 @@ from onomasticon import ImplementationRegistry
 from tatuy.ecs.component import TComponent
 from tatuy.ecs.entity import EntityId
 from tatuy.ecs.world import TWorld, World
+from tatuy.features.collision.components import (
+    BoxCollider,
+    CircleCollider,
+    CollisionBody,
+    PolygonCollider,
+)
 from tatuy.features.spatial.components import Transform
 from tatuy.features.visual.components import (
     Circle,
+    Polygon,
     Rect,
     Text,
     TextAlign,
@@ -60,7 +67,7 @@ class EntityBlueprint(
         raise NotImplementedError
 
 
-TAttrs = TypeVar("TAttrs")
+TAttrs = TypeVar("TAttrs", bound="SharedAttrs")
 
 
 class TypedEntityBlueprint(
@@ -68,6 +75,9 @@ class TypedEntityBlueprint(
     Generic[TWorld, TAttrs],
 ):
     attrs_type: ClassVar[type[Any]]
+
+    def get_collider(self, attrs: TAttrs) -> Any:
+        return None
 
     def build(
         self,
@@ -86,8 +96,22 @@ class TypedEntityBlueprint(
             attrs,
         )
 
-        for component in self.compose(attrs):
+        for component in self.compose(attrs):  # type: ignore
             world.add_component(entity, component)
+
+        # pylint: disable=assignment-from-none
+        collider = self.get_collider(attrs)
+        if collider:
+            if not world.has_component(entity, type(collider)):
+                world.add_component(entity, collider)
+            if not world.has_component(entity, CollisionBody):
+                world.add_component(
+                    entity,
+                    CollisionBody(
+                        inverse_mass=attrs.collision_body_inverse_mass,
+                        restitution=attrs.collision_body_restitution,
+                    ),
+                )
 
     def build_attrs(
         self,
@@ -101,11 +125,18 @@ class TypedEntityBlueprint(
         return ()
 
 
-@dataclass(frozen=True, kw_only=True)
-class RectBlueprintAttrs:
+@dataclass(frozen=True)
+class SharedAttrs:
     position: Vec2 = field(default_factory=Vec2.zero)
-    size: Size = field(default_factory=Size.zero)
     color: Color = (255, 255, 255)
+    with_collider: bool = False
+    collision_body_inverse_mass: float = 1
+    collision_body_restitution: float = 1
+
+
+@dataclass(frozen=True, kw_only=True)
+class RectBlueprintAttrs(SharedAttrs):
+    size: Size = field(default_factory=Size.zero)
 
 
 TRectAttrs = TypeVar(
@@ -117,6 +148,12 @@ TRectAttrs = TypeVar(
 class RectBlueprintBase(
     TypedEntityBlueprint[TWorld, TRectAttrs], Generic[TWorld, TRectAttrs]
 ):
+
+    def get_collider(self, attrs: TRectAttrs) -> BoxCollider | None:
+        if not attrs.with_collider:
+            return None
+
+        return BoxCollider(attrs.size)
 
     def build_attrs(
         self,
@@ -148,10 +185,8 @@ class RectBlueprint(
 
 
 @dataclass(frozen=True, kw_only=True)
-class CircleBlueprintAttrs:
-    position: Vec2 = field(default_factory=Vec2.zero)
+class CircleBlueprintAttrs(SharedAttrs):
     radius: int = 0
-    color: Color = (255, 255, 255)
 
 
 TCircleAttrs = TypeVar(
@@ -163,6 +198,11 @@ TCircleAttrs = TypeVar(
 class CircleBlueprintBase(
     TypedEntityBlueprint[TWorld, TCircleAttrs], Generic[TWorld, TCircleAttrs]
 ):
+    def get_collider(self, attrs: TCircleAttrs) -> CircleCollider | None:
+        if not attrs.with_collider:
+            return None
+
+        return CircleCollider(attrs.radius)
 
     def build_attrs(
         self,
@@ -191,9 +231,53 @@ class CircleBlueprint(
 
 
 @dataclass(frozen=True, kw_only=True)
-class TextBlueprintAttrs:
-    position: Vec2 = field(default_factory=Vec2.zero)
-    color: Color = (255, 255, 255)
+class PolygonBlueprintAttrs(SharedAttrs):
+    vertices: tuple[Vec2, ...]
+
+
+TPolygonAttrs = TypeVar(
+    "TPolygonAttrs",
+    bound=PolygonBlueprintAttrs,
+)
+
+
+class PolygonBlueprintBase(
+    TypedEntityBlueprint[TWorld, TPolygonAttrs],
+    Generic[TWorld, TPolygonAttrs],
+):
+    def get_collider(
+        self,
+        attrs: TPolygonAttrs,
+    ) -> PolygonCollider | None:
+        if not attrs.with_collider:
+            return None
+
+        return PolygonCollider(vertices=attrs.vertices)
+
+    def build_attrs(
+        self,
+        world: TWorld,
+        entity: EntityId,
+        attrs: TPolygonAttrs,
+    ) -> None:
+        polygon = Polygon(
+            vertices=attrs.vertices,
+            color=attrs.color,
+        )
+
+        world.add_component(entity, Transform(attrs.position))
+        world.add_component(entity, polygon)
+
+
+class PolygonBlueprint(
+    PolygonBlueprintBase[TWorld, PolygonBlueprintAttrs],
+    Generic[TWorld],
+):
+    attrs_type = PolygonBlueprintAttrs
+
+
+@dataclass(frozen=True, kw_only=True)
+class TextBlueprintAttrs(SharedAttrs):
     content: str = ""
     font_size: int = 16
     align: TextAlign = "left"

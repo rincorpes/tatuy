@@ -26,6 +26,23 @@ class Circle:
     visible: bool = True
 
 
+from tatuy.math.vec2 import Vec2
+
+
+@dataclass
+class Polygon:
+    # Vertices relative to Transform.position, ordered around the perimeter.
+    vertices: tuple[Vec2, ...]
+    color: Color
+    layer: Layer = "world"
+    z: int = 0
+    visible: bool = True
+
+    def __post_init__(self) -> None:
+        if len(self.vertices) < 3:
+            raise ValueError("Polygon needs at least three vertices")
+
+
 TextAlign = Literal["left", "center", "right"]
 TextVAlign = Literal["top", "middle", "bottom"]
 
