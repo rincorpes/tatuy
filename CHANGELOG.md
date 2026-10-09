@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 #### Added
 
 - Implement collision system enhancements; add polygon collider support and improve collision detection mechanisms
+- Add attachment system and activation; implement attachment handling in spatial systems
 
 ### - 2026-10-08
 

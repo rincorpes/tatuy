@@ -6,7 +6,7 @@ from tatuy.features.spatial.components import AttachedTo, Transform
 from tatuy.scenes.context import SceneTickContext, TContext, TIntent
 
 
-class AttatchmentSystem(BaseSystem[TContext]):
+class AttachmentSystem(BaseSystem[TContext]):
     def step(self, ctx: SceneTickContext[TWorld, TIntent]):
         for (
             _,

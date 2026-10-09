@@ -37,7 +37,8 @@ from tatuy.features.movement.systems import (
     MovementSystem,
     VelocityIntegrationSystem,
 )
-from tatuy.features.spatial.components import Transform
+from tatuy.features.spatial.components import AttachedTo, Transform
+from tatuy.features.spatial.systems import AttachmentSystem
 from tatuy.features.visual.components import Circle, Polygon, Rect, Text
 from tatuy.features.visual.systems import RenderSystem
 from tatuy.scenes.context import SceneTickContext, TIntent
@@ -132,6 +133,12 @@ class CollisionResponseActivation:
         return True
 
 
+class AttachmentActivation:
+
+    def matches(self, ctx: SceneTickContext[TWorld, TIntent]) -> bool:
+        return any(ctx.world.query(AttachedTo))
+
+
 class BoundsDirectionActivation:
     def matches(self, ctx: SceneTickContext[TWorld, TIntent]) -> bool:
         bounds_frame = ctx.world.has_resource(BoundsFrame)
@@ -224,6 +231,11 @@ class BuiltinSystemCatalog:
                 system=CollisionResponseSystem(),
                 active=CollisionResponseActivation().matches,
                 order=400,
+            ),
+            "attachment": SystemRegistration(
+                system=AttachmentSystem(),
+                active=AttachmentActivation().matches,
+                order=1000,
             ),
             # POST_SIMULATION
             "bounds_direction": SystemRegistration(
