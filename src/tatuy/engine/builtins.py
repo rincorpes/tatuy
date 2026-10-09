@@ -222,20 +222,20 @@ class BuiltinSystemCatalog:
                 active=BoundsConstraintActivation().matches,
                 order=200,
             ),
+            "attachment": SystemRegistration(
+                system=AttachmentSystem(),
+                active=AttachmentActivation().matches,
+                order=300,
+            ),
             "collision_detection": SystemRegistration(
                 system=CollisionDetectionSystem(),
                 active=CollisionDetectionActivation().matches,
-                order=300,
+                order=400,
             ),
             "collision_response": SystemRegistration(
                 system=CollisionResponseSystem(),
                 active=CollisionResponseActivation().matches,
-                order=400,
-            ),
-            "attachment": SystemRegistration(
-                system=AttachmentSystem(),
-                active=AttachmentActivation().matches,
-                order=1000,
+                order=500,
             ),
             # POST_SIMULATION
             "bounds_direction": SystemRegistration(
