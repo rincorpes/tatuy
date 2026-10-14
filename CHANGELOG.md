@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+### - 2026-10-14
+
+#### Added
+
+- Integrate profiling system; add profiler configuration and span tracking across event handling and engine lifecycle
+
 ### - 2026-10-09
 
 #### Added

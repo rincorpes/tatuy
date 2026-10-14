@@ -21,6 +21,8 @@ from tatuy.graphics.viewport.service import ViewportService
 from tatuy.input.service import InputService
 from tatuy.resources import ResourceStore
 from tatuy.settings import SettingsRegistry
+from tatuy.tooling.profiler import profiler
+from tatuy.tooling.profiler.profiler import ProfilerConfig
 from tatuy.window.service import WindowService
 
 
@@ -34,6 +36,7 @@ class TatuyConfigDict(TypedDict, total=False):
     backend: dict[str, Any]
     engine: dict[str, Any]
     settings: dict[str, dict[str, Any]]
+    profiler: dict[str, Any]
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,6 +62,11 @@ class TatuyApp:
         self.resources = ResourceStore()
 
         self._build_settings()
+
+        profiler_config = ProfilerConfig.from_dict(
+            self.config.get("profiler", {})
+        )
+        profiler.configure(profiler_config)
 
     def _build_settings(self) -> None:
         sections = self.config.get("settings", {})
@@ -151,4 +159,14 @@ class TatuyApp:
 
     def run(self):
         runtime = self.build()
-        runtime.loop.run(runtime.engine)
+
+        try:
+            runtime.loop.run(runtime.engine)
+        finally:
+            if not profiler.enabled:
+                return
+
+        print(profiler.report())
+
+        print("\nSlowest frames")
+        print(profiler.format_slowest("frame", limit=10))

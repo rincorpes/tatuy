@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from tatuy.backend.backend import Backend
 from tatuy.events import EventFrame
+from tatuy.tooling.profiler import profiler
 
 
 class EventsService:
@@ -13,7 +14,8 @@ class EventsService:
     def get_event_frame(self) -> EventFrame:
         event_frame = EventFrame()
 
-        for event in self._backend.events.get_events():
-            event_frame.add(event)
+        with profiler.span("backend.get_events", "events"):
+            for event in self._backend.events.get_events():
+                event_frame.add(event)
 
         return event_frame

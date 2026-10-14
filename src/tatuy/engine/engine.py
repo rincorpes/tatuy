@@ -36,6 +36,7 @@ from tatuy.input.keys import Key
 from tatuy.math.vec2 import Vec2
 from tatuy.resources import ResourceStore
 from tatuy.scenes.context import SceneContext
+from tatuy.tooling.profiler import profiler
 from tatuy.window.service import WindowService
 
 
@@ -58,11 +59,14 @@ class FrameInputCollector:
         self._services = services
 
     def collect(self) -> InputFrame:
-        events = self._services.events.get_event_frame()
+        with profiler.span("get_frame", "events"):
+            events = self._services.events.get_event_frame()
 
-        self._services.window.sync_events(events.get(EventCategory.WINDOW))
+        with profiler.span("window.sync", "events"):
+            self._services.window.sync_events(events.get(EventCategory.WINDOW))
 
-        self._services.input.sync_events(events.get(EventCategory.INPUT))
+        with profiler.span("input.sync", "events"):
+            self._services.input.sync_events(events.get(EventCategory.INPUT))
 
         return self._services.input.get_input_frame()
 
@@ -330,118 +334,138 @@ class Engine:
         event_bus.on("windowrestored", self._debug_window_events)
         event_bus.on("windowclose", self._debug_window_events)
 
-        self._backend.init()
+        with profiler.trace("engine.start", "lifecycle"):
+            self._backend.init()
 
-        self.services.window.open()
+            self.services.window.open()
 
-        self.services.viewport.initialize(self.services.window.size)
+            self.services.viewport.initialize(self.services.window.size)
 
-        self.scene_context = SceneContext(
-            viewport=self.services.viewport.state,
-            audio=self.services.audio,
-            commands=self.commands,
-            resources=self._resources,
-        )
-
-        self.services.scene.change(
-            self.config.start_scene,
-            self.scene_context,
-        )
-
-        self.scene_updater = SceneUpdater(
-            self.services.scene,
-        )
-        self.scene_presenter = ScenePresenter(
-            self.services.scene,
-        )
-
-    def step(self, dt: float, _frame_index: int) -> None:
-        if not self.running:
-            return
-
-        self.services.capture.poll()
-
-        # Always poll live events, including during playback.
-        # This preserves window close events and replay controls.
-        live_input = self.frame_input_collector.collect()
-
-        if not self.running:
-            return
-
-        self.services.viewport.resize(self.services.window.size)
-
-        live_input = self._process_capture_hotkeys(live_input)
-
-        if not self.running:
-            return
-
-        capture = self.services.capture
-        header = capture.replay_header
-
-        if header is not None:
-            viewport = self.scene_context.viewport
-
-            if (
-                viewport.virtual_w != header.virtual_w
-                or viewport.virtual_h != header.virtual_h
-            ):
-                raise ValueError(
-                    "Window dimensions changed during the replay session"
-                )
-
-        simulation_dt = dt
-        input_frame = live_input
-        should_update = True
-
-        if capture.replay_playing:
-            recorded = capture.next_replay_frame()
-
-            if recorded is None:
-                # Keep presenting the final state without advancing it.
-                simulation_dt = 0.0
-                should_update = False
-            else:
-                input_frame = recorded.input_frame
-                simulation_dt = recorded.dt
-
-        if should_update:
-            # Records exactly the input and timing consumed by the simulation.
-            # The recorder does nothing when inactive.
-            capture.record_input(input_frame, simulation_dt)
-
-            self.scene_updater.update(
-                dt=simulation_dt,
-                input_frame=input_frame,
-                scene_context=self.scene_context,
+            self.scene_context = SceneContext(
+                viewport=self.services.viewport.state,
+                audio=self.services.audio,
+                commands=self.commands,
+                resources=self._resources,
             )
 
+            self.services.scene.change(
+                self.config.start_scene,
+                self.scene_context,
+            )
+
+            self.scene_updater = SceneUpdater(
+                self.services.scene,
+            )
+            self.scene_presenter = ScenePresenter(
+                self.services.scene,
+            )
+
+    def step(self, dt: float, frame_index: int) -> None:
         if not self.running:
             return
+        with profiler.trace(
+            "frame",
+            "frame",
+            metadata={
+                "dt": dt,
+                "frame": frame_index,
+                "completed": False,
+            },
+        ) as frame_run:
+            with profiler.span("events", "engine"):
+                with profiler.span("capture.poll", "events"):
+                    self.services.capture.poll()
 
-        self.command_processor.process()
+                with profiler.span("input.collect", "events"):
+                    # Always poll live events, including during playback.
+                    # This preserves window close events and replay controls.
+                    live_input = self.frame_input_collector.collect()
 
-        if not self.running:
-            return
+            if not self.running:
+                return
 
-        packets = self.scene_presenter.present(
-            dt=simulation_dt,
-            scene_context=self.scene_context,
-        )
+            self.services.viewport.resize(self.services.window.size)
 
-        # Rendering diagnostics can still use the live frame duration.
-        self.frame_renderer.render(packets, dt)
+            live_input = self._process_capture_hotkeys(live_input)
+
+            if not self.running:
+                return
+
+            capture = self.services.capture
+            header = capture.replay_header
+
+            if header is not None:
+                viewport = self.scene_context.viewport
+
+                if (
+                    viewport.virtual_w != header.virtual_w
+                    or viewport.virtual_h != header.virtual_h
+                ):
+                    raise ValueError(
+                        "Window dimensions changed during the replay session"
+                    )
+
+            simulation_dt = dt
+            input_frame = live_input
+            should_update = True
+
+            if capture.replay_playing:
+                recorded = capture.next_replay_frame()
+
+                if recorded is None:
+                    # Keep presenting the final state without advancing it.
+                    simulation_dt = 0.0
+                    should_update = False
+                else:
+                    input_frame = recorded.input_frame
+                    simulation_dt = recorded.dt
+
+            if should_update:
+                # Records exactly the input and timing consumed by the simulation.
+                # The recorder does nothing when inactive.
+                capture.record_input(input_frame, simulation_dt)
+
+                with profiler.span("scene.update", "scene"):
+                    self.scene_updater.update(
+                        dt=simulation_dt,
+                        input_frame=input_frame,
+                        scene_context=self.scene_context,
+                    )
+
+            if not self.running:
+                return
+
+            with profiler.span("commands", "engine"):
+                self.command_processor.process()
+
+            if not self.running:
+                return
+
+            with profiler.span("scene.present", "scene"):
+                packets = self.scene_presenter.present(
+                    dt=simulation_dt,
+                    scene_context=self.scene_context,
+                )
+
+            with profiler.span("render", "render"):
+                # Rendering diagnostics can still use the live frame duration.
+                self.frame_renderer.render(packets, dt)
+
+            if frame_run is not None:
+                frame_run.metadata["completed"] = True
 
     def stop(self) -> None:
         if not self.running:
             return
 
-        self.running = False
+        with profiler.trace("engine.stop", "lifecycle"):
+            self.running = False
 
-        try:
-            self.services.capture.close()
-        finally:
-            self._backend.stop()
-            event_bus.clear()
+            try:
+                self.services.capture.close()
+            finally:
+                self._backend.stop()
+                event_bus.clear()
 
         print("Engine stopped.")
 

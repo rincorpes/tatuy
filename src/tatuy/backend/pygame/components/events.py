@@ -10,6 +10,7 @@ from tatuy.backend.backend_component import BackendComponent
 from tatuy.backend.pygame.config import PygameEventsConfig
 from tatuy.events import Event, EventCategory, EventType
 from tatuy.input.keys import Key
+from tatuy.tooling.profiler import profiler
 
 PYGAME_KEY_TO_KEY: dict[int, Key] = {
     pygame.K_ESCAPE: Key.ESCAPE,
@@ -89,29 +90,33 @@ class PygameEvents(BackendComponent[PygameEventsConfig]):
     def get_events(self) -> list[Event]:
         events: list[Event] = []
 
-        for pygame_event in pygame.event.get():
-            mapping = _EVENT_MAP.get(pygame_event.type)
+        with profiler.span("pygame.poll", "backend"):
+            pygame_events = pygame.event.get()
 
-            if mapping is None:
-                continue
+        with profiler.span("pygame.map", "backend"):
+            for pygame_event in pygame_events:
+                mapping = _EVENT_MAP.get(pygame_event.type)
 
-            category, event_type = mapping
-            attrs = self._translate_attrs(
-                event_type,
-                pygame_event.dict,
-            )
+                if mapping is None:
+                    continue
 
-            if attrs is None:
-                continue
-
-            events.append(
-                Event(
-                    category=category,
-                    type=event_type,
-                    type_name=event_type.name.lower(),
-                    attrs=attrs,
+                category, event_type = mapping
+                attrs = self._translate_attrs(
+                    event_type,
+                    pygame_event.dict,
                 )
-            )
+
+                if attrs is None:
+                    continue
+
+                events.append(
+                    Event(
+                        category=category,
+                        type=event_type,
+                        type_name=event_type.name.lower(),
+                        attrs=attrs,
+                    )
+                )
 
         return events
 
