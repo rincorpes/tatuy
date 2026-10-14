@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 #### Added
 
 - Integrate profiling system; add profiler configuration and span tracking across event handling and engine lifecycle
+- Enhance profiling capabilities; add granular profiling spans and GC event tracking
 
 ### - 2026-10-09
 

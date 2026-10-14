@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from typing import Any
 from uuid import UUID, uuid4
 
+from tatuy.tooling.profiler.event import ProfilerEvent
+
 
 @dataclass
 class Run:
@@ -20,6 +22,8 @@ class Run:
     metrics: dict[str, float | int] = field(default_factory=dict)
 
     children: list[Run] = field(default_factory=list)
+
+    events: list[ProfilerEvent] = field(default_factory=list)
 
     @property
     def duration(self) -> float | None:

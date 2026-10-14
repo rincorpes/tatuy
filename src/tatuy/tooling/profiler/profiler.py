@@ -1,17 +1,20 @@
 from __future__ import annotations
 
+import gc
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from time import perf_counter
 from typing import Any
 
+from tatuy.tooling.profiler.event import ProfilerEvent
 from tatuy.tooling.profiler.run import Run
 
 
 @dataclass(frozen=True)
 class ProfilerConfig:
     enabled: bool = False
+    gc: bool = True
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> ProfilerConfig:
@@ -24,6 +27,9 @@ class Profiler:
 
     _stack: list[Run]
     _roots: list[Run]
+
+    _active_gc_event: ProfilerEvent | None = None
+    _active_gc_run: Run | None = None
 
     def __new__(cls):
         if cls._instance is None:
@@ -38,10 +44,16 @@ class Profiler:
         self._stack = []
         self._roots = []
 
+        self._gc_registered = False
+
         self._initialized = True
 
     def configure(self, config: ProfilerConfig):
         self.enabled = config.enabled
+        if self.enabled and config.gc:
+            self._register_gc_callback()
+        else:
+            self._unregister_gc_callback()
 
     @property
     def current_run(self) -> Run | None:
@@ -49,6 +61,85 @@ class Profiler:
             return None
 
         return self._stack[-1]
+
+    def _register_gc_callback(self) -> None:
+        if self._gc_registered:
+            return
+
+        gc.callbacks.append(self._on_gc)
+        self._gc_registered = True
+
+    def _unregister_gc_callback(self) -> None:
+        if not self._gc_registered:
+            return
+
+        try:
+            gc.callbacks.remove(self._on_gc)
+        except ValueError:
+            pass
+
+        self._gc_registered = False
+
+    def _on_gc(
+        self,
+        phase: str,
+        info: dict[str, int],
+    ) -> None:
+        if not self.enabled:
+            return
+
+        if phase == "start":
+            self._gc_started(info)
+
+        elif phase == "stop":
+            self._gc_finished(info)
+
+    def _gc_started(
+        self,
+        info: dict[str, int],
+    ) -> None:
+        run = self.current_run
+
+        if run is None:
+            return
+
+        event = ProfilerEvent(
+            name="gc",
+            start_time=perf_counter(),
+            metadata={
+                "generation": info.get("generation"),
+            },
+        )
+
+        self._active_gc_event = event
+        self._active_gc_run = run
+
+    def _gc_finished(
+        self,
+        info: dict[str, int],
+    ) -> None:
+        event = self._active_gc_event
+        run = self._active_gc_run
+
+        if event is None or run is None:
+            return
+
+        event.end_time = perf_counter()
+
+        event.metadata.update(
+            {
+                "collected": info.get("collected", 0),
+                "uncollectable": info.get(
+                    "uncollectable",
+                    0,
+                ),
+            }
+        )
+
+        run.events.append(event)
+
+        self._active_gc_event = None
+        self._active_gc_run = None
 
     def start_run(
         self,
@@ -87,6 +178,9 @@ class Profiler:
     def reset(self) -> None:
         self._stack.clear()
         self._roots.clear()
+
+        self._active_gc_event = None
+        self._active_gc_run = None
 
     @contextmanager
     def trace(
@@ -185,7 +279,7 @@ class Profiler:
             return f"{root.name}: incomplete"
 
         header = (
-            f"{'Trace':<42}"
+            f"{'Trace':<62}"
             f"{'Total ms':>12}"
             f"{'Self ms':>12}"
             f"{'% frame':>10}"
@@ -209,11 +303,39 @@ class Profiler:
             name = f"{'  ' * depth}{run.name}"
 
             lines.append(
-                f"{name:<42}"
+                f"{name:<62}"
                 f"{duration * 1000:>12.3f}"
                 f"{self_duration * 1000:>12.3f}"
                 f"{percent:>9.2f}%"
             )
+
+            # Runtime events that happened while this run was active.
+            for event in run.events:
+                event_duration = event.duration
+
+                if event_duration is None:
+                    continue
+
+                generation = event.metadata.get("generation", "?")
+                collected = event.metadata.get("collected", 0)
+                uncollectable = event.metadata.get("uncollectable", 0)
+
+                event_name = (
+                    f"{'  ' * (depth + 1)}"
+                    f"! {event.name} "
+                    f"gen={generation} "
+                    f"collected={collected} "
+                    f"uncollectable={uncollectable}"
+                )
+
+                event_percent = event_duration / root_duration * 100.0
+
+                lines.append(
+                    f"{event_name:<62}"
+                    f"{event_duration * 1000:>12.3f}"
+                    f"{'':>12}"
+                    f"{event_percent:>9.2f}%"
+                )
 
             for child in run.children:
                 visit(child, depth + 1)
@@ -227,7 +349,7 @@ class Profiler:
         name: str,
         *,
         limit: int = 10,
-        completed_only=True,
+        completed_only: bool = True,
     ) -> str:
         runs = self.slowest(name, limit=limit, completed_only=completed_only)
 

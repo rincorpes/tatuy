@@ -130,37 +130,42 @@ class ScenePresenter:
     ) -> list[FramePacket]:
 
         packets: list[FramePacket] = []
+        with profiler.span("scene.present", "scene"):
+            for entry in self._scenes.visible_entries():
 
-        for entry in self._scenes.visible_entries():
+                scene = entry.scene
 
-            scene = entry.scene
+                # One queue and one canvas for this scene's presentation.
+                queue = RenderQueue()
+                canvas = QueuedCanvas(queue)
 
-            # One queue and one canvas for this scene's presentation.
-            queue = RenderQueue()
-            canvas = QueuedCanvas(queue)
+                with profiler.span("scene.create_trick_context", "scene"):
+                    ctx = scene.create_tick_context(
+                        dt=dt,
+                        render_queue=queue,
+                        scene_context=scene_context,
+                        canvas=canvas,
+                    )
+                with profiler.span("scene.on_present", "scene"):
+                    scene.on_present(ctx)
 
-            ctx = scene.create_tick_context(
-                dt=dt,
-                render_queue=queue,
-                scene_context=scene_context,
-                canvas=canvas,
-            )
-            scene.on_present(ctx)
-            scene.system_pipeline.present(ctx)
+                with profiler.span("scene.system_pipeline.present", "scene"):
+                    scene.system_pipeline.present(ctx)
 
-            packet = replace(
-                compile_queue(queue),
-                screen_overlays=scene.screen_fx.snapshot(),
-                world_view=scene.camera_fx.snapshot(),
-            )
+                with profiler.span("compile_queue", "render_queue"):
+                    packet = replace(
+                        compile_queue(queue),
+                        screen_overlays=scene.screen_fx.snapshot(),
+                        world_view=scene.camera_fx.snapshot(),
+                    )
 
-            packets.append(
-                FramePacket(
-                    scene_id=entry.scene_id,
-                    is_overlay=entry.is_overlay,
-                    packet=packet,
+                packets.append(
+                    FramePacket(
+                        scene_id=entry.scene_id,
+                        is_overlay=entry.is_overlay,
+                        packet=packet,
+                    )
                 )
-            )
 
         return packets
 
@@ -251,8 +256,9 @@ class FrameRenderer:
         if not self._backend.initialized:
             return
 
-        size = self._window.size
-        self._viewport.resize(size)
+        with profiler.span("viewport.resize", "render"):
+            size = self._window.size
+            self._viewport.resize(size)
 
         context = RenderContext(
             viewport=self._viewport.state,
@@ -260,18 +266,21 @@ class FrameRenderer:
             frame_ms=dt * 1000,
         )
 
-        self._pipeline.render_frame_content(
-            self._backend,
-            context,
-            packets,
-        )
+        with profiler.span("render_frame_content", "render"):
+            self._pipeline.render_frame_content(
+                self._backend,
+                context,
+                packets,
+            )
 
-        self._capture.after_render()
+        with profiler.span("capture.after_render", "render"):
+            self._capture.after_render()
 
-        self._pipeline.present_frame(
-            self._backend,
-            context,
-        )
+        with profiler.span("present_frame", "render"):
+            self._pipeline.present_frame(
+                self._backend,
+                context,
+            )
 
 
 class Engine:

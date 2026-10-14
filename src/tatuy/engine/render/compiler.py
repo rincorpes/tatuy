@@ -17,6 +17,7 @@ from tatuy.graphics.render.commands import (
 from tatuy.graphics.render.packets import DrawOp, RenderPacket
 from tatuy.graphics.render.queue import DrawOperation, RenderQueue
 from tatuy.math.vec2 import Vec2
+from tatuy.tooling.profiler import profiler
 
 
 class TextCommandRenderer:
@@ -134,16 +135,37 @@ def compile_queue(queue: RenderQueue) -> RenderPacket:
     """
     ops: list[DrawOp] = []
     pass_ops: dict[str, list[DrawOp]] = {}
-    for operation in queue.iter_sorted():
-        prepared = (
-            operation
-            if isinstance(operation.payload, CustomCommand)
-            else deepcopy(operation)
+
+    with profiler.span("queue_items", "compile_queue"):
+        queue_items = queue.iter_sorted()
+
+    with profiler.span("prepare_operations", "compile_queue"):
+        prepared_operations = [
+            (
+                operation,
+                (
+                    operation
+                    if isinstance(operation.payload, CustomCommand)
+                    else deepcopy(operation)
+                ),
+            )
+            for operation in queue_items
+        ]
+
+    with profiler.span("build_draw_ops", "compile_queue"):
+        for operation, prepared in prepared_operations:
+            draw = partial(execute_draw, prepared)
+
+            ops.append(draw)
+            pass_ops.setdefault(
+                operation.layer,
+                [],
+            ).append(draw)
+
+    with profiler.span("render_packet.from_ops", "compile_queue"):
+        return RenderPacket.from_ops(
+            ops,
+            pass_ops={
+                layer: tuple(draws) for layer, draws in pass_ops.items()
+            },
         )
-        draw = partial(execute_draw, prepared)
-        ops.append(draw)
-        pass_ops.setdefault(operation.layer, []).append(draw)
-    return RenderPacket.from_ops(
-        ops,
-        pass_ops={layer: tuple(draws) for layer, draws in pass_ops.items()},
-    )
