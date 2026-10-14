@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import gc
+from collections import deque
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -21,12 +22,21 @@ class ProfilerConfig:
         return cls(**data)
 
 
+@dataclass
+class RunStats:
+    calls: int = 0
+    total: float = 0.0
+    peak: float = 0.0
+
+
 class Profiler:
     _instance: Profiler | None = None
     _initialized = False
 
     _stack: list[Run]
-    _roots: list[Run]
+    _roots: deque[Run]
+    _slow_runs: list[Run]
+    _stats: dict[str, RunStats]
 
     _active_gc_event: ProfilerEvent | None = None
     _active_gc_run: Run | None = None
@@ -42,7 +52,11 @@ class Profiler:
 
         self.enabled = False
         self._stack = []
-        self._roots = []
+        self._roots = deque(maxlen=300)
+        self._slow_runs = []
+        self._stats = {}
+
+        self._slow_run_limit = 20
 
         self._gc_registered = False
 
@@ -170,14 +184,49 @@ class Profiler:
     def end_run(self, run: Run) -> None:
         run.end_time = perf_counter()
 
+        path = "/".join(item.name for item in self._stack)
+
+        duration = run.duration
+
+        if duration is not None:
+            stats = self._stats.setdefault(path, RunStats())
+
+            stats.calls += 1
+            stats.total += duration
+            stats.peak = max(stats.peak, duration)
+
         popped = self._stack.pop()
 
         if popped is not run:
             raise RuntimeError("Profiler run stack corrupted")
 
+        if run.parent_id is None:
+            self._consider_slow_run(run)
+
+    def _consider_slow_run(self, run: Run) -> None:
+        if run.duration is None:
+            return
+
+        if run.run_type != "frame":
+            return
+
+        if not run.metadata.get("completed", False):
+            return
+
+        self._slow_runs.append(run)
+
+        self._slow_runs.sort(
+            key=lambda item: item.duration or 0.0,
+            reverse=True,
+        )
+
+        del self._slow_runs[self._slow_run_limit :]
+
     def reset(self) -> None:
         self._stack.clear()
         self._roots.clear()
+        self._slow_runs.clear()
+        self._stats.clear()
 
         self._active_gc_event = None
         self._active_gc_run = None
@@ -388,7 +437,7 @@ class Profiler:
     ) -> list[Run]:
         runs = [
             run
-            for run in self._roots
+            for run in self._slow_runs
             if (
                 run.name == name
                 and run.duration is not None
@@ -398,50 +447,34 @@ class Profiler:
             )
         ]
 
-        return sorted(
-            runs,
-            key=lambda run: run.duration or 0.0,
-            reverse=True,
-        )[:limit]
+        return runs[:limit]
 
     def report(self) -> str:
-        stats: dict[str, tuple[int, float, float]] = {}
-
-        def collect(run: Run, parent: str = "") -> None:
-            name = f"{parent}/{run.name}" if parent else run.name
-            duration = run.duration
-
-            if duration is not None:
-                count, total, peak = stats.get(name, (0, 0.0, 0.0))
-                stats[name] = (
-                    count + 1,
-                    total + duration,
-                    max(peak, duration),
-                )
-
-            for child in run.children:
-                collect(child, name)
-
-        for root in self._roots:
-            collect(root)
-
-        if not stats:
+        if not self._stats:
             return "Profiler: no completed runs."
 
-        trace_width = max(42, max(len(name) for name in stats) + 2)
+        trace_width = max(
+            42,
+            max(len(name) for name in self._stats) + 2,
+        )
 
         header = (
-            f"{'Trace':<{trace_width}} {'Calls':>7} {'Avg ms':>10} "
-            f"{'Max ms':>10} {'Total ms':>12}"
+            f"{'Trace':<{trace_width}} "
+            f"{'Calls':>7} "
+            f"{'Avg ms':>10} "
+            f"{'Max ms':>10} "
+            f"{'Total ms':>12}"
         )
 
         lines = [header, "-" * len(header)]
 
-        for name, (count, total, peak) in stats.items():
+        for name, stats in self._stats.items():
             lines.append(
-                f"{name:<{trace_width}} {count:>7} "
-                f"{total / count * 1000:>10.3f} "
-                f"{peak * 1000:>10.3f} {total * 1000:>12.3f}"
+                f"{name:<{trace_width}} "
+                f"{stats.calls:>7} "
+                f"{stats.total / stats.calls * 1000:>10.3f} "
+                f"{stats.peak * 1000:>10.3f} "
+                f"{stats.total * 1000:>12.3f}"
             )
 
         return "\n".join(lines)

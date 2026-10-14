@@ -7,7 +7,7 @@ from uuid import UUID, uuid4
 from tatuy.tooling.profiler.event import ProfilerEvent
 
 
-@dataclass
+@dataclass(slots=True)
 class Run:
     name: str
     run_type: str
