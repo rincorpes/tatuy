@@ -155,6 +155,9 @@ class Profiler:
             }
         )
 
+        if run.events is None:
+            run.events = []
+
         run.events.append(event)
 
         self._active_gc_event = None
@@ -173,11 +176,13 @@ class Profiler:
             name=name,
             run_type=run_type,
             start_time=perf_counter(),
-            metadata=metadata or {},
+            metadata=metadata,
         )
 
         if parent is not None:
             run.parent_id = parent.id
+            if parent.children is None:
+                parent.children = []
             parent.children.append(run)
         else:
             self._roots.append(run)
@@ -214,6 +219,9 @@ class Profiler:
 
         if run.run_type != "frame":
             return
+
+        if run.metadata is None:
+            run.metadata = {}
 
         if not run.metadata.get("completed", False):
             return
@@ -316,6 +324,8 @@ class Profiler:
 
     def get_frame(self, frame_index: int) -> Run | None:
         for run in self._roots:
+            if run.metadata is None:
+                run.metadata = {}
             if (
                 run.run_type == "frame"
                 and run.metadata.get("frame") == frame_index
@@ -367,7 +377,7 @@ class Profiler:
             )
 
             # Runtime events that happened while this run was active.
-            for event in run.events:
+            for event in run.events or ():
                 event_duration = event.duration
 
                 if event_duration is None:
@@ -395,7 +405,7 @@ class Profiler:
                     f"{event_percent:>9.2f}%"
                 )
 
-            for child in run.children:
+            for child in run.children or ():
                 visit(child, depth + 1)
 
             if run.metrics:
@@ -444,6 +454,8 @@ class Profiler:
                 lines.append("")
 
             if run.run_type == "frame":
+                if run.metadata is None:
+                    run.metadata = {}
                 frame_index = run.metadata.get("frame", "?")
                 title = (
                     f"#{index} — Frame {frame_index} — "
@@ -472,7 +484,8 @@ class Profiler:
                 run.name == name
                 and run.duration is not None
                 and (
-                    not completed_only or run.metadata.get("completed", False)
+                    not completed_only
+                    or (run.metadata or {}).get("completed", False)
                 )
             )
         ]
@@ -521,6 +534,9 @@ class Profiler:
         if run is None:
             return
 
+        if run.metadata is None:
+            run.metadata = {}
+
         run.metadata.update(metadata)
 
     def metric(
@@ -536,6 +552,9 @@ class Profiler:
         if run is None:
             return
 
+        if run.metrics is None:
+            run.metrics = {}
+
         run.metrics[name] = value
 
     def increment(
@@ -550,6 +569,9 @@ class Profiler:
 
         if run is None:
             return
+
+        if run.metrics is None:
+            run.metrics = {}
 
         run.metrics[name] = run.metrics.get(name, 0) + value
 

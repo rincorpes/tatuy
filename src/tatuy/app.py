@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import gc
 from dataclasses import dataclass
 from typing import Any, TypedDict
 
@@ -161,16 +162,22 @@ class TatuyApp:
     def run(self):
         runtime = self.build()
 
+        gc.disable()
+
         try:
             runtime.loop.run(runtime.engine)
         finally:
-            if not profiler.enabled:
-                return
-            snapshot = profiler.snapshot()
+            gc.collect()
+            gc.enable()
 
-            export_profile(
-                snapshot,
-                ".tatuy/profiles/latest.json",
-            )
-            print(profiler.report())
-            print("Profile written to profiles/latest.json")
+            if profiler.enabled:
+                snapshot = profiler.snapshot()
+
+                export_profile(
+                    snapshot,
+                    ".tatuy/profiles/latest.json",
+                )
+                print(profiler.report())
+                print("\nSlowest frames")
+                print(profiler.format_slowest("frame", limit=3))
+                print("Profile written to profiles/latest.json")

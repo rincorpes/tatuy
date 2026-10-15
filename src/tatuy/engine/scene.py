@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import gc
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -71,6 +72,7 @@ class SceneService:
 
         item = self._stack.pop()
         item.entry.scene.on_exit()
+        gc.collect()
 
         return item.entry
 

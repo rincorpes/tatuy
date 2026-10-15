@@ -18,11 +18,11 @@ class Run:
     start_time: float = 0.0
     end_time: float | None = None
 
-    metadata: dict[str, Any] = field(default_factory=dict)
-    metrics: dict[str, float | int] = field(default_factory=dict)
-    events: list[ProfilerEvent] = field(default_factory=list)
+    metadata: dict[str, Any] | None = None
+    metrics: dict[str, float | int] | None = None
+    events: list[ProfilerEvent] | None = None
 
-    children: list[Run] = field(default_factory=list)
+    children: list[Run] | None = None
 
     @property
     def duration(self) -> float | None:
@@ -39,7 +39,7 @@ class Run:
             return None
 
         children_duration = sum(
-            child.duration or 0.0 for child in self.children
+            child.duration or 0.0 for child in (self.children or ())
         )
 
         return max(
@@ -54,7 +54,9 @@ class Run:
         if self_duration is None:
             return None
 
-        event_duration = sum(event.duration or 0.0 for event in self.events)
+        event_duration = sum(
+            event.duration or 0.0 for event in (self.events or ())
+        )
 
         return max(
             0.0,

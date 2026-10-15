@@ -45,10 +45,14 @@ class RunSnapshot:
             duration=run.duration,
             self_duration=run.self_duration,
             work_duration=run.work_duration,
-            metadata=dict(run.metadata),
-            metrics=dict(run.metrics),
-            events=[EventSnapshot.from_event(event) for event in run.events],
-            children=[RunSnapshot.from_run(child) for child in run.children],
+            metadata=dict(run.metadata or {}),
+            metrics=dict(run.metrics or {}),
+            events=[
+                EventSnapshot.from_event(event) for event in run.events or ()
+            ],
+            children=[
+                RunSnapshot.from_run(child) for child in run.children or ()
+            ],
         )
 
 
