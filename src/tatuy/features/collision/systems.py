@@ -16,6 +16,7 @@ from tatuy.features.movement.components import (
 from tatuy.features.spatial.components import Transform
 from tatuy.geometry.collision import CollisionGeometry
 from tatuy.scenes.context import SceneTickContext, TContext, TIntent
+from tatuy.tooling.profiler import profiler
 
 
 class CollisionDetectionSystem(BaseSystem[TContext]):
@@ -33,47 +34,82 @@ class CollisionDetectionSystem(BaseSystem[TContext]):
         frame.contacts.clear()
 
         colliders = []
+        entities_checked = 0
 
-        for entity, transform in ctx.world.query(Transform):
-            collider = self._colliders.find(
-                ctx.world,
-                entity,
-            )
+        with profiler.span(
+            "collect_colliders",
+            "collision",
+        ):
+            for entity, transform in ctx.world.query(Transform):
+                entities_checked += 1
 
-            if collider is None:
-                continue
-
-            shape = self._colliders.shape(
-                transform.position,
-                collider,
-            )
-
-            colliders.append((entity, shape))
-
-        colliders.sort(key=lambda row: row[0])
-
-        for first, second in combinations(colliders, 2):
-            entity_a, shape_a = first
-            entity_b, shape_b = second
-
-            result = self._geometry.find(
-                shape_a,
-                shape_b,
-            )
-
-            if result is None:
-                continue
-
-            normal, penetration = result
-
-            frame.contacts.append(
-                CollisionContact(
-                    entity_a=entity_a,
-                    entity_b=entity_b,
-                    normal=normal,
-                    penetration=penetration,
+                collider = self._colliders.find(
+                    ctx.world,
+                    entity,
                 )
-            )
+
+                if collider is None:
+                    continue
+
+                shape = self._colliders.shape(
+                    transform.position,
+                    collider,
+                )
+
+                colliders.append((entity, shape))
+
+            colliders.sort(key=lambda row: row[0])
+
+        pair_tests = 0
+        contacts = 0
+
+        with profiler.span(
+            "test_pairs",
+            "collision",
+        ):
+            for first, second in combinations(colliders, 2):
+                pair_tests += 1
+
+                entity_a, shape_a = first
+                entity_b, shape_b = second
+
+                result = self._geometry.find(
+                    shape_a,
+                    shape_b,
+                )
+
+                if result is None:
+                    continue
+
+                contacts += 1
+
+                normal, penetration = result
+
+                frame.contacts.append(
+                    CollisionContact(
+                        entity_a=entity_a,
+                        entity_b=entity_b,
+                        normal=normal,
+                        penetration=penetration,
+                    )
+                )
+
+        profiler.metric(
+            "entities_checked",
+            entities_checked,
+        )
+        profiler.metric(
+            "colliders",
+            len(colliders),
+        )
+        profiler.metric(
+            "pair_tests",
+            pair_tests,
+        )
+        profiler.metric(
+            "contacts",
+            contacts,
+        )
 
 
 class CollisionResponseSystem(BaseSystem[TContext]):

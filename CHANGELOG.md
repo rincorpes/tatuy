@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Add profiling viewer; implement profile export, snapshot handling, and web interface for visualization
 - Improve garbage collection handling and enhance profiler data structures
 - Integrate profiler spans for rendering frame operations in PygameRenderer and RenderPipeline
+- Enhance collision detection with profiling spans for collider collection and pair testing
 
 ### - 2026-10-14
 
