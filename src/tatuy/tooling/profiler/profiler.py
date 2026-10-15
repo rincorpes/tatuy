@@ -331,6 +331,7 @@ class Profiler:
             f"{'Trace':<62}"
             f"{'Total ms':>12}"
             f"{'Self ms':>12}"
+            f"{'Work ms':>12}"
             f"{'% frame':>10}"
         )
 
@@ -347,6 +348,7 @@ class Profiler:
                 return
 
             self_duration = run.self_duration or 0.0
+            work_duration = run.work_duration or 0.0
             percent = duration / root_duration * 100.0
 
             name = f"{'  ' * depth}{run.name}"
@@ -355,6 +357,7 @@ class Profiler:
                 f"{name:<62}"
                 f"{duration * 1000:>12.3f}"
                 f"{self_duration * 1000:>12.3f}"
+                f"{work_duration * 1000:>12.3f}"
                 f"{percent:>9.2f}%"
             )
 
@@ -383,11 +386,33 @@ class Profiler:
                     f"{event_name:<62}"
                     f"{event_duration * 1000:>12.3f}"
                     f"{'':>12}"
+                    f"{'':>12}"
                     f"{event_percent:>9.2f}%"
                 )
 
             for child in run.children:
                 visit(child, depth + 1)
+
+            if run.metrics:
+                metrics = " ".join(
+                    f"{name}={value}" for name, value in run.metrics.items()
+                )
+
+                metric_name = f"{'  ' * (depth + 1)}" f"· {metrics}"
+
+                lines.append(metric_name)
+
+            if run.metadata:
+                metadata = " ".join(
+                    f"{name}={value}"
+                    for name, value in run.metadata.items()
+                    if name not in {"frame", "completed"}
+                )
+
+                if metadata:
+                    metadata_name = f"{'  ' * (depth + 1)}" f"@ {metadata}"
+
+                    lines.append(metadata_name)
 
         visit(root)
 
@@ -478,3 +503,47 @@ class Profiler:
             )
 
         return "\n".join(lines)
+
+    def annotate(
+        self,
+        **metadata: Any,
+    ) -> None:
+        if not self.enabled:
+            return
+
+        run = self.current_run
+
+        if run is None:
+            return
+
+        run.metadata.update(metadata)
+
+    def metric(
+        self,
+        name: str,
+        value: float | int,
+    ) -> None:
+        if not self.enabled:
+            return
+
+        run = self.current_run
+
+        if run is None:
+            return
+
+        run.metrics[name] = value
+
+    def increment(
+        self,
+        name: str,
+        value: float | int = 1,
+    ) -> None:
+        if not self.enabled:
+            return
+
+        run = self.current_run
+
+        if run is None:
+            return
+
+        run.metrics[name] = run.metrics.get(name, 0) + value

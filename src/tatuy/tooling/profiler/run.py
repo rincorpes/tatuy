@@ -20,10 +20,9 @@ class Run:
 
     metadata: dict[str, Any] = field(default_factory=dict)
     metrics: dict[str, float | int] = field(default_factory=dict)
+    events: list[ProfilerEvent] = field(default_factory=list)
 
     children: list[Run] = field(default_factory=list)
-
-    events: list[ProfilerEvent] = field(default_factory=list)
 
     @property
     def duration(self) -> float | None:
@@ -46,4 +45,18 @@ class Run:
         return max(
             0.0,
             duration - children_duration,
+        )
+
+    @property
+    def work_duration(self) -> float | None:
+        self_duration = self.self_duration
+
+        if self_duration is None:
+            return None
+
+        event_duration = sum(event.duration or 0.0 for event in self.events)
+
+        return max(
+            0.0,
+            self_duration - event_duration,
         )

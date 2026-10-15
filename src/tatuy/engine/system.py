@@ -16,6 +16,7 @@ from tatuy.ecs.structural import StructuralCommandBuffer
 from tatuy.ecs.system import BaseSystem, GameSystem, SystemPhase
 from tatuy.features.lifecycle.commit import LifecycleCommitter
 from tatuy.scenes.context import SceneTickContext, TContext
+from tatuy.tooling.profiler import profiler
 
 TContext_contra = TypeVar(
     "TContext_contra",
@@ -52,6 +53,7 @@ class SystemRegistration(Generic[TContext]):
 
             yield phase, self._build_step(
                 callback=self.system.step,
+                phase=phase,
                 order=self._default_order(),
                 sequence=sequence,
             )
@@ -74,6 +76,7 @@ class SystemRegistration(Generic[TContext]):
 
             yield phase, self._build_step(
                 callback=getattr(self.system, method_name),
+                phase=phase,
                 order=self.system.phase_orders.get(
                     phase, self._default_order()
                 ),
@@ -87,35 +90,18 @@ class SystemRegistration(Generic[TContext]):
         self,
         *,
         callback: Callable[[TContext], None],
+        phase: SystemPhase,
         order: int,
         sequence: int,
     ) -> ScheduledStep[TContext]:
         return ScheduledStep(
             owner=self.system,
             callback=callback,
+            phase=phase,
             order=order,
             sequence=sequence,
             active=self.active,
         )
-
-
-@dataclass(frozen=True)
-class ScheduledStep(Generic[TContext]):
-    owner: BaseSystem[TContext] | GameSystem[TContext]
-    callback: Callable[[TContext], None]
-    order: int
-    sequence: int
-    active: Callable[[TContext], bool] | None = None
-
-    def execute(self, ctx: TContext) -> None:
-        if self.active is not None and not self.active(ctx):
-            return
-
-        if self.owner.enabled(ctx):
-            self.callback(ctx)
-
-    def sort_key(self) -> tuple[int, str, int]:
-        return self.order, self.owner.name, self.sequence
 
 
 class StructuralCommitter(Protocol[TContext_contra]):
@@ -163,6 +149,7 @@ class StepDiagnostics:
 class ScheduledStep(Generic[TContext]):
     owner: BaseSystem[TContext] | GameSystem[TContext]
     callback: Callable[[TContext], None]
+    phase: SystemPhase
     order: int
     sequence: int
     active: Callable[[TContext], bool] | None = None
@@ -183,7 +170,11 @@ class ScheduledStep(Generic[TContext]):
         )
         return f"{self.owner.name}.{method}"
 
-    def execute(self, ctx: TContext) -> None:
+    @property
+    def state(self) -> StepState:
+        return self._diagnostics.state
+
+    def _execute(self, ctx: TContext):
         stage = "activation check"
 
         try:
@@ -191,6 +182,10 @@ class ScheduledStep(Generic[TContext]):
                 self._diagnostics.record(
                     StepState.INACTIVE,
                     "activation predicate returned False",
+                )
+
+                profiler.annotate(
+                    state=StepState.INACTIVE.value,
                 )
                 return
 
@@ -201,6 +196,9 @@ class ScheduledStep(Generic[TContext]):
                     StepState.DISABLED,
                     "enabled(ctx) returned False",
                 )
+                profiler.annotate(
+                    state=StepState.DISABLED.value,
+                )
                 return
 
             stage = "callback"
@@ -210,12 +208,33 @@ class ScheduledStep(Generic[TContext]):
 
             self._diagnostics.record(StepState.RAN)
 
+            profiler.annotate(
+                state=StepState.RAN.value,
+            )
+
         except Exception as exc:
             self._diagnostics.record(
                 StepState.FAILED,
                 f"{stage}: {type(exc).__name__}: {exc}",
             )
+            profiler.annotate(
+                state=StepState.FAILED.value,
+                failed_stage=stage,
+                error_type=type(exc).__name__,
+            )
             raise
+
+    def execute(self, ctx: TContext) -> None:
+        with profiler.span(
+            self.name,
+            "system",
+            metadata={
+                "system": self.owner.name,
+                "phase": self.phase.name,
+                "order": self.order,
+            },
+        ):
+            self._execute(ctx)
 
     def debug_line(self) -> str:
         diagnostics = self._diagnostics
@@ -291,11 +310,34 @@ class SystemPipeline(Generic[TContext]):
         phase: SystemPhase,
         ctx: TContext,
     ) -> None:
-        for step in self._steps[phase]:
-            step.execute(ctx)
+        steps = self._steps[phase]
+        with profiler.span(
+            phase.name, "system_pipeline", metadata={"phase": phase.name}
+        ):
+            ran = 0
+            inactive = 0
+            disabled = 0
 
-        if phase in self.COMMIT_PHASES:
-            self._committer.commit(ctx)
+            for step in steps:
+                step.execute(ctx)
+
+                state = step.state
+
+                if state is StepState.RAN:
+                    ran += 1
+                elif state is StepState.INACTIVE:
+                    inactive += 1
+                elif state is StepState.DISABLED:
+                    disabled += 1
+
+                profiler.metric("scheduled_steps", len(steps))
+                profiler.metric("ran_steps", ran)
+                profiler.metric("inactive_steps", inactive)
+                profiler.metric("disabled_steps", disabled)
+
+            if phase in self.COMMIT_PHASES:
+                with profiler.span("structural_commit", "system_pipeline"):
+                    self._committer.commit(ctx)
 
     def _register(
         self,

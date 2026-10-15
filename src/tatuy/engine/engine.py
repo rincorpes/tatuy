@@ -95,16 +95,19 @@ class SceneUpdater:
             )
 
             scene = entry.scene
-            scene.screen_fx.update(dt)
-            scene.camera_fx.update(dt)
+            with profiler.span("screen_fx.update", "scene"):
+                scene.screen_fx.update(dt)
+            with profiler.span("camera_fx.update", "scene"):
+                scene.camera_fx.update(dt)
 
             queue = RenderQueue()
             canvas = QueuedCanvas(queue)
 
-            if hasattr(scene, "intent"):
-                scene.intent.update_from(effective_input)
-            else:
-                print("Not intent defined in Scene.")
+            with profiler.span("intent.update_from_effective_input", "scene"):
+                if hasattr(scene, "intent"):
+                    scene.intent.update_from(effective_input)
+                else:
+                    print("Not intent defined in Scene.")
 
             ctx = scene.create_tick_context(
                 dt=dt,
@@ -112,8 +115,10 @@ class SceneUpdater:
                 scene_context=scene_context,
                 canvas=canvas,
             )
-            scene.on_tick(ctx)
-            scene.system_pipeline.update(ctx)
+            with profiler.span("on_tick", "scene"):
+                scene.on_tick(ctx)
+            with profiler.span("system_pipeline.update", "scene"):
+                scene.system_pipeline.update(ctx)
 
 
 class ScenePresenter:
