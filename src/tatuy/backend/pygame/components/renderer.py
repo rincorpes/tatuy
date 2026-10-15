@@ -14,6 +14,7 @@ from tatuy.geometry.size import Size
 from tatuy.graphics.color import ColorFormatter
 from tatuy.graphics.viewport.transform import ViewportTransform
 from tatuy.math.vec2 import Vec2
+from tatuy.tooling.profiler import profiler
 
 from .window import PygameWindow
 
@@ -480,4 +481,9 @@ class PygameRenderer(BackendComponent[PygameRendererConfig]):
 
     def end_frame(self):
         """End the current rendering frame."""
-        pygame.display.flip()
+        with profiler.span(
+            "pygame.display.flip",
+            "wait",
+            metadata={"kind": "presentation"},
+        ):
+            pygame.display.flip()

@@ -16,6 +16,7 @@ from tatuy.engine.render.pipeline.passes.world import WorldPass
 from tatuy.graphics.render.context import RenderContext
 from tatuy.graphics.render.packets import RenderPacket
 from tatuy.graphics.viewport.state import ViewportState
+from tatuy.tooling.profiler import profiler
 
 
 @dataclass
@@ -82,11 +83,15 @@ class RenderPipeline:
         for p in self.passes:
             if not isinstance(p, EndFramePass):
                 continue
-            p.run(backend, ctx, [])
+
+            with profiler.span("end_frame_pass", "render"):
+                p.run(backend, ctx, [])
+
             ended = True
 
         if not ended:
-            backend.renderer.end_frame()
+            with profiler.span("backend.renderer.end_frame", "render"):
+                backend.renderer.end_frame()
 
     def render_presentation_overlays(
         self, backend: Backend, ctx: RenderContext, packets: list[FramePacket]
