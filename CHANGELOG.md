@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 #### Added
 
 - Integrate profiling enhancements; add span tracking in SceneUpdater and SystemRegistration, and extend Profiler with metrics and annotations
+- Add profiling viewer; implement profile export, snapshot handling, and web interface for visualization
 
 ### - 2026-10-14
 

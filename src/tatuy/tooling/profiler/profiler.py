@@ -10,6 +10,11 @@ from typing import Any
 
 from tatuy.tooling.profiler.event import ProfilerEvent
 from tatuy.tooling.profiler.run import Run
+from tatuy.tooling.profiler.snapshot import (
+    ProfileSnapshot,
+    RunSnapshot,
+    StatsSnapshot,
+)
 
 
 @dataclass(frozen=True)
@@ -547,3 +552,26 @@ class Profiler:
             return
 
         run.metrics[name] = run.metrics.get(name, 0) + value
+
+    def snapshot(self) -> ProfileSnapshot:
+        return ProfileSnapshot(
+            stats=[
+                StatsSnapshot(
+                    path=path,
+                    calls=stats.calls,
+                    total=stats.total,
+                    peak=stats.peak,
+                )
+                for path, stats in self._stats.items()
+            ],
+            recent_runs=[
+                RunSnapshot.from_run(run)
+                for run in self._roots
+                if run.duration is not None
+            ],
+            slow_runs=[
+                RunSnapshot.from_run(run)
+                for run in self._slow_runs
+                if run.duration is not None
+            ],
+        )

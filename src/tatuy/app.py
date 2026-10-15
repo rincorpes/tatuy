@@ -22,6 +22,7 @@ from tatuy.input.service import InputService
 from tatuy.resources import ResourceStore
 from tatuy.settings import SettingsRegistry
 from tatuy.tooling.profiler import profiler
+from tatuy.tooling.profiler.export import export_profile
 from tatuy.tooling.profiler.profiler import ProfilerConfig
 from tatuy.window.service import WindowService
 
@@ -165,8 +166,11 @@ class TatuyApp:
         finally:
             if not profiler.enabled:
                 return
+            snapshot = profiler.snapshot()
 
-        print(profiler.report())
-
-        print("\nSlowest frames")
-        print(profiler.format_slowest("frame", limit=10))
+            export_profile(
+                snapshot,
+                ".tatuy/profiles/latest.json",
+            )
+            print(profiler.report())
+            print("Profile written to profiles/latest.json")
