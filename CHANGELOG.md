@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+### - 2026-10-16
+
+#### aDDED
+
+- Add ParticleEmitResult dataclass and enhance ParticleEmitter with available property
+
 ### - 2026-10-15
 
 #### Added

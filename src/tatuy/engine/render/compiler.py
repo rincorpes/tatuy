@@ -139,22 +139,31 @@ def compile_queue(queue: RenderQueue) -> RenderPacket:
     with profiler.span("queue_items", "compile_queue"):
         queue_items = queue.iter_sorted()
 
-    with profiler.span("prepare_operations", "compile_queue"):
-        prepared_operations = [
-            (
-                operation,
-                (
-                    operation
-                    if isinstance(operation.payload, CustomCommand)
-                    else deepcopy(operation)
-                ),
-            )
-            for operation in queue_items
-        ]
+    profiler.metric("operations", len(queue_items))
+
+    # with profiler.span("prepare_operations", "compile_queue"):
+    #     custom_commands = 0
+    #     copied_operations = 0
+
+    #     prepared_operations = []
+
+    #     for operation in queue_items:
+    #         if isinstance(operation.payload, CustomCommand):
+    #             prepared = operation
+    #             custom_commands += 1
+    #         else:
+    #             prepared = deepcopy(operation)
+    #             copied_operations += 1
+
+    #         prepared_operations.append((operation, prepared))
+
+    #     profiler.metric("operations", len(prepared_operations))
+    #     profiler.metric("copied_operations", copied_operations)
+    #     profiler.metric("custom_commands", custom_commands)
 
     with profiler.span("build_draw_ops", "compile_queue"):
-        for operation, prepared in prepared_operations:
-            draw = partial(execute_draw, prepared)
+        for operation in queue_items:  # prepared_operations:
+            draw = partial(execute_draw, operation)
 
             ops.append(draw)
             pass_ops.setdefault(

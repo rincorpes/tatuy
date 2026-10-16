@@ -70,6 +70,14 @@ class ParticleBurst:
             )
 
 
+@dataclass(slots=True)
+class ParticleEmitResult:
+    requested: int
+    emitted: int
+    available: int
+    entities: tuple[EntityId, ...]
+
+
 class ParticleEmitter:
     def __init__(
         self,
@@ -83,16 +91,25 @@ class ParticleEmitter:
         self._rng = rng or Random()
         self._max_particles = max_particles
 
+    @property
+    def available(self) -> int:
+        active = sum(1 for _ in self._world.query(Particle))
+
+        return max(
+            0,
+            self._max_particles - active,
+        )
+
     def emit(
         self,
         position: Vec2,
         color: Color,
         burst: ParticleBurst,
-    ) -> tuple[EntityId, ...]:
+        available: int | None = None,
+    ) -> ParticleEmitResult:
 
-        available = self._max_particles - sum(
-            1 for _ in self._world.query(Particle)
-        )
+        if available is None:
+            available = self.available
 
         count = min(burst.count, available)
 
@@ -133,4 +150,9 @@ class ParticleEmitter:
             )
             entities.append(entity)
 
-        return tuple(entities)
+        return ParticleEmitResult(
+            requested=burst.count,
+            emitted=count,
+            available=available,
+            entities=tuple(entities),
+        )

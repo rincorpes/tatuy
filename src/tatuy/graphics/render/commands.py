@@ -9,7 +9,7 @@ from tatuy.graphics.color import Color
 from tatuy.math.vec2 import Vec2
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class RectCommand:
     center: Vec2
     size: Size
@@ -17,7 +17,7 @@ class RectCommand:
     radius: float = 0.0
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class LineCommand:
     a: Vec2
     b: Vec2
@@ -27,14 +27,14 @@ class LineCommand:
     dash_gap: float | None = None
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class CircleCommand:
     center: Vec2
     radius: float
     color: Color
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class PolyCommand:
     points: tuple[Vec2, ...]
     fill: Color | None
@@ -43,7 +43,7 @@ class PolyCommand:
     closed: bool = True
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class TextureCommand:
     tex_id: int
     x: float
@@ -53,7 +53,7 @@ class TextureCommand:
     angle_deg: float = 0.0
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class TextCommand:
     x: float
     y: float
@@ -65,7 +65,7 @@ class TextCommand:
     valign: Literal["top", "middle", "bottom"] = "top"
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class CustomCommand:
     op: Callable[[Backend], None]
 

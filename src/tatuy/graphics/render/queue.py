@@ -30,7 +30,7 @@ OperationKind = Literal[
 ]
 
 
-@dataclass
+@dataclass(slots=True)
 class DrawOperation:
     """
     A draw operation for rendering.
