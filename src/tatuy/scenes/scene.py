@@ -6,7 +6,7 @@ from typing import Any, ClassVar, Generic, Iterable, Mapping, Sequence, Type
 from tatuy.ecs.entity.factory import EntityFactory
 from tatuy.ecs.structural import StructuralCommandBuffer
 from tatuy.ecs.system import BaseSystem, GameSystem
-from tatuy.ecs.world import TWorld
+from tatuy.ecs.world import BaseQueryStrategy, SmallestQueryStrategy, TWorld
 from tatuy.engine.system import SystemPipeline, SystemRegistration
 from tatuy.features.bounds.resources import (
     BoundsFrame,
@@ -44,6 +44,8 @@ class Scene(Generic[TWorld, TIntent, TContext]):
     tick_context_type: Type[TContext]
     factory_type: Type[EntityFactory] = EntityFactory
 
+    query_strategy_type: BaseQueryStrategy | None = None
+
     particles: ParticleEmitter
     screen_fx: ScreenEffectStack
     camera_fx: CameraFX
@@ -63,7 +65,11 @@ class Scene(Generic[TWorld, TIntent, TContext]):
     def world(self) -> TWorld:
         if self._world_cache:
             return self._world_cache
-        self._world_cache = self.world_type()
+        if self.query_strategy_type is not None:
+            query_strategy = self.query_strategy_type()
+        else:
+            query_strategy = SmallestQueryStrategy()
+        self._world_cache = self.world_type(query_strategy)
         return self._world_cache
 
     @property

@@ -117,7 +117,13 @@ class SceneUpdater:
             )
             with profiler.span("on_tick", "scene"):
                 scene.on_tick(ctx)
-            with profiler.span("system_pipeline.update", "scene"):
+            with profiler.span(
+                "system_pipeline.update",
+                "scene",
+                metadata={
+                    "query_strategy": ctx.world.query_strategy.name,  # type: ignore
+                },
+            ):
                 scene.system_pipeline.update(ctx)
 
 
@@ -154,7 +160,13 @@ class ScenePresenter:
                 with profiler.span("scene.on_present", "scene"):
                     scene.on_present(ctx)
 
-                with profiler.span("scene.system_pipeline.present", "scene"):
+                with profiler.span(
+                    "scene.system_pipeline.present",
+                    "scene",
+                    metadata={
+                        "query_strategy": ctx.world.query_strategy.name,  # type: ignore
+                    },
+                ):
                     scene.system_pipeline.present(ctx)
 
                 with profiler.span("compile_queue", "render_queue"):

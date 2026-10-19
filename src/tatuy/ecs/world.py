@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Iterator
+from time import perf_counter_ns
 from typing import Any, TypeVar, overload
 
 from tatuy.ecs.component import TComponent
 from tatuy.ecs.entity import EntityId
+from tatuy.tooling.profiler import profiler
 
 TWorld = TypeVar("TWorld", bound="World")
 TResource = TypeVar("TResource")
@@ -32,8 +35,71 @@ C19 = TypeVar("C19")
 C20 = TypeVar("C20")
 
 
+class BaseQueryStrategy(ABC):
+
+    name = "base"
+
+    def _base_index(self, stores: list[dict[EntityId, Any]]) -> int:
+        return min(
+            range(len(stores)),
+            key=lambda index: len(stores[index]),
+        )
+
+    @abstractmethod
+    def execute(
+        self, stores: list[dict[EntityId, Any]]
+    ) -> Iterator[tuple[Any, ...]]: ...
+
+
+class SmallestQueryStrategy(BaseQueryStrategy):
+    name = "smallest"
+
+    def execute(self, stores):
+        base_index = self._base_index(stores)
+
+        base_store = stores[base_index]
+
+        for entity in base_store:
+            if all(
+                entity in store
+                for index, store in enumerate(stores)
+                if index != base_index
+            ):
+                yield entity, *(store[entity] for store in stores)
+
+        return
+
+
+class IntersectionQueryStrategy(BaseQueryStrategy):
+    name = "intersection"
+
+    def execute(self, stores):
+        base_index = self._base_index(stores)
+        base_store = stores[base_index]
+
+        entity_ids = set(base_store)
+
+        for index, store in enumerate(stores):
+            if index == base_index:
+                continue
+
+            entity_ids.intersection_update(store)
+
+            if not entity_ids:
+                return
+
+        # Preserve the exact same entity order as SmallestQueryStrategy.
+        for entity in base_store:
+            if entity not in entity_ids:
+                continue
+
+            yield entity, *(store[entity] for store in stores)
+
+
 class World:
-    def __init__(self) -> None:
+    def __init__(
+        self, query_strategy: BaseQueryStrategy | None = None
+    ) -> None:
         self._next_entity_id = 1
 
         self._entities: set[EntityId] = set()
@@ -43,6 +109,12 @@ class World:
             type,
             dict[EntityId, Any],
         ] = defaultdict(dict)
+
+        self.query_strategy = query_strategy or SmallestQueryStrategy()
+
+    @property
+    def query_strategy_name(self) -> str:
+        return self.query_strategy.name
 
     @property
     def entities(self) -> set[EntityId]:
@@ -701,6 +773,16 @@ class World:
         if not component_types:
             return
 
+        # Fast path shared by both implementations.
+        if len(component_types) == 1:
+            store = self._components.get(component_types[0])
+
+            if not store:
+                return
+
+            yield from store.items()
+            return
+
         stores = [
             self._components.get(component_type, {})
             for component_type in component_types
@@ -709,17 +791,83 @@ class World:
         if any(not store for store in stores):
             return
 
-        base_index = min(
-            range(len(stores)),
-            key=lambda index: len(stores[index]),
-        )
+        yield from self.query_strategy.execute(stores or [])
 
-        base_store = stores[base_index]
+    def legacy_query(
+        self, *component_types: type
+    ) -> Iterator[tuple[Any, ...]]:
+        try:
+            if not component_types:
+                return
 
-        for entity in base_store:
-            if all(
-                entity in store
-                for index, store in enumerate(stores)
-                if index != base_index
-            ):
-                yield entity, *(store[entity] for store in stores)
+            if len(component_types) == 1:
+                store = self._components.get(component_types[0])
+
+                if not store:
+                    return
+
+                for entity, component in store.items():
+                    yield entity, component
+
+                return
+
+            query_ns = 0
+            candidates = 0
+            matches = 0
+
+            start = perf_counter_ns()
+
+            stores = [
+                self._components.get(component_type, {})
+                for component_type in component_types
+            ]
+
+            if any(not store for store in stores):
+                query_ns += perf_counter_ns() - start
+
+                profiler.increment("world.query.calls")
+                profiler.increment("world.query.ns", query_ns)
+                return
+
+            base_index = min(
+                range(len(stores)),
+                key=lambda index: len(stores[index]),
+            )
+
+            base_store = stores[base_index]
+
+            query_ns += perf_counter_ns() - start
+
+            for entity in base_store:
+                start = perf_counter_ns()
+
+                candidates += 1
+
+                matched = all(
+                    entity in store
+                    for index, store in enumerate(stores)
+                    if index != base_index
+                )
+
+                if not matched:
+                    query_ns += perf_counter_ns() - start
+                    continue
+
+                row = (
+                    entity,
+                    *(store[entity] for store in stores),
+                )
+
+                matches += 1
+                query_ns += perf_counter_ns() - start
+
+                yield row
+        finally:
+            profiler.increment("world.query.calls")
+            profiler.increment("world.query.ns", query_ns)
+            profiler.increment(
+                "world.query.components",
+                len(component_types),
+            )
+            profiler.increment("world.query.candidates", candidates)
+            profiler.increment("world.query.matches", matches)

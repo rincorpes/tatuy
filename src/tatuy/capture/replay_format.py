@@ -89,7 +89,7 @@ class ReplayReader:
                     f"Unsupported replay version: {header.version}"
                 )
 
-            if header.fps <= 0:
+            if header.fps < 0:
                 raise ValueError("Replay fps must be positive")
 
             if header.virtual_w <= 0 or header.virtual_h <= 0:
