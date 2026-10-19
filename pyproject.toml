@@ -27,7 +27,9 @@ dependencies = [
     "relict (>=0.1.1,<0.2.0)",
     "pygame (>=2.6.1,<3.0.0)",
     "pillow (>=12.3.0,<13.0.0)",
-    "rincorpes-limen (>=0.1.1,<0.2.0)"
+    "rincorpes-limen (>=0.1.1,<0.2.0)",
+    "mcp[cli] (>=2.3.0,<3.0.0)",
+    "python-dotenv (>=1.2.4,<2.0.0)"
 ]
 
 
@@ -43,6 +45,7 @@ dev = [
 
 [tool.poetry]
 packages = [
+  { include = "tatuy_mcp", from = "src" },
   { include = "tatuy_cli", from = "src" },
   { include = "tatuy", from = "src" },
 ]
@@ -58,7 +61,7 @@ extend-exclude = '''/(
 [tool.isort]
 profile = "black"
 line_length = 79
-known_tatuy = ["tatuy", "tatuy_cli"]
+known_tatuy = ["tatuy", "tatuy_cli", "tatuy_mcp"]
 sections = [
     "FUTURE",
     "STDLIB",
@@ -72,7 +75,7 @@ skip = [".venv", "venv", "env", "build", "dist", "docs", "tests"]
 
 [tool.mypy]
 python_version = "3.10"
-packages = ["tatuy", "tatuy_cli"]
+packages = ["tatuy", "tatuy_cli", "tatuy_mcp"]
 ignore_missing_imports = true
 strict = false
 

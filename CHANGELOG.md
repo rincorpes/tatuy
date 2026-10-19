@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Integrate profiler spans in bounds and lifecycle systems for performance tracking
 - Enhance profiling in entity creation and lifecycle spawning processes
 - Introduce query strategies for improved entity querying in World and Scene classes
+- Add Tatuy MCP server for ChatGPT integration
 
 ### - 2026-10-16
 
