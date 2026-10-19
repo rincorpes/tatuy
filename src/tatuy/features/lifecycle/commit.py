@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+from time import perf_counter
 from typing import Generic
 
 from tatuy.ecs.entity.factory import EntityFactory
@@ -12,6 +14,12 @@ from tatuy.features.lifecycle.resources import (
     SpawnRequest,
 )
 from tatuy.scenes.context import SceneTickContext, TContext, TIntent
+from tatuy.tooling.profiler import profiler
+
+
+@dataclass
+class SpawnResponse:
+    factory_time: float
 
 
 class LifecycleCommitter(Generic[TContext]):
@@ -22,24 +30,35 @@ class LifecycleCommitter(Generic[TContext]):
         if not ctx.world.has_resource(LifecycleQueue):
             return
 
-        queue = ctx.world.get_resource(LifecycleQueue)
-        batch = queue.take_ready_batch()
+        with profiler.span("lifecycle.take_batch", "lifecycle"):
+            queue = ctx.world.get_resource(LifecycleQueue)
+            batch = queue.take_ready_batch()
 
-        for request in batch.despawns:
-            self._despawn(ctx, queue, request)
+        profiler.metric("spawns", len(batch.spawns))
+        profiler.metric("despawns", len(batch.despawns))
+
+        if batch.despawns:
+            with profiler.span("lifecycle.despawns", "lifecycle"):
+                for despawn_request in batch.despawns:
+                    self._despawn(ctx, queue, despawn_request)
 
         if batch.spawns:
             registry = ctx.world.get_resource(SpawnRegistry)
 
-            for request in batch.spawns:
-                self._spawn(ctx, registry, request)
+            with profiler.span("lifecycle.spawns", "lifecycle"):
+                for spawn_request in batch.spawns:
+                    result = self._spawn(ctx, registry, spawn_request)
+                    profiler.metric("factory_time", result.factory_time * 1000)
 
     def _spawn(
         self,
         ctx: SceneTickContext[TWorld, TIntent],
         registry: SpawnRegistry,
         request: SpawnRequest,
-    ) -> None:
+    ) -> SpawnResponse:
+        start = perf_counter()
+        factory_time = 0.0
+
         definition = registry.definitions.get(request.definition)
 
         if definition is None:
@@ -54,6 +73,7 @@ class LifecycleCommitter(Generic[TContext]):
             definition.blueprint,
             **kwargs,
         )
+        factory_time += perf_counter() - start
 
         ctx.world.add_component(
             entity,
@@ -71,6 +91,8 @@ class LifecycleCommitter(Generic[TContext]):
                 entity,
                 Lifetime(remaining=definition.lifetime),
             )
+
+        return SpawnResponse(factory_time)
 
     def _despawn(
         self,

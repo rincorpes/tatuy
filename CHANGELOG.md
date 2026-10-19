@@ -7,9 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+### - 2026-10-19
+
+#### Added
+
+- Integrate profiler spans in bounds and lifecycle systems for performance tracking
+
 ### - 2026-10-16
 
-#### aDDED
+#### Added
 
 - Add ParticleEmitResult dataclass and enhance ParticleEmitter with available property
 

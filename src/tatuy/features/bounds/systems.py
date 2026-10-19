@@ -27,6 +27,7 @@ from tatuy.geometry.bounds import (
 )
 from tatuy.graphics.bounds_border import BoundsBorderRenderer
 from tatuy.scenes.context import SceneTickContext, TContext, TIntent
+from tatuy.tooling.profiler import profiler
 
 
 class BoundsConstraintSystem(BaseSystem[TContext]):
@@ -151,11 +152,12 @@ class WorldBoundsRenderSystem(BaseSystem[TContext]):
         self,
         ctx: SceneTickContext[TWorld, TIntent],
     ) -> None:
-        bounds = ctx.world.get_resource(WorldBounds)
-        border = ctx.world.get_resource(WorldBoundsBorder)
+        with profiler.span("bounds.render", "bounds"):
+            bounds = ctx.world.get_resource(WorldBounds)
+            border = ctx.world.get_resource(WorldBoundsBorder)
 
-        self._renderer.submit(
-            bounds.bounds,
-            border,
-            ctx.render_queue,
-        )
+            self._renderer.submit(
+                bounds.bounds,
+                border,
+                ctx.render_queue,
+            )
