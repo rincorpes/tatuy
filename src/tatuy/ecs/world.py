@@ -706,9 +706,20 @@ class World:
             for component_type in component_types
         ]
 
-        entity_ids = set(stores[0])
-        for store in stores[1:]:
-            entity_ids.intersection_update(store)
+        if any(not store for store in stores):
+            return
 
-        for entity in entity_ids:
-            yield entity, *(store[entity] for store in stores)
+        base_index = min(
+            range(len(stores)),
+            key=lambda index: len(stores[index]),
+        )
+
+        base_store = stores[base_index]
+
+        for entity in base_store:
+            if all(
+                entity in store
+                for index, store in enumerate(stores)
+                if index != base_index
+            ):
+                yield entity, *(store[entity] for store in stores)

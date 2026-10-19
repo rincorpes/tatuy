@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 #### Added
 
 - Integrate profiler spans in bounds and lifecycle systems for performance tracking
+- Enhance profiling in entity creation and lifecycle spawning processes
 
 ### - 2026-10-16
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from dataclasses import dataclass, field
+from time import perf_counter_ns
 from typing import Any, Callable, ClassVar, Generic, Iterable, TypeVar, cast
 
 from onomasticon import ImplementationRegistry
@@ -27,6 +28,7 @@ from tatuy.features.visual.components import (
 from tatuy.geometry.size import Size
 from tatuy.graphics.color import Color
 from tatuy.math.vec2 import Vec2
+from tatuy.tooling.profiler import profiler
 
 
 class EntityBlueprint(
@@ -40,10 +42,26 @@ class EntityBlueprint(
         world: TWorld,
         **kwargs,
     ) -> EntityId:
+        start = perf_counter_ns()
         entity = world.create_entity()
+        profiler.increment(
+            "factory.entity_create_ns",
+            perf_counter_ns() - start,
+        )
 
+        start = perf_counter_ns()
         self.build(world, entity, **kwargs)
+        profiler.increment(
+            "factory.build_ns",
+            perf_counter_ns() - start,
+        )
+
+        start = perf_counter_ns()
         self._build_identity(world, entity)
+        profiler.increment(
+            "factory.identity_ns",
+            perf_counter_ns() - start,
+        )
 
         return entity
 
@@ -85,25 +103,56 @@ class TypedEntityBlueprint(
         entity: EntityId,
         **kwargs: Any,
     ) -> None:
+        start = perf_counter_ns()
         attrs = cast(
             TAttrs,
             self.attrs_type(**kwargs),
         )
+        profiler.increment(
+            "factory.attrs_ns",
+            perf_counter_ns() - start,
+        )
 
+        start = perf_counter_ns()
         self.build_attrs(
             world,
             entity,
             attrs,
         )
+        profiler.increment(
+            "factory.build_attrs_ns",
+            perf_counter_ns() - start,
+        )
 
+        start = perf_counter_ns()
         for component in self.compose(attrs):  # type: ignore
             world.add_component(entity, component)
+        profiler.increment(
+            "factory.compose_ns",
+            perf_counter_ns() - start,
+        )
 
-        # pylint: disable=assignment-from-none
+        start = perf_counter_ns()
+
         collider = self.get_collider(attrs)
+        profiler.increment(
+            "factory.collider_create_ns",
+            perf_counter_ns() - start,
+        )
+
         if collider:
+            start = perf_counter_ns()
+
             if not world.has_component(entity, type(collider)):
                 world.add_component(entity, collider)
+
+            profiler.increment(
+                "factory.collider_add_ns",
+                perf_counter_ns() - start,
+            )
+
+            start = perf_counter_ns()
+
             if not world.has_component(entity, CollisionBody):
                 world.add_component(
                     entity,
@@ -112,6 +161,11 @@ class TypedEntityBlueprint(
                         restitution=attrs.collision_body_restitution,
                     ),
                 )
+
+            profiler.increment(
+                "factory.body_add_ns",
+                perf_counter_ns() - start,
+            )
 
     def build_attrs(
         self,
@@ -337,6 +391,7 @@ class EntityFactory:
         type[EntityBlueprint],
     ] = {}
     _blueprints: ClassVar[type[_BlueprintRegistry]] = _BlueprintRegistry
+    _blueprint_instances: dict[str, EntityBlueprint]
 
     def __init_subclass__(cls, **kwargs) -> None:
         super().__init_subclass__(**kwargs)
@@ -351,6 +406,7 @@ class EntityFactory:
         world: World,
     ) -> None:
         self._world = world
+        self._blueprint_instances = {}
 
     @classmethod
     def blueprint(
@@ -379,12 +435,16 @@ class EntityFactory:
         name: str,
         **kwargs,
     ) -> EntityId:
-        blueprint_type = self.get_blueprint(name)
+        blueprint = self._blueprint_instances.get(name)
 
-        if blueprint_type is None:
-            raise ValueError(f"Unknown entity blueprint: {name}")
+        if blueprint is None:
+            blueprint_type = self.get_blueprint(name)
 
-        blueprint = blueprint_type()
+            if blueprint_type is None:
+                raise ValueError(f"Unknown entity blueprint: {name}")
+
+            blueprint = blueprint_type()
+            self._blueprint_instances[name] = blueprint
 
         return blueprint.create(
             self._world,

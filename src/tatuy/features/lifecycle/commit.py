@@ -19,7 +19,9 @@ from tatuy.tooling.profiler import profiler
 
 @dataclass
 class SpawnResponse:
+    prepare_time: float
     factory_time: float
+    metadata_time: float
 
 
 class LifecycleCommitter(Generic[TContext]):
@@ -45,10 +47,79 @@ class LifecycleCommitter(Generic[TContext]):
         if batch.spawns:
             registry = ctx.world.get_resource(SpawnRegistry)
 
+            prepare_total = 0.0
+            factory_total = 0.0
+            metadata_total = 0.0
+
+            prepare_max = 0.0
+            factory_max = 0.0
+            metadata_max = 0.0
+
             with profiler.span("lifecycle.spawns", "lifecycle"):
                 for spawn_request in batch.spawns:
-                    result = self._spawn(ctx, registry, spawn_request)
-                    profiler.metric("factory_time", result.factory_time * 1000)
+                    result = self._spawn(
+                        ctx,
+                        registry,
+                        spawn_request,
+                    )
+
+                    prepare_total += result.prepare_time
+                    factory_total += result.factory_time
+                    metadata_total += result.metadata_time
+
+                    prepare_max = max(
+                        prepare_max,
+                        result.prepare_time,
+                    )
+                    factory_max = max(
+                        factory_max,
+                        result.factory_time,
+                    )
+                    metadata_max = max(
+                        metadata_max,
+                        result.metadata_time,
+                    )
+
+            count = len(batch.spawns)
+
+            profiler.metric(
+                "spawn.prepare_total_ms",
+                prepare_total * 1000,
+            )
+            profiler.metric(
+                "spawn.prepare_avg_us",
+                (prepare_total / count) * 1_000_000,
+            )
+            profiler.metric(
+                "spawn.prepare_max_us",
+                prepare_max * 1_000_000,
+            )
+
+            profiler.metric(
+                "spawn.factory_total_ms",
+                factory_total * 1000,
+            )
+            profiler.metric(
+                "spawn.factory_avg_us",
+                (factory_total / count) * 1_000_000,
+            )
+            profiler.metric(
+                "spawn.factory_max_us",
+                factory_max * 1_000_000,
+            )
+
+            profiler.metric(
+                "spawn.metadata_total_ms",
+                metadata_total * 1000,
+            )
+            profiler.metric(
+                "spawn.metadata_avg_us",
+                (metadata_total / count) * 1_000_000,
+            )
+            profiler.metric(
+                "spawn.metadata_max_us",
+                metadata_max * 1_000_000,
+            )
 
     def _spawn(
         self,
@@ -56,24 +127,43 @@ class LifecycleCommitter(Generic[TContext]):
         registry: SpawnRegistry,
         request: SpawnRequest,
     ) -> SpawnResponse:
+        # ---------------------------------------------------------
+        # 1. PREPARE
+        # Definition lookup + kwargs construction.
+        # ---------------------------------------------------------
+
         start = perf_counter()
-        factory_time = 0.0
 
         definition = registry.definitions.get(request.definition)
 
         if definition is None:
-            raise ValueError(
-                f"Unknown spawn definition: " f"{request.definition}"
-            )
+            raise ValueError(f"Unknown spawn definition: {request.definition}")
 
         kwargs = dict(definition.make_kwargs())
         kwargs.update(request.kwargs)
+
+        prepare_time = perf_counter() - start
+
+        # ---------------------------------------------------------
+        # 2. FACTORY
+        # Actual entity/blueprint creation.
+        # ---------------------------------------------------------
+
+        start = perf_counter()
 
         entity = self._factory.create(
             definition.blueprint,
             **kwargs,
         )
-        factory_time += perf_counter() - start
+
+        factory_time = perf_counter() - start
+
+        # ---------------------------------------------------------
+        # 3. METADATA
+        # Lifecycle-specific components added after creation.
+        # ---------------------------------------------------------
+
+        start = perf_counter()
 
         ctx.world.add_component(
             entity,
@@ -92,7 +182,13 @@ class LifecycleCommitter(Generic[TContext]):
                 Lifetime(remaining=definition.lifetime),
             )
 
-        return SpawnResponse(factory_time)
+        metadata_time = perf_counter() - start
+
+        return SpawnResponse(
+            prepare_time=prepare_time,
+            factory_time=factory_time,
+            metadata_time=metadata_time,
+        )
 
     def _despawn(
         self,
