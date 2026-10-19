@@ -3,14 +3,12 @@ from __future__ import annotations
 import sys
 import webbrowser
 
-from tatuy.tooling.profiler.viewer.server import serve
+from tatuy_profiler.server import serve
 
 
 def main() -> None:
     if len(sys.argv) != 2:
-        raise SystemExit(
-            "Usage: python -m " "tatuy.tooling.profiler.viewer <profile.json>"
-        )
+        raise SystemExit("Usage: python -m " "tatuy_profiler <profile.json>")
 
     profile_path = sys.argv[1]
 

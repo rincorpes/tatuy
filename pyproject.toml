@@ -46,6 +46,7 @@ dev = [
 [tool.poetry]
 packages = [
   { include = "tatuy_mcp", from = "src" },
+  { include = "tatuy_profiler", from = "src" },
   { include = "tatuy_cli", from = "src" },
   { include = "tatuy", from = "src" },
 ]
@@ -61,7 +62,7 @@ extend-exclude = '''/(
 [tool.isort]
 profile = "black"
 line_length = 79
-known_tatuy = ["tatuy", "tatuy_cli", "tatuy_mcp"]
+known_tatuy = ["tatuy", "tatuy_cli", "tatuy_mcp", "tatuy_profiler"]
 sections = [
     "FUTURE",
     "STDLIB",
@@ -75,7 +76,7 @@ skip = [".venv", "venv", "env", "build", "dist", "docs", "tests"]
 
 [tool.mypy]
 python_version = "3.10"
-packages = ["tatuy", "tatuy_cli", "tatuy_mcp"]
+packages = ["tatuy", "tatuy_cli", "tatuy_mcp", "tatuy_profiler"]
 ignore_missing_imports = true
 strict = false
 

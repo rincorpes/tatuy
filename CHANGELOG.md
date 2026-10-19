@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Enhance profiling in entity creation and lifecycle spawning processes
 - Introduce query strategies for improved entity querying in World and Scene classes
 - Add Tatuy MCP server for ChatGPT integration
+- Add Tatuy Profiler module with server and viewer components
 
 ### - 2026-10-16
 
