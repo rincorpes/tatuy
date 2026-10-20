@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 - Add AGENTS.md and SKILL.md for repository guidance and development collaboration
 
+#### Changed
+
+- Revise README.md for clarity and detail on engine architecture and features
+
 ### - 2026-10-19
 
 #### Added
