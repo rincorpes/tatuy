@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+### - 2026-10-20
+
+#### Added
+
+- Add AGENTS.md and SKILL.md for repository guidance and development collaboration
+
 ### - 2026-10-19
 
 #### Added
