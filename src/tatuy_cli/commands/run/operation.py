@@ -68,7 +68,6 @@ class TargetResolver:
                 f"Invalid target '{name}'. Use dotted names without numeric "
                 "prefixes, for example movement.platformer."
             )
-        print(parts)
         root_name = CATEGORY_ROOTS[category]
         categories = self._children(self.root, allow_unnumbered=True)
         directory = categories.get(root_name)

@@ -60,50 +60,33 @@ def render_readme(
     description = description.strip() or "TODO: describe this project."
 
     if standalone:
-        running = dedent(
-            f"""\
-            Install dependencies:
-
-            ```bash
-            poetry install
-            ```
-
-            Run the game:
-
-            ```bash
-            {run_command}
-            ```
-            """
+        running = (
+            "Install dependencies:\n\n"
+            "```bash\n"
+            "poetry install\n"
+            "```\n\n"
+            "Run the game:\n\n"
+            "```bash\n"
+            f"{run_command}\n"
+            "```"
         )
     else:
-        running = dedent(
-            f"""\
-            From the Tatuy repository root:
-
-            ```bash
-            {run_command}
-            ```
-            """
+        running = (
+            "From the Tatuy repository root:\n\n"
+            "```bash\n"
+            f"{run_command}\n"
+            "```"
         )
 
-    return dedent(
-        f"""\
-        # {title}
-
-        {description}
-
-        ## Goal
-
-        TODO
-
-        ## Notes
-
-        TODO
-
-        ## Running
-
-        {running.rstrip()}
-        """
+    return (
+        f"# {title}\n\n"
+        f"{description}\n\n"
+        "## Goal\n\n"
+        "TODO\n\n"
+        "## Notes\n\n"
+        "TODO\n\n"
+        "## Running\n\n"
+        f"{running}\n"
     )
 
 

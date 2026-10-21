@@ -2,18 +2,47 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import Literal
 
 from dotenv import load_dotenv
 from mcp.server import MCPServer
+
+from tatuy_cli.scaffolding.model import CreateTargetRequest
+from tatuy_cli.scaffolding.service import TargetScaffolder
+from tatuy_mcp.projects import ProjectEntry, discover_projects
 
 load_dotenv()
 
 mcp = MCPServer("Game Development")
 
-PROJECTS: dict[str, Path] = {
-    "engine": Path(os.getenv("TATUY_ENGINE_PATH", "path/to/engine")),
-    "game": Path(os.getenv("TATUY_GAME_PATH", "path/to/game")),
-}
+TargetKind = Literal[
+    "experiment",
+    "game",
+    "project",
+]
+
+ProjectTatuySource = Literal[
+    "local",
+    "pypi",
+]
+
+ENGINE_ROOT = Path(
+    os.getenv(
+        "TATUY_ENGINE_PATH",
+        "path/to/engine",
+    )
+)
+
+PROJECTS_ROOT = Path(
+    os.getenv(
+        "TATUY_PROJECTS_PATH",
+        str(ENGINE_ROOT.parent),
+    )
+)
+
+PROJECTS: dict[str, Path] = {}
+PROJECT_ENTRIES: dict[str, ProjectEntry] = {}
+
 BLOCKED_DIRECTORIES = {
     ".git",
     ".venv",
@@ -37,6 +66,21 @@ BLOCKED_EXTENSIONS = {
 }
 
 
+def refresh_projects() -> list[ProjectEntry]:
+    entries = discover_projects(
+        engine_root=ENGINE_ROOT,
+        projects_root=PROJECTS_ROOT,
+    )
+
+    PROJECTS.clear()
+    PROJECTS.update({entry.key: entry.path for entry in entries})
+
+    PROJECT_ENTRIES.clear()
+    PROJECT_ENTRIES.update({entry.key: entry for entry in entries})
+
+    return entries
+
+
 def check_access(relative_path: Path) -> None:
     """Reject paths excluded from the development tools."""
     parts = [part.casefold() for part in relative_path.parts]
@@ -56,13 +100,18 @@ def check_access(relative_path: Path) -> None:
 @mcp.tool()
 def list_projects() -> list[dict[str, str | bool]]:
     """List configured engine and game projects and their availability."""
+
+    entries = refresh_projects()
+
     return [
         {
-            "name": name,
-            "path": str(root),
-            "available": root.is_dir(),
+            "key": entry.key,
+            "name": entry.name,
+            "kind": entry.kind,
+            "path": str(entry.path),
+            "available": entry.path.is_dir(),
         }
-        for name, root in PROJECTS.items()
+        for entry in entries
     ]
 
 
@@ -71,6 +120,9 @@ def resolve_project_path(
     relative_path: str = ".",
 ) -> Path:
     """Resolve an existing, permitted path inside a project."""
+
+    refresh_projects()
+
     if project not in PROJECTS:
         raise ValueError(f"Unknown project: {project}")
 
@@ -329,6 +381,69 @@ def search_code(
         "scanned_files": scanned_files,
         "skipped_files": skipped_files,
         "truncated": truncated,
+    }
+
+
+@mcp.tool()
+def create_tatuy_target(
+    kind: TargetKind,
+    name: str,
+    description: str = "",
+    tags: list[str] | None = None,
+    tatuy_source: ProjectTatuySource | None = None,
+    tatuy_version: str | None = None,
+) -> dict[str, object]:
+    """
+    Create a Tatuy experiment, reference game, or standalone project.
+
+    Experiments are created under examples/experiments and always use
+    the current Tatuy workspace.
+
+    Games are created under examples/games and always use the current
+    Tatuy workspace.
+
+    Standalone projects are created inside TATUY_PROJECTS_PATH and may
+    use either the local Tatuy repository or a PyPI release.
+    """
+
+    refresh_projects()
+
+    expected_key = f"{kind}:{name}"
+
+    if expected_key in PROJECTS:
+        raise ValueError(f"Target is already registered: {expected_key}")
+
+    if kind in {"experiment", "game"}:
+        tatuy_source = "workspace"
+        tatuy_version = None
+
+    request = CreateTargetRequest(
+        kind=kind,
+        name=name,
+        description=description,
+        tags=tuple(tags or ()),
+        tatuy_source=tatuy_source,
+        tatuy_version=tatuy_version,
+    )
+
+    result = TargetScaffolder(
+        engine_root=ENGINE_ROOT.resolve(strict=True),
+        projects_root=PROJECTS_ROOT,
+        restrict_projects_to_root=True,
+    ).create(request)
+
+    refresh_projects()
+
+    key = f"{result.kind}:{result.name}"
+
+    return {
+        "created": True,
+        "key": key,
+        "kind": result.kind,
+        "name": result.name,
+        "path": str(result.path),
+        "manifest": str(result.manifest_path),
+        "run_command": result.run_command,
     }
 
 
