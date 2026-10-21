@@ -1,29 +1,66 @@
-# Tatuy Docs
+# Tatuy Documentation
 
-1. [Backend](./001_backend/index.md)
-    1. [Architecture](./001_backend/architecture.md)
-    2. [Config](./001_backend/config.md)
-    3. [Lifecycle](./001_backend/lifecycle.md)
-    4. [Registry](./001_backend/registry.md)
-    5. [Factory](./001_backend/factory.md)
-    6. [Capabilities](./001_backend/capabilities/index.md)
-        1. [Window](./001_backend/capabilities/window.md)
-        2. [Events](./001_backend/capabilities/events.md)
-        3. [Input](./001_backend/capabilities/input.md)
-        4. [Renderer](./001_backend/capabilities/renderer/index.md)
-            1. [Shapes](./001_backend/capabilities/renderer/shapes.md)
-            2. [Text](./001_backend/capabilities/renderer/text.md)
-            3. [Textures](./001_backend/capabilities/renderer/textures.md)
-            4. [Clipping](./001_backend/capabilities/renderer/clipping.md)
-            5. [Coordinates](./001_backend/capabilities/renderer/coordinates.md)
-        5. [Audio](./001_backend/capabilities/audio.md)
-        6. [Capture](./001_backend/capabilities/capture.md)
-    7. [Implementations](./001_backend/implementations/index.md)
-        1. [Pygame](./001_backend/implementations/pygame.md)
-    8. [Development](./001_backend/development.md)
-    9. [Examples](./001_backend/examples.md)
-2. [Running Tatuy](./002_running/index.md)
-    1. [Running Examples](./002_running/examples.md)
-3. [Scenes](./003_scenes/index.md)
-    1. [Scene Examples](./003_scenes/examples.md)
-4. [Make a Moving Rectangle](./tutorials/moving_rectangle.md)
+Tatuy is a Python-first 2D game engine built around scenes, ECS, explicit system scheduling, reusable features, and a replaceable backend boundary.
+
+The documentation is organized around **what you are trying to accomplish**, not around the order in which Tatuy's source code was implemented.
+
+## Choose your path
+
+### Understand the project
+
+If you are exploring Tatuy, reviewing the repository, or evaluating its architecture:
+
+1. [Why Tatuy?](overview/why-tatuy.md)
+2. [Architecture at a glance](overview/architecture-at-a-glance.md)
+3. [Features](overview/features.md)
+4. [Roadmap](overview/roadmap.md)
+
+### Build a game
+
+1. [Installation](getting-started/installation.md)
+2. [Your first game](getting-started/first-game.md)
+3. [Project structure](getting-started/project-structure.md)
+4. [Learn Tatuy](learn/index.md)
+
+### Solve a specific task
+
+Use [Guides](guides/index.md).
+
+### Look up exact behavior
+
+Use [Reference](reference/index.md).
+
+### Understand the architecture
+
+Use [Architecture](architecture/index.md).
+
+### Work on Tatuy itself
+
+Use [Internals](internals/index.md), then inspect the implementation and nearby examples.
+
+### Use an AI coding assistant
+
+Read:
+
+1. [`AGENTS.md`](../AGENTS.md)
+2. [AI development guide](ai/index.md)
+3. [Architecture map](ai/architecture-map.md)
+4. [Architectural invariants](ai/invariants.md)
+
+## Documentation types
+
+| Area | Purpose |
+| --- | --- |
+| `overview/` | Explain Tatuy quickly |
+| `getting-started/` | Get something running |
+| `learn/` | Teach concepts |
+| `guides/` | Complete a task |
+| `reference/` | State current contracts |
+| `architecture/` | Explain design decisions |
+| `internals/` | Explain implementation |
+| `examples/` | Find executable demonstrations |
+| `ai/` | Help agents navigate the project |
+
+When documentation and current code disagree, inspect the implementation and update stale documentation.
+
+---

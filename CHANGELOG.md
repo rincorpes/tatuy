@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+### - 2026-10-21
+
+#### Added
+
+- Add comprehensive documentation for Tatuy engine internals and features
+
 ### - 2026-10-20
 
 #### Added
