@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 #### Added
 
 - Add comprehensive documentation for Tatuy engine internals and features
+- Implement create command operation with input handling and scaffolding
 
 ### - 2026-10-20
 

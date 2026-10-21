@@ -7,6 +7,7 @@ from limen.app import BaseCLIApp
 from limen.config import CLIConfig
 from limen.runner import run_cli
 
+from tatuy_cli.commands.create.commands import BaseCreateCommand
 from tatuy_cli.commands.run.commands import BaseRunCommand
 
 from . import commands  # pylint: disable=unused-import
@@ -29,6 +30,28 @@ class TatuyCLI(BaseCLIApp):
                     help=argument.help_text,
                 )
             return
+
+        if issubclass(command_cls, BaseCreateCommand):
+            for argument in command_cls.define_arguments():
+                if argument.name == "name":
+                    command_parser.add_argument(
+                        argument.name,
+                        type=argument.data_type,
+                        help=argument.help_text,
+                    )
+
+                    continue
+
+                command_parser.add_argument(
+                    f"--{argument.name.replace('_', '-')}",
+                    dest=argument.name,
+                    type=argument.data_type,
+                    required=argument.required,
+                    help=argument.help_text,
+                )
+
+            return
+
         super().define_command_arguments(command_parser, command_cls)
 
 

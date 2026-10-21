@@ -38,7 +38,7 @@ class BaseRunCommand(BaseCommand):
         return self.input_class(name=kwargs["name"], category=self.category)
 
 
-@CommandRegistry.implementation("example")
+@CommandRegistry.implementation("run.example")
 class RunExampleCommand(BaseRunCommand):
     abstract = False
     name = "example"
@@ -46,7 +46,7 @@ class RunExampleCommand(BaseRunCommand):
     summary = "Run an example from examples/fundamentals."
 
 
-@CommandRegistry.implementation("experiment")
+@CommandRegistry.implementation("run.experiment")
 class RunExperimentCommand(BaseRunCommand):
     abstract = False
     name = "experiment"
@@ -54,7 +54,7 @@ class RunExperimentCommand(BaseRunCommand):
     summary = "Run a gameplay experiment from examples/experiments."
 
 
-@CommandRegistry.implementation("game")
+@CommandRegistry.implementation("run.game")
 class RunGameCommand(BaseRunCommand):
     abstract = False
     name = "game"
