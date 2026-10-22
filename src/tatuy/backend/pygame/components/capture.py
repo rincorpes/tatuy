@@ -20,7 +20,7 @@ class PygameCapture(BackendComponent[PygameCaptureConfig]):
         super().__init__(config)
         self._window = window
 
-    def bmp(self, path: str) -> bool:
+    def bmp(self, path: str | None = None) -> bool:
         """
         Capture the current screen and save it as a BMP file.
         """

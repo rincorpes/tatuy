@@ -6,7 +6,9 @@ services.
 
 ## Pygame operations
 
-`bmp(path)` returns false for an empty path. Otherwise it calls
+`bmp(path: str | None = None)` returns false when the path is omitted,
+`None`, or empty, without accessing the screen or saving a file.
+Otherwise it calls
 `pygame.image.save(window.screen, str(path))` and returns true.
 Pygame chooses the encoding from the filename, so this method's name does
 not force BMP when another extension is supplied. Save errors propagate;
@@ -17,14 +19,7 @@ per pixel in B, G, R, A order, with `width * height * 4` bytes.
 This matches the capture worker's BGRA decoding. The source docstrings
 currently say ARGB in places; the actual export format is BGRA.
 
-Both operations need an available screen surface. They do not check
+Saving to a nonempty path and extracting raw bytes need an available screen
+surface. They do not check
 `CaptureConfig.enabled`, `directory`, or `format`.
-
-## Contract issue
-
-The shared protocol allows `bmp(path: str | None = None)`. The concrete
-Pygame implementation requires `path: str`, so calling `bmp()` through the
-documented protocol fails with TypeError. Callers should pass an explicit
-path until the contract is aligned. The choice between requiring a path
-everywhere and supporting an omitted path remains an implementation decision.
 

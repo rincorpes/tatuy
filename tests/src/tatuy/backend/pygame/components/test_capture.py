@@ -33,10 +33,25 @@ def test_capture_empty_path_and_save_forwarding(monkeypatch, render_target):
     save.assert_called_once_with(render_target.screen, "frame.bmp")
 
 
-@pytest.mark.xfail(strict=True, reason="B04: concrete capture requires path")
-def test_capture_accepts_protocol_default_path(render_target):
+def test_capture_accepts_protocol_default_path(monkeypatch):
+    save = Mock()
+    monkeypatch.setattr(module.pygame.image, "save", save)
     capture = module.PygameCapture(
         PygameCaptureConfig(),
-        render_target.window,
+        Mock(spec=[]),
     )
     assert capture.bmp() is False
+    assert capture.bmp(None) is False
+    assert capture.bmp(path=None) is False
+    save.assert_not_called()
+
+
+def test_capture_save_errors_propagate(monkeypatch, render_target):
+    error = OSError("save failed")
+    save = Mock(side_effect=error)
+    monkeypatch.setattr(module.pygame.image, "save", save)
+    capture = module.PygameCapture(PygameCaptureConfig(), render_target.window)
+    with pytest.raises(OSError) as caught:
+        capture.bmp("frame.bmp")
+    assert caught.value is error
+    save.assert_called_once_with(render_target.screen, "frame.bmp")

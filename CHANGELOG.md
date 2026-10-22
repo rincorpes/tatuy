@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Enhance Pygame backend initialization and cleanup; implement rollback on failures
 - Ensure audio operations are no-ops when disabled or mixer is uninitialized; enhance tests for robustness
 - Retain normalized master volume for later sound loads; enhance volume handling and tests
+- Update capture functionality to accept optional path; enhance tests for error propagation and default behavior
 
 ### - 2026-10-21
 

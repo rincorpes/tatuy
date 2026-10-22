@@ -4,9 +4,6 @@ The backend is Tatuy's platform integration layer. Read
 [Backend boundary](../../architecture/backend-boundary.md) for the architectural
 reason behind it. The current implementation is Pygame.
 
-See [Backend review (2026-10-22)](review.md) for findings,
-regression tests, and proposed implementation work.
-
 ## Read in this order
 
 - [Architecture](architecture.md): capability composition and dependencies.

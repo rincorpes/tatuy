@@ -48,6 +48,6 @@ audio devices, and FFmpeg for separate integration checks.
 
 The protocols are structural, but the current Pygame builder uses a cast.
 A passing mypy run alone is therefore not proof that a concrete backend
-satisfies every method signature. In particular, review the current
-`Capture.bmp` default-argument mismatch before copying that implementation.
+satisfies every method signature. Check concrete capabilities against their
+protocols directly, including mutable configuration attribute types.
 

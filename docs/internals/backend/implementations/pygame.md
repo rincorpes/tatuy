@@ -43,7 +43,6 @@ fixed; an unexpected pass fails the suite.
 - Initialization failures roll back platform state; see the lifecycle page for cleanup retry semantics.
 - Input configuration flags and capture configuration fields are not enforced
   in the corresponding Pygame ports.
-- Capture's concrete `bmp` signature differs from its protocol.
 - See the capability pages for audio volume, text defaults, and tiled
   texture/alpha polygon limitations.
 
