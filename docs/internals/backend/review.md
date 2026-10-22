@@ -88,7 +88,16 @@ does not enforce those flags as device-lifetime guarantees.
 
 Regression: `pygame/components/test_audio.py::test_disabled_volume_and_stop_are_noops`.
 
-### B03 — Medium: sounds loaded later ignore master volume
+### B03 — Resolved: sounds loaded later ignore master volume
+
+Implemented after this review: successful master-volume updates retain the
+normalized gain, which is applied to later sound loads and replacements.
+Per-sound volume remains a direct override; subsequent master updates still
+replace all current sound volumes. No multiplicative gain model was added.
+The original regression and additional clamp/configuration/override tests
+now pass. See [Audio capability](capabilities/audio.md) for the contract.
+
+Original finding:
 
 Location: `pygame/components/audio.py:PygameAudio.load_sound/set_master_volume`.
 

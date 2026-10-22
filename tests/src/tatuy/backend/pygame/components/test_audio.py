@@ -70,9 +70,6 @@ def test_disabled_volume_and_stop_are_noops(mixer):
     assert mixer.mock_calls == []
 
 
-@pytest.mark.xfail(
-    strict=True, reason="B03: later sounds ignore master volume"
-)
 def test_later_sound_inherits_master_volume(mixer):
     audio = module.PygameAudio(PygameAudioConfig(enabled=True))
     audio.set_master_volume(32)
@@ -142,3 +139,55 @@ def test_explicit_init_failure_propagates_and_operations_remain_safe(mixer):
     audio.set_master_volume(64)
     audio.stop_all()
     assert all(call[0] == "get_init" for call in mixer.mock_calls)
+
+
+@pytest.mark.parametrize(
+    "volume,expected", [(-10, 0.0), (0, 0.0), (64, 0.5), (200, 1.0)]
+)
+def test_later_sound_inherits_clamped_master_volume(mixer, volume, expected):
+    audio = module.PygameAudio(PygameAudioConfig(enabled=True))
+    audio.set_master_volume(volume)
+    audio.load_sound("late", "late.wav")
+    mixer.Sound.return_value.set_volume.assert_called_once_with(expected)
+
+
+def test_configured_master_applies_to_later_sounds(mixer):
+    audio = module.PygameAudio(
+        PygameAudioConfig(enabled=True, master_volume=0.25)
+    )
+    audio.init()
+    audio.load_sound("late", "late.wav")
+    mixer.Sound.return_value.set_volume.assert_called_once_with(0.25)
+
+
+def test_per_sound_volume_overrides_without_changing_master(mixer):
+    first, second, replacement = Mock(), Mock(), Mock()
+    mixer.Sound.side_effect = [first, second, replacement]
+    audio = module.PygameAudio(PygameAudioConfig(enabled=True))
+    audio.set_master_volume(32)
+    audio.load_sound("first", "first.wav")
+    first.set_volume.assert_called_once_with(0.25)
+    audio.set_sound_volume("first", 64)
+    assert first.set_volume.call_args.args == (0.5,)
+    audio.load_sound("second", "second.wav")
+    second.set_volume.assert_called_once_with(0.25)
+
+    # A later master update still replaces individual sound volumes.
+    audio.set_master_volume(16)
+    assert first.set_volume.call_args.args == (0.125,)
+    assert second.set_volume.call_args.args == (0.125,)
+    audio.load_sound("first", "replacement.wav")
+    replacement.set_volume.assert_called_once_with(0.125)
+    audio.play_sound("first")
+    replacement.play.assert_called_once_with(loops=0)
+    first.play.assert_not_called()
+
+
+def test_unavailable_volume_request_does_not_change_retained_master(mixer):
+    audio = module.PygameAudio(PygameAudioConfig(enabled=True))
+    audio.set_master_volume(32)
+    mixer.get_init.return_value = None
+    audio.set_master_volume(64)
+    mixer.get_init.return_value = (44100, -16, 2)
+    audio.load_sound("late", "late.wav")
+    mixer.Sound.return_value.set_volume.assert_called_once_with(0.25)

@@ -18,6 +18,7 @@ class PygameAudio(BackendComponent[PygameAudioConfig]):
     def __init__(self, config: PygameAudioConfig):
         super().__init__(config)
         self._sounds: dict[str, pygame.mixer.Sound] = {}
+        self._master_volume: float | None = None
 
     def init(self):
         """
@@ -57,7 +58,10 @@ class PygameAudio(BackendComponent[PygameAudioConfig]):
         if not sound_id:
             raise ValueError("sound_id cannot be empty")
         p = io.FileService.validate_file_exists(path)
-        self._sounds[sound_id] = pygame.mixer.Sound(p)
+        sound = pygame.mixer.Sound(p)
+        if self._master_volume is not None:
+            sound.set_volume(self._master_volume)
+        self._sounds[sound_id] = sound
 
     def play_sound(self, sound_id: str, loops: int = 0):
         """
@@ -77,6 +81,7 @@ class PygameAudio(BackendComponent[PygameAudioConfig]):
             return
         v = max(0, min(128, int(volume))) / 128.0
         pygame.mixer.music.set_volume(v)
+        self._master_volume = v
         for s in self._sounds.values():
             s.set_volume(v)
 

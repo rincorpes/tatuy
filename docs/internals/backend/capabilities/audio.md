@@ -15,7 +15,15 @@ Device initialization errors propagate to the caller.
 Configuration `master_volume` uses 0.0–1.0. Initialization clamps that range,
 converts it to a rounded 0–128 integer, and calls `set_master_volume`.
 The runtime volume API uses integers 0–128 and clamps before converting to
-Pygame's 0.0–1.0.
+Pygame's 0.0–1.0. Successful master-volume updates retain the normalized
+value and apply it to music, existing sounds, and sounds loaded afterward.
+Before any master-volume update, newly loaded sounds keep Pygame's default.
+Initialization selects the configured master volume.
+
+Per-sound volume directly overrides that sound's volume; it does not
+multiply the retained master. It does not change the master used by later
+loads. A subsequent master-volume update replaces all existing per-sound
+volumes, and replacing a sound ID applies the current master to the new sound.
 
 All device operations are no-ops when disabled or when
 `pygame.mixer.get_init()` reports no initialized mixer. Disabled calls do not
@@ -34,9 +42,6 @@ channels; it does not unload sounds or explicitly stop the music stream.
 
 ## Current limitations
 
-- Master volume is applied to music and sounds currently loaded; it is not
-  retained for sounds loaded later. Per-sound volume replaces that sound's
-  volume rather than multiplying a separate master gain.
 - Sound objects remain in the port's dictionary after `shutdown()`.
   Reinitialization/ownership semantics need an explicit decision.
 - `pygame.init()` in the parent backend can initialize the mixer regardless
