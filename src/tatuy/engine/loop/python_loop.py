@@ -12,10 +12,9 @@ class PythonLoop:
         self._target_dt = 1.0 / target_fps if target_fps > 0 else 0.0
 
     def run(self, engine: Engine) -> None:
-        engine.start()
-        clock = FrameClock()
-
         try:
+            engine.start()
+            clock = FrameClock()
             while engine.running:
                 frame_start = perf_counter()
 
@@ -26,8 +25,13 @@ class PythonLoop:
                 self._wait(processing_time)
 
                 clock.frame_index += 1
-        finally:
-            engine.stop()
+        except BaseException as run_error:
+            try:
+                engine.stop()
+            except BaseException as cleanup_error:
+                raise run_error from cleanup_error
+            raise
+        engine.stop()
 
     def _wait(self, elapsed: float) -> None:
         if self._target_dt <= 0:

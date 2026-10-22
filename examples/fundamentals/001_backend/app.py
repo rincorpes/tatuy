@@ -10,11 +10,11 @@ def main():
         config=config,
     )
 
-    backend.init()
-
-    print(backend)
-
-    backend.stop()
+    try:
+        backend.init()
+        print(backend)
+    finally:
+        backend.stop()
 
 
 if __name__ == "__main__":

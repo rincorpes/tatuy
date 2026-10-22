@@ -33,7 +33,16 @@ must be removed when a fix is accepted.
 
 ## Findings requiring implementation decisions
 
-### B01 — High: startup failures can leak platform resources
+### B01 — Resolved: startup failures can leak platform resources
+
+Implemented after this review: backend initialization now rolls back on
+failure, repeated initialization preserves capabilities, and failed platform
+cleanup can be retried. PythonLoop includes startup in its cleanup boundary
+and preserves the original error when cleanup also fails. The original B01
+regression is now a passing test; lifecycle and loop regressions cover the
+additional failure paths. See [Lifecycle](lifecycle.md) for the contract.
+
+Original finding:
 
 Locations: `pygame/pygame_backend.py:PygameBackend.init/stop` and
 `engine/loop/python_loop.py:PythonLoop.run`.

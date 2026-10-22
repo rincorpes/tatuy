@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Refactor verification and development documentation; enhance server functionality
 - Refactor backend lifecycle documentation and enhance test coverage
 - Update documentation and improve verification guidance; enhance MCP server functionality
+- Enhance Pygame backend initialization and cleanup; implement rollback on failures
 
 ### - 2026-10-21
 

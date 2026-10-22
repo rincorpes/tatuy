@@ -77,9 +77,6 @@ def test_stop_before_init_is_safe(platform):
     platform.quit.assert_not_called()
 
 
-@pytest.mark.xfail(
-    strict=True, reason="B01: failed init leaks pygame resources"
-)
 def test_failed_initialization_releases_platform(platform, monkeypatch):
     monkeypatch.setattr(
         module,

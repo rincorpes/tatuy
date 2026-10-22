@@ -40,7 +40,7 @@ fixed; an unexpected pass fails the suite.
 ## Current constraints
 
 - Pygame initialization/shutdown is global; backend instances are not isolated.
-- Partial initialization does not currently roll back platform state.
+- Initialization failures roll back platform state; see the lifecycle page for cleanup retry semantics.
 - Input configuration flags and capture configuration fields are not enforced
   in the corresponding Pygame ports.
 - Capture's concrete `bmp` signature differs from its protocol.

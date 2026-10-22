@@ -49,20 +49,28 @@ finally:
 
 Interactive examples must also poll events regularly.
 
-## Shutdown and current failure behavior
+## Shutdown and failure behavior
 
-`stop()` returns immediately when `initialized=False`. Otherwise it calls
-`pygame.quit()` and clears the flag. Stopping before initialization and
-repeated stopping are safe. Shutdown affects Pygame globally, so independent
-simultaneous backends do not have isolated platform lifetimes.
+Repeated successful `init()` calls are no-ops, preserving capabilities and
+caches. Failures during platform initialization or capability setup attempt
+`pygame.quit()`. The original error propagates; if rollback also fails,
+the cleanup error is chained as its cause.
 
-There is currently no repeated-init guard. Reinitializing replaces capability
-objects and their caches. If initialization fails after `pygame.init()`,
-the flag remains false and `stop()` does not release partially initialized
-resources. Cleanup on partial failure is an open implementation issue.
+`stop()` is safe before initialization and after successful cleanup.
+It clears `initialized` before quitting. If quitting raises, cleanup remains
+pending and `stop()` can retry. Until cleanup succeeds, `init()` raises.
+After cleanup succeeds, initialization may be attempted again.
+Capabilities remain referenced through quitting, preserving SDL window
+wrapper lifetime protection. Do not use capabilities after stopping or
+failed initialization.
 
-At the loop level, `PythonLoop.run()` calls `engine.start()` before its
-`try/finally`; startup exceptions therefore also bypass normal loop cleanup.
-Successful execution stops through `Engine.stop()`, which closes capture
-before stopping the backend.
+`PythonLoop.run()` includes startup and frame-clock construction in its
+cleanup boundary. Backend, window, and scene startup failures therefore call
+`Engine.stop()`, which closes capture before stopping the backend.
+Startup or execution errors remain primary if cleanup also fails; the cleanup
+error is chained as the cause. Cleanup errors after normal exit propagate
+directly. Interruption exceptions follow the same cleanup rules.
+
+Pygame initialization/shutdown is global; simultaneous backend instances do
+not have isolated platform lifetimes.
 
