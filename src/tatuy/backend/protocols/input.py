@@ -12,10 +12,16 @@ class Input(Protocol):
     """Observe the pointer and change the cursor without exposing native devices.
 
     Attributes:
-        config (InputConfig): Settings for this capability.
+        config (InputConfig): Read-only settings for this capability.
     """
 
-    config: InputConfig
+    @property
+    def config(self) -> InputConfig:
+        """Return the configuration without exposing reference reassignment.
+
+        Returns:
+            InputConfig: Read-only configuration reference for this capability.
+        """
 
     def get_pointer_state(self) -> PointerState:
         """Return pointer position in window coordinates and whether it is inside.

@@ -72,8 +72,12 @@ float fields. Numeric strings are not coerced.
 
 Decoding validates structure and types, not semantic ranges such as positive
 window dimensions, valid mixer channel counts, or existing asset paths.
-Frozen configuration prevents reassignment; runtime operations such as
-resize do not rewrite configuration.
+Frozen configuration prevents field reassignment; runtime operations such as
+resize do not rewrite configuration. Backend and capability protocols expose
+configuration references as read-only properties. Portable consumers may read
+them but cannot assign a replacement config. Concrete implementations retain
+their existing configuration storage; this is a static interface guarantee,
+not a runtime assignment restriction on concrete objects.
 
 ## Input and capture ownership
 

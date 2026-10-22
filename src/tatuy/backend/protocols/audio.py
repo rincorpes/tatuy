@@ -11,10 +11,16 @@ class Audio(Protocol):
     """Expose sound playback and volume operations behind a platform boundary.
 
     Attributes:
-        config (AudioConfig): Settings for this capability.
+        config (AudioConfig): Read-only settings for this capability.
     """
 
-    config: AudioConfig
+    @property
+    def config(self) -> AudioConfig:
+        """Return the configuration without exposing reference reassignment.
+
+        Returns:
+            AudioConfig: Read-only configuration reference for this capability.
+        """
 
     def init(self):
         """Initialize the configured audio device and preload configured sounds.

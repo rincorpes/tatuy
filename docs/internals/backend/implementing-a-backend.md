@@ -47,8 +47,18 @@ texture byte layout and pitch, font selection, audio state, and capture bytes.
 Use offscreen surfaces and mocks for unit tests; reserve real windows,
 audio devices, and FFmpeg for separate integration checks.
 
-The protocols are structural, but the current Pygame builder uses a cast.
-A passing mypy run alone is therefore not proof that a concrete backend
-satisfies every method signature. Check concrete capabilities against their
-protocols directly, including mutable configuration attribute types.
+The protocols are structural. The Pygame builder returns its concrete
+backend directly as `Backend`, so mypy checks the backend and its nested
+capabilities without a cast.
+
+Each capability exposes `config` as a read-only protocol property. Consumers
+may read settings but cannot replace the configuration reference through the
+portable contract. This permits an implementation to return its own config
+subclass, such as `PygameAudioConfig`, without promising to accept assignment
+of every shared `AudioConfig`. A concrete implementation may satisfy this
+property with a typed instance attribute; no runtime property or inheritance
+from the protocol is required. Existing concrete config storage is unchanged.
+
+Check concrete capabilities against their protocols directly when adding or
+changing an implementation. Do not use casts to conceal incompatible members.
 

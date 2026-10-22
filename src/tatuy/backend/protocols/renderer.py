@@ -261,12 +261,19 @@ class Renderer(Protocol):
     """Compose drawing capabilities and control frame clearing and presentation.
 
     Attributes:
-        config (RendererConfig): Settings for this capability.
+        config (RendererConfig): Read-only settings for this capability.
         viewport_transform (ViewportTransform): Mapping between logical
             coordinates and display pixels.
     """
 
-    config: RendererConfig
+    @property
+    def config(self) -> RendererConfig:
+        """Return the configuration without exposing reference reassignment.
+
+        Returns:
+            RendererConfig: Read-only configuration reference for this capability.
+        """
+
     viewport_transform: ViewportTransform
 
     @property

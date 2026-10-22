@@ -13,14 +13,21 @@ class Window(Protocol):
     """Expose portable window state and separate resize requests from observations.
 
     Attributes:
-        config (WindowConfig): Settings for this capability.
+        config (WindowConfig): Read-only settings for this capability.
         position (Vec2): Observed window position in screen coordinates.
         minimized (bool): Whether the window is minimized.
         maximized (bool): Whether the window is maximized.
         close_requested (bool): Whether a window close was requested.
     """
 
-    config: WindowConfig
+    @property
+    def config(self) -> WindowConfig:
+        """Return the configuration without exposing reference reassignment.
+
+        Returns:
+            WindowConfig: Read-only configuration reference for this capability.
+        """
+
     position: Vec2
     minimized: bool
     maximized: bool

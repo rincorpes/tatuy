@@ -11,10 +11,16 @@ class Capture(Protocol):
     """Expose explicit image saving and portable raw frame extraction.
 
     Attributes:
-        config (CaptureConfig): Settings for this capability.
+        config (CaptureConfig): Read-only settings for this capability.
     """
 
-    config: CaptureConfig
+    @property
+    def config(self) -> CaptureConfig:
+        """Return the configuration without exposing reference reassignment.
+
+        Returns:
+            CaptureConfig: Read-only configuration reference for this capability.
+        """
 
     def bmp(self, path: str | None = None) -> bool:
         """Save to an explicit image path, returning false when no path is supplied.

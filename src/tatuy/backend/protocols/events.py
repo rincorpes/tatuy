@@ -12,10 +12,16 @@ class Events(Protocol):
     """Collect supported platform events as normalized Tatuy events.
 
     Attributes:
-        config (EventsConfig): Settings for this capability.
+        config (EventsConfig): Read-only settings for this capability.
     """
 
-    config: EventsConfig
+    @property
+    def config(self) -> EventsConfig:
+        """Return the configuration without exposing reference reassignment.
+
+        Returns:
+            EventsConfig: Read-only configuration reference for this capability.
+        """
 
     def get_events(self) -> list[Event]:
         """Drain supported platform events into ordered, normalized Tatuy events.

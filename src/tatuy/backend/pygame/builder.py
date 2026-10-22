@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import Any
 
 from tatuy.backend.backend import Backend
 from tatuy.backend.pygame.config import PygameBackendConfig
@@ -32,4 +32,4 @@ class PygameBackendBuilder(BackendBuilder):
         if not isinstance(backend_config, PygameBackendConfig):
             raise TypeError("Expected PygameBackendConfig")
 
-        return cast(Backend, PygameBackend(backend_config))
+        return PygameBackend(backend_config)
