@@ -163,8 +163,9 @@ class Texture(Protocol):
                 when drawing.
             h (int): Texture height in pixels when uploading, or logical height
                 when drawing.
-            data (bytes | bytearray | memoryview): RGBA pixel buffer, including
-                any row padding.
+            data (bytes | bytearray | memoryview): C-contiguous RGBA pixel
+                buffer, including row padding. Typed and multidimensional
+                views are interpreted as a flat sequence of bytes.
             pitch (int): Bytes per input row. Nonpositive values select tightly
                 packed RGBA rows; positive values must be at least four times
                 the width.
@@ -174,7 +175,7 @@ class Texture(Protocol):
 
         Raises:
             ValueError: Dimensions are nonpositive, positive pitch is too
-                small, or the pixel buffer is too short.
+                small, or the pixel buffer is too short or not C-contiguous.
         """
 
     def draw(

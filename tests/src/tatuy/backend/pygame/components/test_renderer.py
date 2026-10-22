@@ -436,3 +436,51 @@ def test_font_default_sizes_scale_once(
 def test_clear_color_setter_has_no_stdout(render_target, capsys):
     render_target.renderer.set_clear_color(1, 2, 3)
     assert capsys.readouterr().out == ""
+
+
+@pytest.mark.parametrize("pitch", [-1, 8])
+@pytest.mark.parametrize("pixel_format", ["B", "I"])
+@pytest.mark.parametrize("multidimensional", [False, True])
+def test_texture_upload_normalizes_memoryview_bytes(
+    monkeypatch, render_target, textures, pitch, pixel_format, multidimensional
+):
+    pixels = bytes((255, 0, 0, 255, 0, 255, 0, 255))
+    rows = pixels if pitch < 0 else pixels[:4] + b"pad!" + pixels[4:] + b"pad!"
+    # Trailing bytes expose element-based slicing in the packed path too.
+    storage = bytearray(rows + b"trailing")
+    view = memoryview(storage).cast(pixel_format)
+    if multidimensional:
+        view = view.cast("B").cast(pixel_format, shape=(2, len(view) // 2))
+    conversion = Mock(wraps=module.pygame.image.frombuffer)
+    monkeypatch.setattr(module.pygame.image, "frombuffer", conversion)
+
+    handle = textures.create(1, 2, view, pitch=pitch)
+    assert bytes(conversion.call_args.args[0]) == pixels
+    storage[:] = bytes(len(storage))
+    textures.draw(handle, 2, 2, 1, 2)
+    assert render_target.screen.get_at((2, 2))[:3] == (255, 0, 0)
+    assert render_target.screen.get_at((2, 3))[:3] == (0, 255, 0)
+
+
+@pytest.mark.parametrize("pitch", [-1, 8])
+@pytest.mark.parametrize("step", [2, -1])
+def test_texture_rejects_noncontiguous_memoryviews_before_conversion(
+    monkeypatch, textures, pitch, step
+):
+    conversion = Mock()
+    monkeypatch.setattr(module.pygame.image, "frombuffer", conversion)
+    view = memoryview(bytes(32))[::step]
+    with pytest.raises(ValueError, match="C-contiguous"):
+        textures.create(1, 2, view, pitch=pitch)
+    conversion.assert_not_called()
+
+
+@pytest.mark.parametrize("pitch", [-1, 8])
+def test_texture_rejects_short_typed_memoryviews(monkeypatch, textures, pitch):
+    conversion = Mock()
+    monkeypatch.setattr(module.pygame.image, "frombuffer", conversion)
+    needed = 8 if pitch < 0 else 16
+    view = memoryview(bytes(needed - 4)).cast("I")
+    with pytest.raises(ValueError, match="buffer too small"):
+        textures.create(1, 2, view, pitch=pitch)
+    conversion.assert_not_called()

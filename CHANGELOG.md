@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Implemented tests for new input handling features and capture settings.
 - Removed obsolete sample test file and added new tests for input and window services.
 - Enhance engine cleanup process with retry logic and error propagation
+- Update texture handling to enforce C-contiguous memoryviews and enhance related tests
 
 ### - 2026-10-21
 

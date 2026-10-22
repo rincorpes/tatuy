@@ -525,8 +525,9 @@ class PygameTexture:
                 when drawing.
             h (int): Texture height in pixels when uploading, or logical height
                 when drawing.
-            data (bytes | bytearray | memoryview): RGBA pixel buffer, including
-                any row padding.
+            data (bytes | bytearray | memoryview): C-contiguous RGBA pixel
+                buffer, including row padding. Typed and multidimensional
+                views are interpreted as a flat sequence of bytes.
             pitch (int): Bytes per input row. Nonpositive values select tightly
                 packed RGBA rows; positive values must be at least four times
                 the width.
@@ -536,7 +537,7 @@ class PygameTexture:
 
         Raises:
             ValueError: Dimensions are nonpositive, positive pitch is too
-                small, or the pixel buffer is too short.
+                small, or the pixel buffer is too short or not C-contiguous.
             pygame.error: A required native subsystem is unavailable or the
                 platform operation fails.
         """
@@ -550,11 +551,16 @@ class PygameTexture:
             pitch = w * 4
 
         mv = memoryview(data)
+        if not mv.c_contiguous:
+            raise ValueError("Texture pixel buffer must be C-contiguous")
         needed = h * pitch
         if mv.nbytes < needed:
             raise ValueError(
                 f"create_texture_rgba: buffer too small ({mv.nbytes}) for h*pitch ({needed})"
             )
+
+        # Pitch and slices count bytes, regardless of input element type/shape.
+        mv = mv.cast("B")
 
         # Fast path: tightly packed RGBA rows
         if pitch == w * 4:

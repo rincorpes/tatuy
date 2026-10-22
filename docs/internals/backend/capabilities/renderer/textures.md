@@ -9,6 +9,13 @@ The buffer must hold at least `h * pitch` bytes. Packed data goes through
 repacked before conversion. Conversion requires an initialized display.
 The converted surface does not retain the caller's mutable buffer.
 
+Buffers must be C-contiguous. Typed and multidimensional memoryviews are
+normalized to a one-dimensional unsigned-byte view, so pitch and row offsets
+always count bytes rather than elements. Strided, reversed, and other
+non-C-contiguous layouts raise `ValueError` before native conversion or handle
+creation. Short typed views are rejected using their byte count. Extra trailing
+bytes are ignored, and callers may mutate or release their buffer after upload.
+
 Non-positive width/height, a positive pitch below `w * 4`, and a buffer
 shorter than `h * pitch` raise `ValueError` before allocation/conversion or
 handle creation. Extra trailing bytes are allowed. Non-positive pitch
