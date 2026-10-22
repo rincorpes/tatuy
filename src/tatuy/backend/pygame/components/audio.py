@@ -44,7 +44,7 @@ class PygameAudio(BackendComponent[PygameAudioConfig]):
 
     def shutdown(self):
         """Shutdown the audio subsystem."""
-        if not self.config.enabled:
+        if not self.config.enabled or not pygame.mixer.get_init():
             return
         pygame.mixer.quit()
 
@@ -52,7 +52,7 @@ class PygameAudio(BackendComponent[PygameAudioConfig]):
         """
         Load a sound file.
         """
-        if not self.config.enabled:
+        if not self.config.enabled or not pygame.mixer.get_init():
             return
         if not sound_id:
             raise ValueError("sound_id cannot be empty")
@@ -63,7 +63,7 @@ class PygameAudio(BackendComponent[PygameAudioConfig]):
         """
         Play a loaded sound.
         """
-        if not self.config.enabled:
+        if not self.config.enabled or not pygame.mixer.get_init():
             return
         s = self._sounds.get(sound_id)
         if s:
@@ -73,6 +73,8 @@ class PygameAudio(BackendComponent[PygameAudioConfig]):
         """
         Set the master volume.
         """
+        if not self.config.enabled or not pygame.mixer.get_init():
+            return
         v = max(0, min(128, int(volume))) / 128.0
         pygame.mixer.music.set_volume(v)
         for s in self._sounds.values():
@@ -82,6 +84,8 @@ class PygameAudio(BackendComponent[PygameAudioConfig]):
         """
         Set the volume for a specific sound.
         """
+        if not self.config.enabled or not pygame.mixer.get_init():
+            return
         s = self._sounds.get(sound_id)
         if not s:
             return
@@ -90,4 +94,6 @@ class PygameAudio(BackendComponent[PygameAudioConfig]):
 
     def stop_all(self):
         """Stop all currently playing sounds."""
+        if not self.config.enabled or not pygame.mixer.get_init():
+            return
         pygame.mixer.stop()

@@ -63,7 +63,16 @@ and needs agreement before implementation.
 
 Regression: `pygame/test_pygame_backend.py::test_failed_initialization_releases_platform`.
 
-### B02 — Medium: disabled audio is not consistently a no-op
+### B02 — Resolved: disabled audio is not consistently a no-op
+
+Implemented after this review: all device operations return when disabled
+or when the mixer is uninitialized. Disabled calls do not query the mixer.
+Explicit initialization errors still propagate. Parent pygame.init() mixer
+behavior is unchanged. The B02 regression now passes, with additional
+coverage for unavailable mixers, cached sounds, and shutdown boundaries.
+See [Audio capability](capabilities/audio.md) for the current contract.
+
+Original finding:
 
 Location: `pygame/components/audio.py:PygameAudio.set_master_volume/stop_all`.
 
