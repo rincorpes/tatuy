@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+### - 2026-10-22
+
+#### Added
+
+- Implement file creation and editing tools with path validation and access checks
+
 ### - 2026-10-21
 
 #### Added

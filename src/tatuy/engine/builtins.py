@@ -177,9 +177,9 @@ class RenderActivation:
 
 class WorldBoundsRenderActivation:
     def matches(self, ctx: SceneTickContext[TWorld, TIntent]) -> bool:
-        bounds = ctx.world.get_resource(WorldBounds)
-        border = ctx.world.get_resource(WorldBoundsBorder)
-        return bool(bounds and border)
+        return ctx.world.has_resource(WorldBounds) and ctx.world.has_resource(
+            WorldBoundsBorder
+        )
 
 
 # pylint: disable=unused-argument

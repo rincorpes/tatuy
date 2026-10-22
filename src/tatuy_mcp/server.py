@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import os
 from pathlib import Path
 from typing import Literal
@@ -453,6 +454,206 @@ def server_info() -> dict[str, str]:
     return {
         "name": "Game Development",
         "status": "ready",
+    }
+
+
+def resolve_new_project_path(
+    project: str,
+    relative_path: str,
+) -> Path:
+    """Resolve a permitted new path inside a project."""
+
+    refresh_projects()
+
+    if project not in PROJECTS:
+        raise ValueError(f"Unknown project: {project}")
+
+    root = PROJECTS[project].resolve(strict=True)
+
+    requested = Path(relative_path)
+
+    if requested.is_absolute() or requested.drive or requested.root:
+        raise ValueError("Provide a project-relative path")
+
+    check_access(requested)
+
+    target = (root / requested).resolve(strict=False)
+
+    if not target.is_relative_to(root):
+        raise ValueError("Path points outside the selected project")
+
+    check_access(target.relative_to(root))
+
+    parent = target.parent.resolve(strict=True)
+
+    if not parent.is_relative_to(root):
+        raise ValueError(
+            "Parent directory points outside the selected project"
+        )
+
+    if target.exists():
+        raise ValueError(f"Path already exists: {relative_path}")
+
+    return target
+
+
+WRITABLE_EXTENSIONS = {
+    ".py",
+    ".toml",
+    ".md",
+    ".json",
+    ".yaml",
+    ".yml",
+    ".txt",
+    ".glsl",
+    ".vert",
+    ".frag",
+}
+
+WRITABLE_FILENAMES = {
+    ".gitignore",
+}
+
+
+def check_writable_file(path: Path) -> None:
+    if (
+        path.suffix.casefold() not in WRITABLE_EXTENSIONS
+        and path.name not in WRITABLE_FILENAMES
+    ):
+        raise ValueError(f"File type is not writable through MCP: {path.name}")
+
+
+@mcp.tool()
+def create_file(
+    project: str,
+    path: str,
+    content: str,
+) -> dict[str, object]:
+    """
+    Create a new UTF-8 text file inside a Tatuy development project.
+
+    Use only when the user explicitly asks Tatuy Development to create,
+    implement, save, or apply code or documentation changes.
+
+    Refuses to overwrite existing files.
+    """
+
+    target = resolve_new_project_path(
+        project,
+        path,
+    )
+
+    check_writable_file(target)
+
+    encoded = content.encode("utf-8")
+
+    if len(encoded) > 1_000_000:
+        raise ValueError("File exceeds the 1 MB writing limit")
+
+    target.write_text(
+        content,
+        encoding="utf-8",
+    )
+
+    data = target.read_bytes()
+
+    return {
+        "created": True,
+        "project": project,
+        "path": path,
+        "sha256": hashlib.sha256(data).hexdigest(),
+        "bytes": len(data),
+    }
+
+
+@mcp.tool()
+def edit_file(
+    project: str,
+    path: str,
+    old_text: str,
+    new_text: str,
+    expected_sha256: str,
+) -> dict[str, object]:
+    """
+    Replace one exact text region in an existing UTF-8 project file.
+
+    Use only when the user explicitly asks Tatuy Development to apply,
+    implement, refactor, or otherwise modify project files.
+
+    The expected SHA-256 must match the current file so edits cannot
+    silently overwrite changes made since the file was inspected.
+    """
+
+    if not old_text:
+        raise ValueError("old_text must not be empty")
+
+    target = resolve_project_path(
+        project,
+        path,
+    )
+
+    if not target.is_file():
+        raise ValueError("Requested path is not a file")
+
+    check_writable_file(target)
+
+    data = target.read_bytes()
+
+    actual_sha256 = hashlib.sha256(data).hexdigest()
+
+    if actual_sha256 != expected_sha256:
+        raise ValueError(
+            "File changed since it was inspected. "
+            "Read the file again before editing."
+        )
+
+    if len(data) > 1_000_000:
+        raise ValueError("File exceeds the 1 MB writing limit")
+
+    if b"\x00" in data:
+        raise ValueError("File appears to contain binary data")
+
+    try:
+        content = data.decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise ValueError("File is not valid UTF-8 text") from exc
+
+    occurrences = content.count(old_text)
+
+    if occurrences == 0:
+        raise ValueError("old_text was not found in the file")
+
+    if occurrences > 1:
+        raise ValueError(
+            "old_text occurs more than once. "
+            "Provide a more specific text region."
+        )
+
+    updated = content.replace(
+        old_text,
+        new_text,
+        1,
+    )
+
+    encoded = updated.encode("utf-8")
+
+    if len(encoded) > 1_000_000:
+        raise ValueError("Updated file exceeds the 1 MB writing limit")
+
+    target.write_text(
+        updated,
+        encoding="utf-8",
+    )
+
+    written = target.read_bytes()
+
+    return {
+        "updated": True,
+        "project": project,
+        "path": path,
+        "previous_sha256": actual_sha256,
+        "sha256": hashlib.sha256(written).hexdigest(),
+        "bytes": len(written),
     }
 
 
