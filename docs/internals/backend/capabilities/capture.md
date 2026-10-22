@@ -16,8 +16,7 @@ the method does not create missing parent directories.
 
 `bgra8888_bytes()` returns `(width, height, data)`. Data has four bytes
 per pixel in B, G, R, A order, with `width * height * 4` bytes.
-This matches the capture worker's BGRA decoding. The source docstrings
-currently say ARGB in places; the actual export format is BGRA.
+This matches the capture worker's BGRA decoding.
 
 Saving to a nonempty path and extracting raw bytes need an available screen
 surface. They do not check the deprecated

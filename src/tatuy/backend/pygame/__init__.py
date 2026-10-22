@@ -1,6 +1,4 @@
-"""
-tatuy pygame backend package.
-"""
+"""Lazy public exports for the Pygame backend and its configuration."""
 
 from __future__ import annotations
 

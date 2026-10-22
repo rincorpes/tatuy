@@ -1,3 +1,5 @@
+"""Pygame mixer operations with readiness guards and retained master volume."""
+
 from __future__ import annotations
 
 # Justification: Disabling no-member checks for pygame attributes since they are
@@ -11,8 +13,11 @@ from tatuy.backend.pygame.config import PygameAudioConfig
 
 
 class PygameAudio(BackendComponent[PygameAudioConfig]):
-    """
-    Audio port for the tatuy pygame backend.
+    """Guard mixer operations and apply retained master volume to loaded sounds.
+
+    Args:
+        config (PygameAudioConfig): Settings used to configure this
+            capability.
     """
 
     def __init__(self, config: PygameAudioConfig):
@@ -21,8 +26,18 @@ class PygameAudio(BackendComponent[PygameAudioConfig]):
         self._master_volume: float | None = None
 
     def init(self):
-        """
-        Initialize the audio subsystem.
+        """Initialize enabled mixer audio, preload sounds, and apply configured volume.
+
+        Disabled audio is a no-op. Device and sound-file initialization errors propagate.
+
+        Returns:
+            None: This method does not return a value.
+
+        Raises:
+            ValueError: A sound identifier is empty.
+            FileNotFoundError: A configured sound file does not exist.
+            pygame.error: A required native subsystem is unavailable or the
+                platform operation fails.
         """
         if not self.config.enabled:
             return
@@ -44,14 +59,37 @@ class PygameAudio(BackendComponent[PygameAudioConfig]):
         self.set_master_volume(round(normalized_volume * 128))
 
     def shutdown(self):
-        """Shutdown the audio subsystem."""
+        """Quit an enabled, initialized mixer; otherwise do nothing.
+
+        Returns:
+            None: This method does not return a value.
+
+        Raises:
+            pygame.error: A required native subsystem is unavailable or the
+                platform operation fails.
+        """
         if not self.config.enabled or not pygame.mixer.get_init():
             return
         pygame.mixer.quit()
 
     def load_sound(self, sound_id: str, path: str):
-        """
-        Load a sound file.
+        """Load or replace a sound and apply the retained master gain when available.
+
+        Disabled or uninitialized audio is a no-op. Empty identifiers raise
+        ValueError when ready; file and native loading errors propagate.
+
+        Args:
+            sound_id (str): Identifier used to load or address a sound.
+            path (str): Path to the source sound file.
+
+        Returns:
+            None: This method does not return a value.
+
+        Raises:
+            ValueError: A sound identifier is empty.
+            FileNotFoundError: A configured sound file does not exist.
+            pygame.error: A required native subsystem is unavailable or the
+                platform operation fails.
         """
         if not self.config.enabled or not pygame.mixer.get_init():
             return
@@ -64,8 +102,19 @@ class PygameAudio(BackendComponent[PygameAudioConfig]):
         self._sounds[sound_id] = sound
 
     def play_sound(self, sound_id: str, loops: int = 0):
-        """
-        Play a loaded sound.
+        """Play a known sound when audio is ready; ignore disabled or missing sounds.
+
+        Args:
+            sound_id (str): Identifier used to load or address a sound.
+            loops (int): Number of additional repetitions; -1 repeats
+                indefinitely.
+
+        Returns:
+            None: This method does not return a value.
+
+        Raises:
+            pygame.error: A required native subsystem is unavailable or the
+                platform operation fails.
         """
         if not self.config.enabled or not pygame.mixer.get_init():
             return
@@ -74,8 +123,20 @@ class PygameAudio(BackendComponent[PygameAudioConfig]):
             s.play(loops=int(loops))
 
     def set_master_volume(self, volume: int):
-        """
-        Set the master volume.
+        """Clamp volume to 0 through 128 and retain its normalized mixer gain.
+
+        Apply the gain to music and existing sounds; later loads inherit it.
+        Disabled or uninitialized audio ignores the request without retaining it.
+
+        Args:
+            volume (int): Volume from 0 through 128, clamped to that range.
+
+        Returns:
+            None: This method does not return a value.
+
+        Raises:
+            pygame.error: A required native subsystem is unavailable or the
+                platform operation fails.
         """
         if not self.config.enabled or not pygame.mixer.get_init():
             return
@@ -86,8 +147,18 @@ class PygameAudio(BackendComponent[PygameAudioConfig]):
             s.set_volume(v)
 
     def set_sound_volume(self, sound_id: str, volume: int):
-        """
-        Set the volume for a specific sound.
+        """Override one loaded sound volume without changing the retained master gain.
+
+        Args:
+            sound_id (str): Identifier used to load or address a sound.
+            volume (int): Volume from 0 through 128, clamped to that range.
+
+        Returns:
+            None: This method does not return a value.
+
+        Raises:
+            pygame.error: A required native subsystem is unavailable or the
+                platform operation fails.
         """
         if not self.config.enabled or not pygame.mixer.get_init():
             return
@@ -98,7 +169,15 @@ class PygameAudio(BackendComponent[PygameAudioConfig]):
         s.set_volume(v)
 
     def stop_all(self):
-        """Stop all currently playing sounds."""
+        """Stop sound channels when audio is ready, leaving music ownership unchanged.
+
+        Returns:
+            None: This method does not return a value.
+
+        Raises:
+            pygame.error: A required native subsystem is unavailable or the
+                platform operation fails.
+        """
         if not self.config.enabled or not pygame.mixer.get_init():
             return
         pygame.mixer.stop()

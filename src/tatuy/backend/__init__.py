@@ -1,3 +1,5 @@
+"""Public backend contracts and shared configuration exports."""
+
 from __future__ import annotations
 
 from .backend import Backend

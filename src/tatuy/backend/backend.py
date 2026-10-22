@@ -1,3 +1,5 @@
+"""Structural contract for the platform capabilities used by the engine."""
+
 from __future__ import annotations
 
 from typing import Protocol
@@ -9,38 +11,84 @@ from .protocols import Audio, Capture, Events, Input, Renderer, Window
 
 
 class Backend(Protocol):
+    """Expose the configuration, capabilities, and lifecycle required by the engine.
+
+    Attributes:
+        viewport_transform (ViewportTransform): Mapping between logical
+            coordinates and display pixels.
+        initialized (bool): Whether platform startup has completed
+            successfully.
     """
-    Interface that any rendering/input backend must implement.
-    tatuy-core only talks to this protocol, never to SDL/pygame directly.
-
-    Each sub-capability is exposed as a typed protocol attribute so that
-    systems or draw helpers can accept only the slice they need (e.g.
-    ``Renderer`` or ``Text``) instead of the full backend.
-    """
 
     @property
-    def config(self) -> BackendConfig: ...
+    def config(self) -> BackendConfig:
+        """Return the immutable configuration used to construct this backend.
+
+        Returns:
+            BackendConfig: The requested capability.
+        """
 
     @property
-    def events(self) -> Events: ...
+    def events(self) -> Events:
+        """Return the event collection capability.
+
+        Returns:
+            Events: The requested capability.
+        """
 
     @property
-    def window(self) -> Window: ...
+    def window(self) -> Window:
+        """Return the portable window management capability.
+
+        Returns:
+            Window: The requested capability.
+        """
 
     @property
-    def audio(self) -> Audio: ...
+    def audio(self) -> Audio:
+        """Return the sound playback and volume capability.
+
+        Returns:
+            Audio: The requested capability.
+        """
 
     @property
-    def capture(self) -> Capture: ...
+    def capture(self) -> Capture:
+        """Return the explicit image and raw-frame capture capability.
+
+        Returns:
+            Capture: The requested capability.
+        """
 
     @property
-    def input(self) -> Input: ...
+    def input(self) -> Input:
+        """Return the pointer observation and cursor capability.
+
+        Returns:
+            Input: The requested capability.
+        """
 
     @property
-    def renderer(self) -> Renderer: ...
+    def renderer(self) -> Renderer:
+        """Return the drawing and frame presentation capability.
+
+        Returns:
+            Renderer: The requested capability.
+        """
 
     viewport_transform: ViewportTransform
     initialized: bool
 
-    def init(self) -> None: ...
-    def stop(self) -> None: ...
+    def init(self) -> None:
+        """Initialize platform state and prepare the configured capabilities.
+
+        Returns:
+            None: This method does not return a value.
+        """
+
+    def stop(self) -> None:
+        """Release platform resources owned by this backend.
+
+        Returns:
+            None: This method does not return a value.
+        """

@@ -1,8 +1,4 @@
-"""
-Backend module for rendering and input abstraction.
-Defines the Backend interface and related types.
-This is the only part of the code that talks to SDL/pygame directly.
-"""
+"""Platform-neutral capability contracts consumed by Tatuy services."""
 
 from __future__ import annotations
 

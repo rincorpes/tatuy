@@ -1,3 +1,5 @@
+"""Translate supported Pygame events into portable Tatuy event payloads."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -113,7 +115,14 @@ _EVENT_MAP = {
 
 
 class PygameEvents(BackendComponent[PygameEventsConfig]):
-    """Collect pygame events and translate them into tatuy events."""
+    """Drain native events and emit only supported, normalized Tatuy payloads.
+
+    Args:
+        config (PygameEventsConfig): Settings used to configure this
+            capability.
+        input_config (InputConfig | None): Input filters, or None to use
+            the shared input defaults.
+    """
 
     def __init__(
         self,
@@ -124,6 +133,18 @@ class PygameEvents(BackendComponent[PygameEventsConfig]):
         self._input_config = input_config or InputConfig()
 
     def get_events(self) -> list[Event]:
+        """Drain the native queue and translate supported events in their original order.
+
+        Apply keyboard and mouse enable flags without filtering window or quit
+        events. Discard unsupported events and native-only payload values.
+
+        Returns:
+            list[Event]: Supported events in platform queue order.
+
+        Raises:
+            pygame.error: A required native subsystem is unavailable or the
+                platform operation fails.
+        """
         events: list[Event] = []
 
         with profiler.span("pygame.poll", "backend"):
@@ -171,6 +192,24 @@ class PygameEvents(BackendComponent[PygameEventsConfig]):
         event_type: EventType,
         attrs: dict[str, Any],
     ) -> dict[str, Any] | None:
+        """Normalize native event attributes, discarding unsupported keys.
+
+        Args:
+            event_type (EventType): Normalized event type whose native
+                attributes are translated.
+            attrs (dict[str, Any]): Native event attributes to normalize into
+                portable values.
+
+        Returns:
+            dict[str, Any] | None: Portable attributes, or None when the event
+                should be discarded.
+
+        Raises:
+            KeyError: Required native attributes are missing.
+            TypeError: Native attributes cannot be converted to portable
+                values.
+            ValueError: A numeric native attribute is malformed.
+        """
         match event_type:
             case EventType.KEYDOWN | EventType.KEYUP:
                 key = PYGAME_KEY_TO_KEY.get(attrs["key"])

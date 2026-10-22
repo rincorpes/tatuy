@@ -1,3 +1,5 @@
+"""Contract for window state, explicit resizing, and native size observation."""
+
 from __future__ import annotations
 
 from typing import Protocol
@@ -8,8 +10,14 @@ from tatuy.math.vec2 import Vec2
 
 
 class Window(Protocol):
-    """
-    Represents a game window.
+    """Expose portable window state and separate resize requests from observations.
+
+    Attributes:
+        config (WindowConfig): Settings for this capability.
+        position (Vec2): Observed window position in screen coordinates.
+        minimized (bool): Whether the window is minimized.
+        maximized (bool): Whether the window is maximized.
+        close_requested (bool): Whether a window close was requested.
     """
 
     config: WindowConfig
@@ -19,27 +27,48 @@ class Window(Protocol):
     close_requested: bool
 
     @property
-    def size(self) -> Size: ...
+    def size(self) -> Size:
+        """Return the current window surface dimensions.
 
-    def open(self): ...
+        Returns:
+            Size: Current window width and height in screen pixels.
+        """
+
+    def open(self):
+        """Open a display using the configured initial window settings.
+
+        Returns:
+            None: This method does not return a value.
+        """
 
     def set_title(self, title: str):
-        """
-        Set the window title.
+        """Update the displayed window title without changing frozen configuration.
 
-        :param title: New window title.
-        :type title: str
+        Args:
+            title (str): Caption to display on the window.
+
+        Returns:
+            None: This method does not return a value.
         """
 
     def sync_size(self, width: int, height: int) -> None:
-        """Observe a native resize without requesting another resize."""
+        """Observe a native resize without issuing another platform resize request.
+
+        Args:
+            width (int): Window width in screen pixels.
+            height (int): Window height in screen pixels.
+
+        Returns:
+            None: This method does not return a value.
+        """
 
     def resize(self, width: int, height: int):
-        """
-        Resize the window.
+        """Request a platform window resize to the supplied dimensions.
 
-        :param width: New width in pixels.
-        :type width: int
-        :param height: New height in pixels.
-        :type height: int
+        Args:
+            width (int): Window width in screen pixels.
+            height (int): Window height in screen pixels.
+
+        Returns:
+            None: This method does not return a value.
         """

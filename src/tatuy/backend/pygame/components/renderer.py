@@ -1,3 +1,5 @@
+"""Render viewport-mapped shapes, text, and textures on Pygame surfaces."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -21,11 +23,31 @@ from .window import PygameWindow
 
 @dataclass(frozen=True)
 class PygameRendererContext:
+    """Share the concrete display window and viewport transform across renderers.
+
+    Args:
+        window (PygameWindow): Concrete window providing the display surface.
+        viewport_transform (ViewportTransform): Mapping between logical
+            coordinates and display pixels.
+
+    Attributes:
+        window (PygameWindow): Concrete window providing the display surface.
+        viewport_transform (ViewportTransform): Mapping between logical
+            coordinates and display pixels.
+    """
+
     window: PygameWindow
     viewport_transform: ViewportTransform
 
 
 class PygameShape:
+    """Rasterize opaque or alpha-blended geometry using logical coordinates.
+
+    Args:
+        ctx (PygameRendererContext): Shared display window and viewport
+            mapping.
+    """
+
     def __init__(self, ctx: PygameRendererContext):
         self._context = ctx
 
@@ -36,6 +58,19 @@ class PygameShape:
         color: tuple[int, int, int, int],
         draw_fn,
     ) -> None:
+        """Blend a clipped temporary shape surface into the display.
+
+        Args:
+            bounds (pygame.Rect): Screen-space rectangle enclosing the shape,
+                including its final pixels.
+            color (tuple[int, int, int, int]): RGBA color with an explicit 8-bit alpha channel.
+            draw_fn (Callable[..., object]):
+                Callback receiving a temporary surface, local offset, and RGBA
+                color.
+
+        Returns:
+            None: This method does not return a value.
+        """
         clipped = bounds.clip(self._context.window.screen.get_rect())
         if clipped.width <= 0 or clipped.height <= 0:
             return
@@ -60,6 +95,21 @@ class PygameShape:
         *,
         radius: float = 0.0,
     ):
+        """Draw a viewport-mapped rectangle with scaled corner radius and optional alpha.
+
+        Args:
+            pos (Vec2): Top-left position in logical coordinates.
+            size (Size): Width and height in logical units.
+            color (Color): RGB or RGBA drawing color; omitted alpha is opaque.
+            radius (float): Rounded-corner radius in logical units.
+
+        Returns:
+            None: This method does not return a value.
+
+        Raises:
+            ValueError: The color or alpha value is invalid.
+            TypeError: The alpha value has an unsupported type.
+        """
         x, y = pos.to_tuple()
         w, h = size.to_tuple()
         r, g, b, a = ColorFormatter.rgba(color)
@@ -102,6 +152,25 @@ class PygameShape:
         color=(255, 255, 255),
         thickness=5,
     ):
+        """Draw a viewport-mapped line with logical thickness and optional alpha.
+
+        Negative thickness raises ValueError; zero or rounded-away thickness is a no-op.
+
+        Args:
+            start (Vec2): Starting point in logical coordinates.
+            end (Vec2): Ending point in logical coordinates.
+            color (Color): RGB or RGBA drawing color; omitted alpha is opaque.
+            thickness (int): Nonnegative line width in logical units; zero
+                draws nothing.
+
+        Returns:
+            None: This method does not return a value.
+
+        Raises:
+            ValueError: Thickness is negative. The color or alpha value is
+                invalid.
+            TypeError: The alpha value has an unsupported type.
+        """
         if thickness < 0:
             raise ValueError("Line thickness cannot be negative")
         thickness = int(round(thickness * self._context.viewport_transform.s))
@@ -143,6 +212,25 @@ class PygameShape:
         )
 
     def circle(self, x: int, y: int, radius: int, color=(255, 255, 255)):
+        """Draw a viewport-mapped circle, blending translucent colors when needed.
+
+        Negative radius raises ValueError; zero or rounded-away radius is a no-op.
+
+        Args:
+            x (int): Horizontal position in logical coordinates.
+            y (int): Vertical position in logical coordinates.
+            radius (int): Nonnegative circle radius in logical units; zero
+                draws nothing.
+            color (Color): RGB or RGBA drawing color; omitted alpha is opaque.
+
+        Returns:
+            None: This method does not return a value.
+
+        Raises:
+            ValueError: Radius is negative. The color or alpha value is
+                invalid.
+            TypeError: The alpha value has an unsupported type.
+        """
         if radius < 0:
             raise ValueError("Circle radius cannot be negative")
         if radius == 0:
@@ -191,6 +279,25 @@ class PygameShape:
         color=(255, 255, 255),
         filled: bool = True,
     ):
+        """Draw logical vertices as a filled polygon or one-pixel raster outline.
+
+        Ignore fewer than three vertices. Alpha bounds include both maximum-edge
+        pixels and preserve the target clip during local rasterization.
+
+        Args:
+            points (list[tuple[int, int]]): Polygon vertices in logical
+                coordinates.
+            color (Color): RGB or RGBA drawing color; omitted alpha is opaque.
+            filled (bool): Whether to fill the polygon instead of drawing a
+                one-pixel outline.
+
+        Returns:
+            None: This method does not return a value.
+
+        Raises:
+            ValueError: The color or alpha value is invalid.
+            TypeError: The alpha value has an unsupported type.
+        """
         r, g, b, a = ColorFormatter.rgba(color)
         if len(points) < 3:
             return
@@ -232,6 +339,14 @@ class PygameShape:
 
 
 class PygameText:
+    """Resolve configured fonts and cache them by requested name and raster size.
+
+    Args:
+        ctx (PygameRendererContext): Shared display window and viewport
+            mapping.
+        config (TextConfig): Settings used to configure this capability.
+    """
+
     def __init__(self, ctx: PygameRendererContext, config: TextConfig):
         self._context = ctx
         self._font_paths = {font.name: font.path for font in config.fonts}
@@ -241,6 +356,16 @@ class PygameText:
         self._fonts: dict[tuple[str | None, int], pygame.font.Font] = {}
 
     def _resolve_font_path(self, font_name: str | None) -> str | None:
+        """Resolve a font alias using the configured default and fallback policy.
+
+        Args:
+            font_name (str | None): Font alias, or None for the configured
+                default. Unknown names fall back to the literal default alias,
+                then the configured default.
+
+        Returns:
+            str | None: Resolved font path, or None for the built-in font.
+        """
         if font_name is None:
             return self._font_path
         if font_name in self._font_paths:
@@ -250,6 +375,23 @@ class PygameText:
     def _font(
         self, font_size: int | None, font_name: str | None
     ) -> pygame.font.Font:
+        """Get or create a cached font with viewport-scaled raster size.
+
+        Args:
+            font_size (int | None): Logical font size, or None to use the
+                selected font configuration.
+            font_name (str | None): Font alias, or None for the configured
+                default. Unknown names fall back to the literal default alias,
+                then the configured default.
+
+        Returns:
+            pygame.font.Font: Cached or newly constructed native font.
+
+        Raises:
+            pygame.error: A required native subsystem is unavailable or the
+                platform operation fails.
+            OSError: The selected font file cannot be opened.
+        """
         selected = self._default_font if font_name is None else font_name
         if selected not in self._font_paths and font_name is not None:
             selected = (
@@ -285,8 +427,23 @@ class PygameText:
         font_size: int | None = None,
         font_name: str | None = None,
     ) -> tuple[int, int]:
-        """
-        Measure the width and height of the given text.
+        """Return logical text dimensions using the same font resolution as drawing.
+
+        Args:
+            text (str): Text to measure or render.
+            font_size (int | None): Logical font size, or None to use the
+                selected font configuration.
+            font_name (str | None): Font alias, or None for the configured
+                default. Unknown names fall back to the literal default alias,
+                then the configured default.
+
+        Returns:
+            tuple[int, int]: Text width and height in logical units.
+
+        Raises:
+            pygame.error: A required native subsystem is unavailable or the
+                platform operation fails.
+            OSError: The selected font file cannot be opened.
         """
         f = self._font(font_size, font_name)
         w_px, h_px = f.size(text)
@@ -303,8 +460,29 @@ class PygameText:
         font_size: int | None = None,
         font_name: str | None = None,
     ):
-        """
-        Draw the given text at the specified position.
+        """Render antialiased text at a logical position and blend its requested alpha.
+
+        Omitted names use the configured default. Omitted sizes use the selected
+        font default; logical sizes scale once and clamp to at least eight raster pixels.
+
+        Args:
+            x (int): Horizontal position in logical coordinates.
+            y (int): Vertical position in logical coordinates.
+            text (str): Text to measure or render.
+            color (Color): RGB or RGBA drawing color; omitted alpha is opaque.
+            font_size (int | None): Logical font size, or None to use the
+                selected font configuration.
+            font_name (str | None): Font alias, or None for the configured
+                default. Unknown names fall back to the literal default alias,
+                then the configured default.
+
+        Returns:
+            None: This method does not return a value.
+
+        Raises:
+            pygame.error: A required native subsystem is unavailable or the
+                platform operation fails.
+            OSError: The selected font file cannot be opened.
         """
         r, g, b, alpha = ColorFormatter.rgba(color)
         sx, sy = self._context.viewport_transform.map_xy(int(x), int(y))
@@ -317,6 +495,13 @@ class PygameText:
 
 
 class PygameTexture:
+    """Own texture surfaces and expose integer handles for viewport-mapped drawing.
+
+    Args:
+        ctx (PygameRendererContext): Shared display window and viewport
+            mapping.
+    """
+
     def __init__(self, ctx: PygameRendererContext):
         self._context = ctx
         self._next_tex_id = 1
@@ -329,6 +514,32 @@ class PygameTexture:
         data: bytes | bytearray | memoryview,
         pitch: int = -1,
     ) -> int:
+        """Copy RGBA pixels into a native surface and return its texture handle.
+
+        Nonpositive pitch means tightly packed rows. Invalid dimensions, undersized
+        positive pitch, or short buffers raise ValueError before native conversion.
+        Padded rows are repacked; conversion requires an initialized display.
+
+        Args:
+            w (int): Texture width in pixels when uploading, or logical width
+                when drawing.
+            h (int): Texture height in pixels when uploading, or logical height
+                when drawing.
+            data (bytes | bytearray | memoryview): RGBA pixel buffer, including
+                any row padding.
+            pitch (int): Bytes per input row. Nonpositive values select tightly
+                packed RGBA rows; positive values must be at least four times
+                the width.
+
+        Returns:
+            int: Opaque handle identifying the uploaded texture.
+
+        Raises:
+            ValueError: Dimensions are nonpositive, positive pitch is too
+                small, or the pixel buffer is too short.
+            pygame.error: A required native subsystem is unavailable or the
+                platform operation fails.
+        """
         w = int(w)
         h = int(h)
         if w <= 0 or h <= 0:
@@ -378,6 +589,29 @@ class PygameTexture:
         h: int,
         angle_deg: float = 0.0,
     ):
+        """Draw mapped texture bounds, optionally rotated clockwise about their center.
+
+        Missing handles and nonpositive mapped dimensions are no-ops. Native
+        scaling and rotation occur when required by the requested output.
+
+        Args:
+            tex (int): Opaque texture handle returned by create().
+            x (int): Horizontal position in logical coordinates.
+            y (int): Vertical position in logical coordinates.
+            w (int): Texture width in pixels when uploading, or logical width
+                when drawing.
+            h (int): Texture height in pixels when uploading, or logical height
+                when drawing.
+            angle_deg (float): Clockwise rotation in degrees about the
+                destination center.
+
+        Returns:
+            None: This method does not return a value.
+
+        Raises:
+            pygame.error: A required native subsystem is unavailable or the
+                platform operation fails.
+        """
         surf = self._textures.get(int(tex))
         if surf is None:
             return
@@ -403,7 +637,28 @@ class PygameTexture:
         self._context.window.screen.blit(draw_surf, (sx, sy))
 
     def tiled(self, tex_id: int, x: int, y: int, w: int, h: int):
-        """Stretch to logical width and repeat vertically within logical height."""
+        """Stretch to logical width and repeat vertically within logical height.
+
+        Scale source tile height with the viewport, crop the final tile, and retain
+        the active clip. Missing handles or mapped dimensions/tile height at zero
+        or below are no-ops. Horizontal repetition is not performed.
+
+        Args:
+            tex_id (int): Opaque texture handle returned by create().
+            x (int): Horizontal position in logical coordinates.
+            y (int): Vertical position in logical coordinates.
+            w (int): Texture width in pixels when uploading, or logical width
+                when drawing.
+            h (int): Texture height in pixels when uploading, or logical height
+                when drawing.
+
+        Returns:
+            None: This method does not return a value.
+
+        Raises:
+            pygame.error: A required native subsystem is unavailable or the
+                platform operation fails.
+        """
         surf = self._textures.get(int(tex_id))
         if surf is None:
             return
@@ -425,10 +680,25 @@ class PygameTexture:
             )
 
     def destroy(self, tex: int):
+        """Remove a stored texture surface, ignoring unknown handles.
+
+        Args:
+            tex (int): Opaque texture handle returned by create().
+
+        Returns:
+            None: This method does not return a value.
+        """
         self._textures.pop(int(tex), None)
 
 
 class PygameClip:
+    """Map logical clip rectangles onto the active Pygame display surface.
+
+    Args:
+        context (PygameRendererContext): Shared display window and viewport
+            mapping.
+    """
+
     def __init__(self, context: PygameRendererContext):
         self._context = context
 
@@ -437,6 +707,15 @@ class PygameClip:
         pos: Vec2,
         size: Size,
     ) -> None:
+        """Replace the surface clip with the viewport-mapped logical bounds.
+
+        Args:
+            pos (Vec2): Top-left position in logical coordinates.
+            size (Size): Width and height in logical units.
+
+        Returns:
+            None: This method does not return a value.
+        """
         x, y = pos.to_tuple()
         w, h = size.to_tuple()
 
@@ -459,12 +738,28 @@ class PygameClip:
         )
 
     def clear(self) -> None:
+        """Reset the surface clip to the full display bounds.
+
+        Returns:
+            None: This method does not return a value.
+        """
         self._context.window.screen.set_clip(None)
 
 
 class PygameRenderer(BackendComponent[PygameRendererConfig]):
-    """
-    Render port for the tatuy native backend.
+    """Compose native drawing ports and present completed Pygame frames.
+
+    Args:
+        config (PygameRendererConfig): Settings used to configure this
+            capability.
+        window (PygameWindow): Concrete window providing the display
+            surface.
+        viewport_transform (ViewportTransform): Mapping from logical
+            coordinates to display pixels.
+
+    Raises:
+        ValueError: The configured clear color or alpha value is invalid.
+        TypeError: The configured alpha has an unsupported type.
     """
 
     def __init__(
@@ -486,18 +781,41 @@ class PygameRenderer(BackendComponent[PygameRendererConfig]):
         self.clip = PygameClip(context)
 
     def set_clear_color(self, r: int, g: int, b: int):
-        """
-        Set the clear color for the renderer.
+        """Select an opaque RGB clear color without producing console output.
+
+        Args:
+            r (int): Red channel in the range 0 through 255.
+            g (int): Green channel in the range 0 through 255.
+            b (int): Blue channel in the range 0 through 255.
+
+        Returns:
+            None: This method does not return a value.
         """
         self._clear = (int(r), int(g), int(b), 255)
 
     def begin_frame(self):
-        """Begin a new rendering frame."""
+        """Fill the display with the clear color, respecting the active surface clip.
+
+        Returns:
+            None: This method does not return a value.
+
+        Raises:
+            pygame.error: A required native subsystem is unavailable or the
+                platform operation fails.
+        """
         r, g, b, _ = self._clear
         self._window.screen.fill((r, g, b))
 
     def end_frame(self):
-        """End the current rendering frame."""
+        """Present the completed display surface through pygame.display.flip.
+
+        Returns:
+            None: This method does not return a value.
+
+        Raises:
+            pygame.error: A required native subsystem is unavailable or the
+                platform operation fails.
+        """
         with profiler.span(
             "pygame.display.flip",
             "wait",

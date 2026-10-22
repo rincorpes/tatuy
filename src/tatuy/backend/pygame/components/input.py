@@ -1,3 +1,5 @@
+"""Observe Pygame pointer state and select cached system cursors."""
+
 from __future__ import annotations
 
 # pygame exposes some attributes dynamically.
@@ -10,7 +12,15 @@ from tatuy.input.pointer import Cursor, PointerState
 
 
 class PygameInput(BackendComponent[PygameInputConfig]):
-    """Observe input devices through pygame."""
+    """Observe enabled mouse input and cache successful native cursor selections.
+
+    Args:
+        config (PygameInputConfig): Settings used to configure this
+            capability.
+
+    Raises:
+        NotImplementedError: Gamepad input is requested.
+    """
 
     def __init__(self, config: PygameInputConfig):
         super().__init__(config)
@@ -19,6 +29,19 @@ class PygameInput(BackendComponent[PygameInputConfig]):
         self._cursor: Cursor | None = None
 
     def get_pointer_state(self) -> PointerState:
+        """Observe pointer position and focus within the current display bounds.
+
+        Return a neutral state without native calls when mouse input is disabled.
+
+        Returns:
+            PointerState: Pointer position and whether it lies inside the
+                focused display; the default state when mouse input is
+                disabled.
+
+        Raises:
+            pygame.error: A required native subsystem is unavailable or the
+                platform operation fails.
+        """
         if not self.config.enable_mouse:
             return PointerState()
         position = pygame.mouse.get_pos()
@@ -36,6 +59,18 @@ class PygameInput(BackendComponent[PygameInputConfig]):
         )
 
     def set_cursor(self, cursor: Cursor) -> None:
+        """Select and cache an enabled system cursor; failed selections are not cached.
+
+        Args:
+            cursor (Cursor): System cursor to select.
+
+        Returns:
+            None: This method does not return a value.
+
+        Raises:
+            pygame.error: A required native subsystem is unavailable or the
+                platform operation fails.
+        """
         if not self.config.enable_mouse:
             return
         if cursor == self._cursor:

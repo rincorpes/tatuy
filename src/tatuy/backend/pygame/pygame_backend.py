@@ -1,3 +1,5 @@
+"""Compose Pygame capabilities and manage transactional platform startup."""
+
 from __future__ import annotations
 
 # Justification: Disabling no-member checks for pygame attributes since they are
@@ -17,8 +19,22 @@ from .config import PygameBackendConfig
 
 
 class PygameBackend:
-    """
-    Pygame backend for tatuy.
+    """Compose Pygame capabilities and own their global platform lifetime.
+
+    Args:
+        config (PygameBackendConfig): Settings used to configure this
+            capability.
+
+    Attributes:
+        config (PygameBackendConfig): Backend and capability settings.
+        viewport_transform (ViewportTransform): Logical-to-display mapping.
+        initialized (bool): Whether startup has completed successfully.
+        events (PygameEvents): Event collection capability, available after init.
+        window (PygameWindow): Window capability, available after init.
+        input (PygameInput): Pointer capability, available after init.
+        renderer (PygameRenderer): Drawing capability, available after init.
+        audio (PygameAudio): Audio capability, available after init.
+        capture (PygameCapture): Frame capture capability, available after init.
     """
 
     events: PygameEvents
@@ -29,9 +45,6 @@ class PygameBackend:
     capture: PygameCapture
 
     def __init__(self, config: PygameBackendConfig):
-        """
-        Initialize the PygameBackend with the given config.
-        """
 
         self.config = config
         self.viewport_transform = ViewportTransform()
@@ -42,7 +55,24 @@ class PygameBackend:
         return f"PygameBackend(config={self.config})"
 
     def init(self):
-        """Compose capabilities, rolling back platform state on failure."""
+        """Initialize Pygame and compose capabilities, rolling back on failure.
+
+        Repeated successful calls preserve capabilities. Unsupported gamepad mode
+        and pending failed cleanup are rejected before new platform acquisition.
+        If rollback also fails, preserve the startup error and chain the cleanup error.
+
+        Returns:
+            None: This method does not return a value.
+
+        Raises:
+            RuntimeError: A previous platform shutdown failed and cleanup is
+                still pending.
+            NotImplementedError: Gamepad support is requested.
+            FileNotFoundError: A preloaded sound file does not exist.
+            ValueError: A preloaded sound identifier is empty.
+            pygame.error: A required native subsystem is unavailable or the
+                platform operation fails.
+        """
         if self.initialized:
             return
         if self._platform_active:
@@ -82,7 +112,18 @@ class PygameBackend:
         self.initialized = True
 
     def stop(self):
-        """Release platform state; failed quits can be retried."""
+        """Quit owned platform state while retaining native wrapper references.
+
+        Repeated calls after successful cleanup are harmless. A failed quit leaves
+        cleanup pending so stop can retry; the backend is no longer initialized.
+
+        Returns:
+            None: This method does not return a value.
+
+        Raises:
+            pygame.error: A required native subsystem is unavailable or the
+                platform operation fails.
+        """
         if not self._platform_active:
             return
 

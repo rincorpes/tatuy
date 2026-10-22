@@ -1,3 +1,5 @@
+"""Manage the Pygame display while retaining its borrowed SDL window wrapper."""
+
 from __future__ import annotations
 
 # Justification: Disabling no-member checks for pygame attributes since they are
@@ -13,8 +15,19 @@ from tatuy.math.vec2 import Vec2
 
 
 class PygameWindow(BackendComponent[PygameWindowConfig]):
-    """
-    Port for window management.
+    """Own the display surface and retain the SDL wrapper until platform shutdown.
+
+    Args:
+        config (PygameWindowConfig): Settings used to configure this
+            capability.
+
+    Attributes:
+        config (PygameWindowConfig): Settings for this capability.
+        screen (pygame.Surface): Display surface, available after open().
+        position (Vec2): Observed window position in screen coordinates.
+        minimized (bool): Whether the window is minimized.
+        maximized (bool): Whether the window is maximized.
+        close_requested (bool): Whether a window close was requested.
     """
 
     config: PygameWindowConfig
@@ -38,11 +51,28 @@ class PygameWindow(BackendComponent[PygameWindowConfig]):
 
     @property
     def size(self) -> Size:
+        """Read current display-surface dimensions and refresh the cached size.
+
+        Returns:
+            Size: Current window width and height in screen pixels.
+        """
         width, height = self.screen.get_size()
         self._size = Size(width, height)
         return self._size
 
     def open(self):
+        """Create the configured display and retain its borrowed SDL window wrapper.
+
+        Apply the caption and capture window position. Keep the wrapper alive until
+        platform shutdown because native events retain a borrowed reference.
+
+        Returns:
+            None: This method does not return a value.
+
+        Raises:
+            pygame.error: A required native subsystem is unavailable or the
+                platform operation fails.
+        """
         flags = pygame.RESIZABLE if self.config.resizable else 0
         self.screen = pygame.display.set_mode(
             (self.config.width, self.config.height), flags
@@ -55,25 +85,49 @@ class PygameWindow(BackendComponent[PygameWindowConfig]):
         self.position = Vec2(float(window_x), float(window_y))
 
     def set_title(self, title: str):
-        """
-        Set the window title.
+        """Update the caption and cached title without rewriting frozen configuration.
 
-        :param title: New window title.
-        :type title: str
+        Args:
+            title (str): Caption to display on the window.
+
+        Returns:
+            None: This method does not return a value.
+
+        Raises:
+            pygame.error: A required native subsystem is unavailable or the
+                platform operation fails.
         """
         self._title = title
         pygame.display.set_caption(title)
 
     def sync_size(self, width: int, height: int) -> None:
-        """Refresh surface state after a native resize notification."""
+        """Refresh observed size and surface state without requesting another resize.
+
+        Args:
+            width (int): Window width in screen pixels.
+            height (int): Window height in screen pixels.
+
+        Returns:
+            None: This method does not return a value.
+        """
         self._size = Size(width, height)
         surface = pygame.display.get_surface()
         if surface is not None:
             self.screen = surface
 
     def resize(self, width: int, height: int):
-        """
-        Resize the window.
+        """Request a display resize with the original flags and retain the returned surface.
+
+        Args:
+            width (int): Window width in screen pixels.
+            height (int): Window height in screen pixels.
+
+        Returns:
+            None: This method does not return a value.
+
+        Raises:
+            pygame.error: A required native subsystem is unavailable or the
+                platform operation fails.
         """
         self._size = Size(width, height)
         self.screen = pygame.display.set_mode(
