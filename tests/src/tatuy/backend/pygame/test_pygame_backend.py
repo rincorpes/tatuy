@@ -90,3 +90,16 @@ def test_failed_initialization_releases_platform(platform, monkeypatch):
         backend.init()
     backend.stop()
     platform.quit.assert_called_once_with()
+
+
+def test_gamepad_rejected_before_platform_initialization(platform):
+    from tatuy.backend.pygame.config import PygameInputConfig
+
+    backend = module.PygameBackend(
+        PygameBackendConfig(input=PygameInputConfig(enable_gamepad=True))
+    )
+    with pytest.raises(NotImplementedError, match="gamepad"):
+        backend.init()
+    assert not backend.initialized
+    platform.init.assert_not_called()
+    platform.quit.assert_not_called()

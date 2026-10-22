@@ -5,23 +5,14 @@ from tatuy.backend.factory import BackendFactory
 
 def main():
     config = {
-        "window": {
-            "width": 1280,
-            "height": 720,
-            "title": "Factory Example",
-        },
+        "window": {"width": 1280, "height": 720, "title": "Factory Example"}
     }
-
-    backend = BackendFactory.create(
-        "pygame",
-        config,
-    )
-
-    backend.init()
-
-    print(backend)
-
-    backend.stop()
+    backend = BackendFactory.create("pygame", config)
+    try:
+        backend.init()
+        print(backend)
+    finally:
+        backend.stop()
 
 
 if __name__ == "__main__":

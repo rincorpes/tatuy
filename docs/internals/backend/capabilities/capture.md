@@ -20,6 +20,8 @@ This matches the capture worker's BGRA decoding. The source docstrings
 currently say ARGB in places; the actual export format is BGRA.
 
 Saving to a nonempty path and extracting raw bytes need an available screen
-surface. They do not check
-`CaptureConfig.enabled`, `directory`, or `format`.
-
+surface. They do not check the deprecated
+`CaptureConfig.enabled`, `directory`, or `format` fields. Low-level calls
+are explicit operations. `CaptureSettings` owns workflow paths, hotkeys,
+and screenshot encoding (PNG by default; BMP is also supported).
+

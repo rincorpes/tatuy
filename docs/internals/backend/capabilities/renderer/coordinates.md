@@ -13,9 +13,9 @@ units. Shape inputs that use `Vec2` are currently truncated to integers
 before mapping, so fractional logical positions lose precision.
 
 Circles scale their radius; rectangle corner radii scale too.
-Line thickness currently remains in screen pixels. Text's explicit font
-size scales with the viewport, but an omitted size takes the unscaled
-24-pixel fallback.
+Line thickness scales with the viewport. Text sizes, including omitted
+per-font defaults, are logical dimensions and scale once. Outlined polygons
+retain their existing fixed one-pixel raster outline.
 
 `texture.tiled()` maps position and destination dimensions like
 `texture.draw()`. Source tile height is treated as logical height and
@@ -25,4 +25,4 @@ the final crop use the resulting integer screen dimensions.
 Viewport policy and camera/world-to-view conversion belong to rendering
 infrastructure above this port. Do not add backend-specific coordinate
 conversion to gameplay to compensate for these differences.
-
+

@@ -7,6 +7,7 @@ from typing import Any
 import pygame
 
 from tatuy.backend.backend_component import BackendComponent
+from tatuy.backend.config import InputConfig
 from tatuy.backend.pygame.config import PygameEventsConfig
 from tatuy.events import Event, EventCategory, EventType
 from tatuy.input.keys import Key
@@ -34,6 +35,36 @@ for number in range(10):
 for number in range(1, 13):
     PYGAME_KEY_TO_KEY[getattr(pygame, f"K_F{number}")] = Key[f"F{number}"]
 
+
+PYGAME_KEY_TO_KEY.update(
+    {
+        pygame.K_LSHIFT: Key.LSHIFT,
+        pygame.K_RSHIFT: Key.RSHIFT,
+        pygame.K_LCTRL: Key.LCTRL,
+        pygame.K_RCTRL: Key.RCTRL,
+        pygame.K_LALT: Key.LALT,
+        pygame.K_RALT: Key.RALT,
+        pygame.K_LGUI: Key.LGUI,
+        pygame.K_RGUI: Key.RGUI,
+        pygame.K_KP0: Key.KP_0,
+        pygame.K_KP1: Key.KP_1,
+        pygame.K_KP2: Key.KP_2,
+        pygame.K_KP3: Key.KP_3,
+        pygame.K_KP4: Key.KP_4,
+        pygame.K_KP5: Key.KP_5,
+        pygame.K_KP6: Key.KP_6,
+        pygame.K_KP7: Key.KP_7,
+        pygame.K_KP8: Key.KP_8,
+        pygame.K_KP9: Key.KP_9,
+        pygame.K_KP_ENTER: Key.KP_ENTER,
+        pygame.K_KP_PLUS: Key.KP_PLUS,
+        pygame.K_KP_MINUS: Key.KP_MINUS,
+        pygame.K_KP_MULTIPLY: Key.KP_MULTIPLY,
+        pygame.K_KP_DIVIDE: Key.KP_DIVIDE,
+        pygame.K_KP_PERIOD: Key.KP_PERIOD,
+        pygame.K_KP_EQUALS: Key.KP_EQUALS,
+    }
+)
 
 _EVENT_MAP = {
     pygame.KEYDOWN: (EventCategory.INPUT, EventType.KEYDOWN),
@@ -84,8 +115,13 @@ _EVENT_MAP = {
 class PygameEvents(BackendComponent[PygameEventsConfig]):
     """Collect pygame events and translate them into tatuy events."""
 
-    def __init__(self, config: PygameEventsConfig):
+    def __init__(
+        self,
+        config: PygameEventsConfig,
+        input_config: InputConfig | None = None,
+    ):
         super().__init__(config)
+        self._input_config = input_config or InputConfig()
 
     def get_events(self) -> list[Event]:
         events: list[Event] = []
@@ -101,6 +137,16 @@ class PygameEvents(BackendComponent[PygameEventsConfig]):
                     continue
 
                 category, event_type = mapping
+                if category == EventCategory.INPUT:
+                    keyboard = event_type in (
+                        EventType.KEYDOWN,
+                        EventType.KEYUP,
+                        EventType.TEXTINPUT,
+                    )
+                    if keyboard and not self._input_config.enable_keyboard:
+                        continue
+                    if not keyboard and not self._input_config.enable_mouse:
+                        continue
                 attrs = self._translate_attrs(
                     event_type,
                     pygame_event.dict,
@@ -160,6 +206,12 @@ class PygameEvents(BackendComponent[PygameEventsConfig]):
                     "y": float(attrs["y"]),
                 }
 
+            case (
+                EventType.WINDOWMOVED
+                | EventType.WINDOWRESIZED
+                | EventType.WINDOWSIZECHANGED
+            ):
+                return {"x": int(attrs["x"]), "y": int(attrs["y"])}
             case _:
-                # Preserve the existing window event payloads.
-                return dict(attrs)
+                # Native window wrappers and other backend values stay private.
+                return {}

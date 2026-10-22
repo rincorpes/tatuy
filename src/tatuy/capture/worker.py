@@ -139,11 +139,11 @@ class CaptureWorker(BaseWorker):
                     and image.size != job.target_size
                 ):
                     with image.resize(job.target_size) as resized:
-                        resized.save(temporary, format="PNG")
+                        resized.save(temporary, format=job.image_format)
                 else:
-                    image.save(temporary, format="PNG")
+                    image.save(temporary, format=job.image_format)
 
-            # A final filename appears only after the PNG is complete.
+            # A final filename appears only after encoding is complete.
             temporary.replace(job.out_path)
 
             result = CaptureResult(

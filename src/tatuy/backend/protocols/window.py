@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Protocol
+from typing import Protocol
 
 from tatuy.backend.config import WindowConfig
 from tatuy.geometry.size import Size
@@ -13,7 +13,6 @@ class Window(Protocol):
     """
 
     config: WindowConfig
-    screen: Any
     position: Vec2
     minimized: bool
     maximized: bool
@@ -31,6 +30,9 @@ class Window(Protocol):
         :param title: New window title.
         :type title: str
         """
+
+    def sync_size(self, width: int, height: int) -> None:
+        """Observe a native resize without requesting another resize."""
 
     def resize(self, width: int, height: int):
         """

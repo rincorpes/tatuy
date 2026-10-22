@@ -26,6 +26,15 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Update translucent polygon rendering to include extreme vertex pixels; enhance tests for alpha coverage
 - Update tiled texture handling to apply viewport transformations; enhance tests for cropping and clipping behavior
 - Simplify font path resolution logic; enhance tests for font selection and error propagation
+- Moved engine start to the main loop for better control flow.
+- Added deprecation warnings for unused capture configurations in AudioConfig.
+- Introduced sync_size method in PygameWindow to handle native resize notifications.
+- Enhanced PygameEvents to support keyboard and mouse enabling/disabling via InputConfig.
+- Updated PygameInput to raise NotImplementedError for unsupported gamepad input.
+- Improved error handling for invalid texture geometry and shape sizes in PygameRenderer.
+- Added support for customizable screenshot formats in CaptureSettings and CaptureWorker.
+- Implemented tests for new input handling features and capture settings.
+- Removed obsolete sample test file and added new tests for input and window services.
 
 ### - 2026-10-21
 

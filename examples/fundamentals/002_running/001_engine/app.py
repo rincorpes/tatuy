@@ -11,13 +11,12 @@ def main():
     backend = PygameBackend(PygameBackendConfig())
     engine = Engine(backend)
 
-    engine.start()
-
     target_dt = 1.0 / 60
     previous_frame_start = perf_counter()
     frame_index = 0
 
     try:
+        engine.start()
         while engine.running:
             frame_start = perf_counter()
             dt = frame_start - previous_frame_start

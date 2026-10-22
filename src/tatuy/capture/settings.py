@@ -36,6 +36,7 @@ class CaptureSettings:
     root_dir: str = ".tatuy"
 
     screenshots_dir: str = "screenshots"
+    screenshot_format: str = "png"
     replays_dir: str = "replays"
     recordings_dir: str = "recordings"
 
@@ -50,6 +51,10 @@ class CaptureSettings:
 
     keep_frames: bool = True
     worker_queue_size: int = 16
+
+    def __post_init__(self) -> None:
+        if self.screenshot_format not in ("png", "bmp"):
+            raise ValueError("screenshot_format must be png or bmp")
 
 
 @SettingsRegistry.implementation("capture")

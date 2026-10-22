@@ -1,13 +1,8 @@
 from __future__ import annotations
 
 from tatuy.backend.config import SoundConfig
-from tatuy.backend.pygame import (
-    PygameBackend,
-    PygameBackendConfig,
-)
-from tatuy.backend.pygame.config import (
-    PygameAudioConfig,
-)
+from tatuy.backend.pygame import PygameBackend, PygameBackendConfig
+from tatuy.backend.pygame.config import PygameAudioConfig
 
 
 def main():
@@ -24,16 +19,13 @@ def main():
             ),
         )
     )
-
     backend = PygameBackend(config)
-
-    backend.init()
-
-    backend.audio.play_sound("test")
-
-    input("Press ENTER to stop...")
-
-    backend.stop()
+    try:
+        backend.init()
+        backend.audio.play_sound("test")
+        input("Press ENTER to stop...")
+    finally:
+        backend.stop()
 
 
 if __name__ == "__main__":

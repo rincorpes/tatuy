@@ -1,25 +1,24 @@
 # Input Capability
 
-The backend protocol exposes `get_pointer_state()` and `set_cursor()`.
-Keyboard/button event state is assembled by higher-level `InputService`
-and `InputFrame`, not by this pointer port.
+`get_pointer_state()` observes the pointer in window coordinates;
+`set_cursor()` selects a system cursor. No viewport conversion happens here.
+Keyboard/button state is assembled by `InputService`, not the pointer port.
 
-`PygameInput.get_pointer_state()` returns integer window-space coordinates.
-Its `inside` flag requires all of:
+`enable_keyboard=False` suppresses key and text events and publishes no held,
+pressed, or released keys. `enable_mouse=False` suppresses mouse events,
+pointer polling and cursor changes; snapshots have neutral mouse state.
+Disabled devices clear previously held state without synthesizing releases.
+The event collector and input service both honor these flags. Window and
+quit events remain available even when both input devices are disabled.
 
-- an existing display surface;
-- mouse focus;
-- a point inside the surface rectangle.
+Pygame gamepad support is not implemented. `enable_gamepad=True` raises
+`NotImplementedError` before backend initialization acquires platform state.
+The shared configuration retains the flag for backends supporting controllers.
 
-The right and bottom edges are exclusive. Position is still returned when
-the pointer is outside or there is no surface. No viewport conversion is
-performed here.
+An enabled pointer is inside only when a display exists, the mouse has focus,
+and its coordinates lie inside the surface. Right/bottom edges are exclusive.
+Position is still reported outside the display. Disabled pointers return
+`PointerState(position=(0, 0), inside=False)` without native calls.
 
-`set_cursor()` maps `Cursor.ARROW`, `HAND`, and `TEXT` to Pygame system
-cursors. A successful selection is cached; repeated selections avoid another
-native call. Failed native calls propagate and do not update that cache.
-
-The current `enable_keyboard`, `enable_mouse`, and `enable_gamepad`
-configuration flags do not enable or disable these operations. Gamepad
-support is not implemented by this port.
-
+Cursor choices are ARROW, HAND, and TEXT. Successful choices are cached;
+native errors propagate without updating the cache.

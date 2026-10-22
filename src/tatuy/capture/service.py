@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
 from queue import Empty, SimpleQueue
 from uuid import uuid4
 
@@ -40,7 +39,7 @@ class CaptureService:
 
         self.screenshot_paths = CapturePathBuilder(
             directory=self.directories.screenshots,
-            ext="png",
+            ext=self.settings.screenshot_format,
         )
 
         self.worker = CaptureWorker(
@@ -179,6 +178,7 @@ class CaptureService:
                     h=height,
                     pixels=pixels,
                     fmt="BGRA",
+                    image_format=self.settings.screenshot_format.upper(),
                 )
             )
 

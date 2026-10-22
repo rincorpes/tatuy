@@ -14,9 +14,13 @@ class PygameInput(BackendComponent[PygameInputConfig]):
 
     def __init__(self, config: PygameInputConfig):
         super().__init__(config)
+        if config.enable_gamepad:
+            raise NotImplementedError("Pygame gamepad input is not supported")
         self._cursor: Cursor | None = None
 
     def get_pointer_state(self) -> PointerState:
+        if not self.config.enable_mouse:
+            return PointerState()
         position = pygame.mouse.get_pos()
         surface = pygame.display.get_surface()
 
@@ -32,6 +36,8 @@ class PygameInput(BackendComponent[PygameInputConfig]):
         )
 
     def set_cursor(self, cursor: Cursor) -> None:
+        if not self.config.enable_mouse:
+            return
         if cursor == self._cursor:
             return
 

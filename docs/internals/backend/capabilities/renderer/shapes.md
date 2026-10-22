@@ -14,9 +14,10 @@ the target. A fully offscreen translucent shape returns without allocation.
 The target surface's active clip also applies during drawing/blitting.
 
 Polygons with fewer than three points are ignored. Outlined polygons use
-one-pixel width. Circles currently clamp their mapped radius to at least
-one pixel, even for a zero/negative logical radius. Input range policy is
-not otherwise validated consistently.
+one raster pixel. Line thickness and circle radius are logical dimensions
+scaled through the viewport. Zero sizes are no-ops; negative line thickness
+or circle radius raises `ValueError`. Positive sizes mapping to zero draw
+nothing instead of being clamped to one pixel.
 
 Translucent polygon bounds include both extreme vertex pixels after
 viewport mapping (`max - min + 1` in screen pixels). The active target clip
@@ -26,4 +27,4 @@ outline rasterization as well as the final blit's clipping.
 Temporary alpha surfaces are allocated per draw. Profile actual workloads
 before introducing pooling, batching, or native implementations.
 See [Coordinates](coordinates.md) for scaling differences.
-
+

@@ -346,3 +346,93 @@ def test_configured_font_load_errors_propagate(monkeypatch, render_target):
         text.measure("hello")
     assert caught.value is error
     font_type.assert_called_once_with("bad.ttf", 24)
+
+
+@pytest.mark.parametrize(
+    "w,h,pitch", [(0, 2, -1), (-1, 2, -1), (2, 0, -1), (2, -1, -1), (2, 2, 7)]
+)
+def test_invalid_texture_geometry_fails_before_conversion(
+    monkeypatch, textures, w, h, pitch
+):
+    conversion = Mock()
+    monkeypatch.setattr(module.pygame.image, "frombuffer", conversion)
+    with pytest.raises(ValueError):
+        textures.create(w, h, bytes(100), pitch=pitch)
+    conversion.assert_not_called()
+
+
+@pytest.mark.parametrize("shape", ["line", "circle"])
+@pytest.mark.parametrize("size", [0, -1])
+def test_invalid_shape_sizes(render_target, shape, size):
+    before = pygame.image.tostring(render_target.screen, "RGBA")
+
+    def draw():
+        if shape == "line":
+            render_target.renderer.shape.line(
+                Vec2(1, 1), Vec2(8, 8), thickness=size
+            )
+        else:
+            render_target.renderer.shape.circle(8, 8, size)
+
+    if size < 0:
+        with pytest.raises(ValueError):
+            draw()
+    else:
+        draw()
+    assert pygame.image.tostring(render_target.screen, "RGBA") == before
+
+
+def test_line_thickness_scales_with_viewport(monkeypatch, render_target):
+    draw = Mock()
+    monkeypatch.setattr(module.pygame.draw, "line", draw)
+    render_target.transform.set(0, 0, 2)
+    render_target.renderer.shape.line(Vec2(1, 1), Vec2(8, 8), thickness=3)
+    assert draw.call_args.args[-1] == 6
+
+
+def test_tiny_shapes_rounding_to_zero_are_noops(render_target):
+    render_target.transform.set(0, 0, 0.1)
+    before = pygame.image.tostring(render_target.screen, "RGBA")
+    render_target.renderer.shape.line(Vec2(1, 1), Vec2(8, 8), thickness=1)
+    render_target.renderer.shape.circle(8, 8, 1)
+    assert pygame.image.tostring(render_target.screen, "RGBA") == before
+
+
+@pytest.mark.parametrize(
+    "name,size,expected",
+    [
+        (None, None, 36),
+        ("ui", None, 36),
+        ("default", None, 40),
+        ("missing", None, 40),
+        (None, 12, 24),
+    ],
+)
+def test_font_default_sizes_scale_once(
+    monkeypatch, render_target, name, size, expected
+):
+    font = Mock()
+    font.return_value.size.return_value = (20, 20)
+    font.return_value.render.return_value = pygame.Surface((2, 2))
+    monkeypatch.setattr(module.pygame.font, "Font", font)
+    render_target.transform.set(0, 0, 2)
+    text = module.PygameText(
+        module.PygameRendererContext(
+            render_target.window, render_target.transform
+        ),
+        TextConfig(
+            fonts=(
+                FontConfig("ui", None, 18),
+                FontConfig("default", None, 20),
+            ),
+            default_font="ui",
+        ),
+    )
+    assert text.measure("hello", size, name) == (10, 10)
+    text.draw(0, 0, "hello", font_size=size, font_name=name)
+    font.assert_called_once_with(None, expected)
+
+
+def test_clear_color_setter_has_no_stdout(render_target, capsys):
+    render_target.renderer.set_clear_color(1, 2, 3)
+    assert capsys.readouterr().out == ""

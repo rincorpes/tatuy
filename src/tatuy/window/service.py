@@ -11,6 +11,7 @@ from tatuy.math.vec2 import Vec2
 class WindowService:
     def __init__(self, backend: Backend):
         self._backend = backend
+        self._last_size = Size(0, 0)
 
     @property
     def _window(self) -> Window:
@@ -24,6 +25,7 @@ class WindowService:
 
     def open(self) -> None:
         self._window.open()
+        self._last_size = self._window.size
 
     def sync_events(self, events: list[Event]):
         if not self._backend.initialized:
@@ -48,10 +50,11 @@ class WindowService:
                     )
 
                 case EventType.WINDOWRESIZED | EventType.WINDOWSIZECHANGED:
-                    old_size = self._window.size
-                    self._window.resize(
+                    old_size = self._last_size
+                    self._window.sync_size(
                         event.attrs.get("x", 0), event.attrs.get("y", 0)
                     )
+                    self._last_size = self._window.size
                     event_bus.emit(
                         event.type_name,
                         data={

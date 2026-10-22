@@ -9,9 +9,10 @@ The buffer must hold at least `h * pitch` bytes. Packed data goes through
 repacked before conversion. Conversion requires an initialized display.
 The converted surface does not retain the caller's mutable buffer.
 
-The current code does not explicitly reject a positive pitch smaller than
-`w * 4` or non-positive dimensions. Those values are not supported inputs;
-error handling needs to be made explicit before expanding this contract.
+Non-positive width/height, a positive pitch below `w * 4`, and a buffer
+shorter than `h * pitch` raise `ValueError` before allocation/conversion or
+handle creation. Extra trailing bytes are allowed. Non-positive pitch
+retains the tightly packed-row convention.
 
 `draw(handle, x, y, w, h, angle_deg=0.0)` maps logical position and dimensions
 through the viewport, ignores missing handles and non-positive mapped sizes,
@@ -30,4 +31,4 @@ heights that round to zero are no-ops. Tiling remains vertical-only.
 `destroy(handle)` removes a stored surface and silently ignores unknown
 handles. Resource ownership belongs to the renderer instance; the protocol
 does not expose a separate texture shutdown.
-
+

@@ -20,6 +20,17 @@ Tatuy includes:
 
 Replay availability depends on replay settings.
 
+## Screenshot policy
+
+`CaptureSettings` owns root/screenshot/replay/recording directories.
+`screenshot_format="png"` is the default; `"bmp"` selects real BMP output.
+Video intermediate frames remain PNG. Other screenshot formats raise
+`ValueError`. `hotkeys_enabled=False` disables automatic capture hotkeys;
+explicit screenshot/recording commands remain available.
+
+Legacy backend capture `enabled`, `directory`, and `format` fields are
+deprecated and ignored. Move workflow configuration to `CaptureSettings`.
+
 ## Replay
 
 Replay files store game input/timing information rather than video.

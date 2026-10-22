@@ -48,3 +48,18 @@ def test_cursor_only_updates_when_changed(monkeypatch):
     input_port.set_cursor(Cursor.HAND)
     input_port.set_cursor(Cursor.ARROW)
     assert setter.call_count == 2
+
+
+def test_disabled_mouse_never_touches_platform(monkeypatch):
+    fake = Mock()
+    monkeypatch.setattr(module, "pygame", fake)
+    port = module.PygameInput(PygameInputConfig(enable_mouse=False))
+    state = port.get_pointer_state()
+    port.set_cursor(Cursor.HAND)
+    assert state.position == (0, 0) and state.inside is False
+    assert fake.mock_calls == []
+
+
+def test_gamepad_mode_is_explicitly_unsupported():
+    with pytest.raises(NotImplementedError, match="gamepad"):
+        module.PygameInput(PygameInputConfig(enable_gamepad=True))

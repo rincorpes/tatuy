@@ -90,7 +90,57 @@ def test_poll_translates_event(
 def test_unknown_events_and_keys_are_ignored(monkeypatch):
     native = [
         pygame.event.Event(pygame.USEREVENT, {}),
-        pygame.event.Event(pygame.KEYDOWN, {"key": pygame.K_LSHIFT}),
+        pygame.event.Event(pygame.KEYDOWN, {"key": pygame.K_PRINTSCREEN}),
     ]
     monkeypatch.setattr(module.pygame.event, "get", Mock(return_value=native))
     assert module.PygameEvents(PygameEventsConfig()).get_events() == []
+
+
+@pytest.mark.parametrize(
+    "native,key",
+    [
+        (pygame.K_LSHIFT, Key.LSHIFT),
+        (pygame.K_RCTRL, Key.RCTRL),
+        (pygame.K_KP0, Key.KP_0),
+        (pygame.K_KP_ENTER, Key.KP_ENTER),
+    ],
+)
+def test_modifier_and_keypad_mapping(monkeypatch, native, key):
+    monkeypatch.setattr(
+        module.pygame.event,
+        "get",
+        lambda: [
+            pygame.event.Event(pygame.KEYDOWN, {"key": native}),
+            pygame.event.Event(pygame.KEYUP, {"key": native}),
+        ],
+    )
+    assert [
+        event.attrs
+        for event in module.PygameEvents(PygameEventsConfig()).get_events()
+    ] == [{"key": key}, {"key": key}]
+
+
+def test_disabled_devices_preserve_window_events(monkeypatch):
+    from tatuy.backend.config import InputConfig
+
+    monkeypatch.setattr(
+        module.pygame.event,
+        "get",
+        lambda: [
+            pygame.event.Event(pygame.KEYDOWN, {"key": pygame.K_a}),
+            pygame.event.Event(pygame.TEXTINPUT, {"text": "a"}),
+            pygame.event.Event(pygame.MOUSEWHEEL, {"x": 0, "y": 1}),
+            pygame.event.Event(
+                pygame.WINDOWMOVED, {"x": 10, "y": 20, "window": object()}
+            ),
+            pygame.event.Event(pygame.QUIT, {"window": object()}),
+        ],
+    )
+    result = module.PygameEvents(
+        PygameEventsConfig(),
+        InputConfig(enable_keyboard=False, enable_mouse=False),
+    ).get_events()
+    assert [(e.type, e.attrs) for e in result] == [
+        (EventType.WINDOWMOVED, {"x": 10, "y": 20}),
+        (EventType.QUIT, {}),
+    ]

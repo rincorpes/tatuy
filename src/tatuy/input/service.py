@@ -4,6 +4,7 @@ from tatuy.backend.backend import Backend
 from tatuy.events import Event, EventType
 from tatuy.input.frame import ButtonState, InputFrame
 from tatuy.input.keys import Key
+from tatuy.input.pointer import PointerState
 
 
 class InputService:
@@ -32,6 +33,13 @@ class InputService:
         """Advance input state once, including frames with no events."""
         if not self._backend.initialized:
             return
+        config = self._backend.config.input
+        if not config.enable_keyboard:
+            self._keys_down.clear()
+        if not config.enable_mouse:
+            self._mouse_down.clear()
+            self._mouse_pos = (0, 0)
+            self._mouse_inside = False
         keys_pressed: set[Key] = set()
         keys_released: set[Key] = set()
 
@@ -45,6 +53,15 @@ class InputService:
         mouse_dy = 0
 
         for event in events:
+            keyboard = event.type in (
+                EventType.KEYDOWN,
+                EventType.KEYUP,
+                EventType.TEXTINPUT,
+            )
+            if keyboard and not config.enable_keyboard:
+                continue
+            if not keyboard and not config.enable_mouse:
+                continue
             attrs = event.attrs
 
             match event.type:
@@ -99,7 +116,11 @@ class InputService:
                     axes["wheel_x"] = axes.get("wheel_x", 0.0) + attrs["x"]
                     axes["wheel_y"] = axes.get("wheel_y", 0.0) + attrs["y"]
 
-        pointer = self._backend.input.get_pointer_state()
+        pointer = (
+            self._backend.input.get_pointer_state()
+            if config.enable_mouse
+            else PointerState()
+        )
 
         if pointer.inside:
             self._mouse_pos = pointer.position

@@ -64,6 +64,13 @@ class PygameWindow(BackendComponent[PygameWindowConfig]):
         self._title = title
         pygame.display.set_caption(title)
 
+    def sync_size(self, width: int, height: int) -> None:
+        """Refresh surface state after a native resize notification."""
+        self._size = Size(width, height)
+        surface = pygame.display.get_surface()
+        if surface is not None:
+            self.screen = surface
+
     def resize(self, width: int, height: int):
         """
         Resize the window.

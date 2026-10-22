@@ -81,6 +81,33 @@ class Key(Enum):
     F11 = auto()
     F12 = auto()
 
+    # Modifiers and numeric keypad
+    LSHIFT = auto()
+    RSHIFT = auto()
+    LCTRL = auto()
+    RCTRL = auto()
+    LALT = auto()
+    RALT = auto()
+    LGUI = auto()
+    RGUI = auto()
+    KP_0 = auto()
+    KP_1 = auto()
+    KP_2 = auto()
+    KP_3 = auto()
+    KP_4 = auto()
+    KP_5 = auto()
+    KP_6 = auto()
+    KP_7 = auto()
+    KP_8 = auto()
+    KP_9 = auto()
+    KP_ENTER = auto()
+    KP_PLUS = auto()
+    KP_MINUS = auto()
+    KP_MULTIPLY = auto()
+    KP_DIVIDE = auto()
+    KP_PERIOD = auto()
+    KP_EQUALS = auto()
+
 
 # Justification: Simple alias object for keys
 # pylint: disable=too-many-instance-attributes
@@ -149,6 +176,31 @@ class _Keys:
     f10: Key = Key.F10
     f11: Key = Key.F11
     f12: Key = Key.F12
+    lshift: Key = Key.LSHIFT
+    rshift: Key = Key.RSHIFT
+    lctrl: Key = Key.LCTRL
+    rctrl: Key = Key.RCTRL
+    lalt: Key = Key.LALT
+    ralt: Key = Key.RALT
+    lgui: Key = Key.LGUI
+    rgui: Key = Key.RGUI
+    kp_0: Key = Key.KP_0
+    kp_1: Key = Key.KP_1
+    kp_2: Key = Key.KP_2
+    kp_3: Key = Key.KP_3
+    kp_4: Key = Key.KP_4
+    kp_5: Key = Key.KP_5
+    kp_6: Key = Key.KP_6
+    kp_7: Key = Key.KP_7
+    kp_8: Key = Key.KP_8
+    kp_9: Key = Key.KP_9
+    kp_enter: Key = Key.KP_ENTER
+    kp_plus: Key = Key.KP_PLUS
+    kp_minus: Key = Key.KP_MINUS
+    kp_multiply: Key = Key.KP_MULTIPLY
+    kp_divide: Key = Key.KP_DIVIDE
+    kp_period: Key = Key.KP_PERIOD
+    kp_equals: Key = Key.KP_EQUALS
 
 
 # pylint: enable=too-many-instance-attributes

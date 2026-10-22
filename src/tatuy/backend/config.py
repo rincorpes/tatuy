@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field, fields, is_dataclass
-from enum import Enum
-from types import UnionType
-from typing import Any, TypeVar, Union, get_args, get_origin, get_type_hints
+import warnings
+from dataclasses import asdict, dataclass, field
+from typing import TypeVar
 
 from tatuy.backend.exceptions import BackendError
 from tatuy.dataclass_utils import dataclass_from_dict
@@ -96,7 +95,6 @@ class AudioConfig(BaseConfig):
     sounds: tuple[SoundConfig, ...] = ()
 
 
-# TODO: None of these currently have effect
 @dataclass(frozen=True)
 class InputConfig(BaseConfig):
     enable_keyboard: bool = True
@@ -109,6 +107,19 @@ class CaptureConfig(BaseConfig):
     enabled: bool = False
     directory: str = "captures"
     format: str = "png"
+
+    def __post_init__(self) -> None:
+        if (
+            self.enabled
+            or self.directory != "captures"
+            or self.format != "png"
+        ):
+            warnings.warn(
+                "Backend capture enabled/directory/format are deprecated and ignored; "
+                "use CaptureSettings for capture workflows",
+                DeprecationWarning,
+                stacklevel=2,
+            )
 
 
 @dataclass(frozen=True)

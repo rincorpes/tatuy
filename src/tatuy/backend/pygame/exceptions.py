@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from tatuy.exceptions import TatuyError
+from tatuy.backend.exceptions import BackendError
 
 
-class PygameBackendError(TatuyError): ...
+class PygameBackendError(BackendError): ...

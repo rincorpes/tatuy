@@ -24,6 +24,7 @@ class CaptureJob(BaseJob):
     pitch: int | None = None
 
     target_size: tuple[int, int] | None = None
+    image_format: str = "PNG"
 
 
 @dataclass(frozen=True)

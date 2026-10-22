@@ -7,8 +7,9 @@ Implement config, events, window, input, renderer, audio, capture,
 The renderer composes shape, text, texture, and clip capabilities.
 Use the shared `ViewportTransform` consistently and specify byte formats,
 coordinate units, ownership, and errors explicitly. Keep platform types
-inside the implementation where practical. The existing window protocol's
-`screen: Any` is an escape hatch, not a portable surface specification.
+inside the implementation. Native surfaces belong on concrete backend
+windows, not the shared window protocol. Emit only normalized Tatuy event
+fields rather than forwarding arbitrary native event dictionaries.
 
 ## Builder registration
 
@@ -50,4 +51,4 @@ The protocols are structural, but the current Pygame builder uses a cast.
 A passing mypy run alone is therefore not proof that a concrete backend
 satisfies every method signature. Check concrete capabilities against their
 protocols directly, including mutable configuration attribute types.
-
+

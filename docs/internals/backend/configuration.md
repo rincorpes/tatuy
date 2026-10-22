@@ -75,17 +75,17 @@ window dimensions, valid mixer channel counts, or existing asset paths.
 Frozen configuration prevents reassignment; runtime operations such as
 resize do not rewrite configuration.
 
-## Current limitations
+## Input and capture ownership
 
-- Input enable flags are not enforced by Pygame input or event polling;
-  gamepad events are not translated.
-- Pygame capture methods do not consult the capture configuration fields.
-  Higher-level capture settings and services control capture workflows.
-- Font entry `size` is decoded but not used as a per-font rendering default.
-- See [Text](capabilities/renderer/text.md) for current default-font and
-  viewport-size behavior, and [Audio](capabilities/audio.md) for volume
-  units and initialization details.
+Keyboard/mouse flags are enforced by event translation, pointer operations,
+and input snapshots. Pygame rejects gamepad mode explicitly; it is reserved
+for future controller support rather than silently ignored.
 
-These limitations describe the current source; they are not guarantees for
-future backend implementations.
-
+Backend capture `enabled`, `directory`, and `format` fields are deprecated,
+accepted for compatibility, and ignored. Nondefault legacy values emit
+`DeprecationWarning`. `CaptureSettings` owns paths, hotkeys, and screenshot
+format; low-level capture methods remain explicit platform operations.
+
+Font entry `size` is the logical default for that selected font. Explicit
+sizes override it; both defaults and explicit sizes scale with the viewport.
+See [Text](capabilities/renderer/text.md) and [Audio](capabilities/audio.md).

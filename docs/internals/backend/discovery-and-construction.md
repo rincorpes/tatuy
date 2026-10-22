@@ -44,4 +44,10 @@ and constructs `PygameBackend`.
 The dictionary's `name` field does not override the factory argument.
 Import discovery relies on Python module caching; it is not a hot-reload
 or registry-reset mechanism.
-
+
+Configuration decoding uses the canonical `BackendConfigError` in
+`tatuy.backend.config`; the historical Pygame config import aliases the
+same class. `PygameBackendError` derives from `BackendError` (and therefore
+`TatuyError`). Invalid operation arguments remain `ValueError`.
+Native Pygame/file errors retain their original types; there is no blanket
+exception wrapping that would hide specific failure information.

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from tatuy.backend.pygame import PygameBackend, PygameBackendConfig
+from tatuy.events import EventType
 
 
 def main():
@@ -14,30 +15,24 @@ def main():
             }
         }
     )
-
     backend = PygameBackend(config)
-    backend.init()
-
-    backend.window.open()
-
-    print(
-        "Window size:",
-        backend.window.size,
-    )
-
-    backend.window.set_title("Tatuy Window")
-
-    print("Press CTRL+C to exit")
-
     try:
-        while True:
-            # Poll events so the OS does not
-            # consider the application dead.
-            backend.events.get_events()
-
-    except KeyboardInterrupt:
-        pass
-
+        backend.init()
+        backend.window.open()
+        print("Window size:", backend.window.size)
+        backend.window.set_title("Tatuy Window")
+        print("Close the window or press CTRL+C to exit")
+        try:
+            while True:
+                if any(
+                    (
+                        event.type in (EventType.QUIT, EventType.WINDOWCLOSE)
+                        for event in backend.events.get_events()
+                    )
+                ):
+                    break
+        except KeyboardInterrupt:
+            pass
     finally:
         backend.stop()
 

@@ -33,16 +33,18 @@ Unit tests use mocks and offscreen surfaces. Texture upload tests substitute
 display-dependent conversion while checking row repacking and output pixels.
 They do not prove native display, mixer/device, font-file, or driver behavior.
 
-Strict expected-failure regression tests identify pending implementation
-issues by review ID. They must be revisited when the associated behavior is
-fixed; an unexpected pass fails the suite.
+Regression tests cover initialization rollback, audio readiness and gain,
+capture paths, polygon edge coverage, transformed tiling, and font selection.
+Input flags, screenshot encoding, and resize observation also have focused
+source/service tests. Native desktop checks complement offscreen tests.
 
 ## Current constraints
 
 - Pygame initialization/shutdown is global; backend instances are not isolated.
 - Initialization failures roll back platform state; see the lifecycle page for cleanup retry semantics.
-- Input configuration flags and capture configuration fields are not enforced
-  in the corresponding Pygame ports.
-- See the capability pages for audio volume, text defaults, and tiled
-  texture/alpha polygon limitations.
+- Keyboard/mouse enable flags are enforced; gamepad mode is unsupported.
+- Legacy backend capture fields are deprecated and ignored. CaptureSettings
+  owns workflow directories, hotkeys, and screenshot encoding.
+- See the capability pages for audio readiness, logical text/shape sizes,
+  vertical-only tiling, and native resource ownership.
 

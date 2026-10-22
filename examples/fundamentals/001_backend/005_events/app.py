@@ -6,25 +6,16 @@ from tatuy.events import EventType
 
 def main():
     backend = PygameBackend(PygameBackendConfig())
-
-    backend.init()
-    backend.window.open()
-
-    running = True
-
     try:
+        backend.init()
+        backend.window.open()
+        running = True
         while running:
             events = backend.events.get_events()
-
             for event in events:
-                print(
-                    event.type,
-                    event.attrs,
-                )
-
+                print(event.type, event.attrs)
                 if event.type == EventType.QUIT:
                     running = False
-
     finally:
         backend.stop()
 

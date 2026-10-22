@@ -37,3 +37,20 @@ def test_window_open_resize_and_title(monkeypatch):
     platform.display.set_mode.assert_called_with((30, 15), 16)
     screen.get_size.return_value = (30, 15)
     assert window.size.to_tuple() == (30, 15)
+
+
+def test_native_resize_does_not_request_display_mode(monkeypatch):
+    screen = Mock()
+    screen.get_size.return_value = (400, 300)
+    platform = Mock()
+    platform.display.get_surface.return_value = screen
+    monkeypatch.setattr(module, "pygame", platform)
+    window = module.PygameWindow(PygameWindowConfig())
+    wrapper = object()
+    window._sdl_window = wrapper
+    window.sync_size(400, 300)
+    window.sync_size(400, 300)
+    platform.display.set_mode.assert_not_called()
+    assert window.screen is screen
+    assert window.size.to_tuple() == (400, 300)
+    assert window._sdl_window is wrapper

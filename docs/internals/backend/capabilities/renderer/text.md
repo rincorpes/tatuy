@@ -8,9 +8,11 @@ PygameText stores configured font names/paths. Font objects are cached by
 requested `(font_name, size)`. A missing path selects Pygame's default font.
 Font-file errors propagate when the font is first needed.
 
-Explicit font sizes scale with the viewport and clamp to at least 8 pixels.
-An omitted size uses a 24-pixel fallback. Measurement
-divides pixel dimensions by viewport scale (using 1.0 if scale is zero).
+Explicit and omitted font sizes are logical units and scale with the viewport.
+The selected font's `FontConfig.size` supplies an omitted size; an unconfigured
+font falls back to 24 logical units. Explicit sizes override the font default.
+Raster sizes round once and clamp to at least 8 pixels. Measurement divides
+pixel dimensions by viewport scale (using 1.0 when scale is zero).
 
 ## Font selection
 
@@ -30,12 +32,12 @@ explicitly or set `default_font="default"`.
 
 ## Sizes and caching
 
-`FontConfig.size` is not used by PygameText. An omitted font size is not
-scaled with the viewport, unlike an explicitly supplied size.
-Default-size and default-name semantics should be decided before changing
-the implementation.
+Font fallback resolves name/path/size together: unknown explicit names use
+the literal default alias when present, otherwise the configured default.
+An omitted name uses only the configured default, preserving B07 semantics.
+Both measure and draw share this resolution and the scaled-size cache.
 
-The cache retains fonts for every requested name/size pair during the
-renderer lifetime. Continuous viewport/size changes can grow it; optimization
-needs measurements and an agreed eviction policy.
-
+Omitted sizes now scale; callers relying on the former fixed 24 screen
+pixels should provide a suitable logical size for their viewport.
+The cache retains fonts for requested name/size pairs during renderer life;
+an eviction policy should follow measurements rather than arbitrary limits.

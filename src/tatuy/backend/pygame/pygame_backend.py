@@ -48,6 +48,8 @@ class PygameBackend:
         if self._platform_active:
             raise RuntimeError("Call stop() before retrying initialization")
 
+        if self.config.input.enable_gamepad:
+            raise NotImplementedError("Pygame gamepad input is not supported")
         audio_config = self.config.audio
         if audio_config.enabled:
             pygame.mixer.pre_init(
@@ -60,7 +62,7 @@ class PygameBackend:
         self._platform_active = True
         try:
             pygame.init()
-            self.events = PygameEvents(self.config.events)
+            self.events = PygameEvents(self.config.events, self.config.input)
             self.window = PygameWindow(self.config.window)
             self.input = PygameInput(self.config.input)
             self.renderer = PygameRenderer(

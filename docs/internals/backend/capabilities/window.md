@@ -1,27 +1,26 @@
 # Window Capability
 
-Runtime code normally uses `WindowService`. The Pygame port owns the
-display surface and the SDL window wrapper.
+`WindowService` exposes runtime window operations. The Pygame window owns
+its native surface and SDL wrapper; the shared `Window` protocol exposes
+no native `screen`. Renderer/capture implementations use their concrete
+Pygame window internally.
 
-Construction stores configuration and resize flags without opening a display.
-`open()` creates the configured surface using `pygame.display.set_mode`,
-sets the configured caption, and reads window position into a Tatuy `Vec2`.
-The SDL wrapper is kept in `_sdl_window`: native window events borrow its
-pointer, so retaining it is necessary for lifetime safety.
+`open()` creates the display, applies title/flags, reads position, and
+retains `_sdl_window`. Native events borrow its pointer, so the wrapper
+must remain alive through display shutdown.
 
-`size` reads the current surface dimensions into `Size`. It is unavailable
-before a surface has been created. `set_title(title)` updates the caption
-and cached title. `resize(width, height)` calls `set_mode` with the original
-resize flags and updates the screen reference.
+`size` reads the live display-surface size. `set_title()` changes the title.
+`resize(width, height)` is an explicit request and calls `set_mode()`.
+`sync_size(width, height)` observes a native notification and refreshes the
+surface reference without calling `set_mode()` or replacing the SDL wrapper.
 
-`WindowService.sync_events()` updates position/minimized/maximized/close
-state and emits higher-level notifications. Resize events currently call
-the port's resize method. This can invoke `set_mode` for notifications
-about a size Pygame has already applied; native resize behavior should be
-checked before changing that policy.
+The Windows desktop probe confirmed that the display surface already has
+the new dimensions when native size-change notifications are delivered.
+`WindowService.sync_events()` therefore calls `sync_size()`, not `resize()`.
+The service caches its previous observed size from `open()` for emitted
+old/new-size data. Duplicate native notifications do not request a resize.
+Move/minimize/maximize/restore/close notifications update service state.
 
-The configuration stays frozen: resizing/title changes do not rewrite it.
-Calling `open()` again uses the original configured title/dimensions.
-The port has no independent close operation; backend shutdown uses
-`pygame.quit()`.
-
+Configuration stays frozen; title/resize operations do not rewrite it.
+Opening again uses configured values. Backend shutdown closes the platform;
+there is no independent window close method.

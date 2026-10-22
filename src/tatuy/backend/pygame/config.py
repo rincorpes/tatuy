@@ -2,19 +2,20 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from tatuy.backend.config import AudioConfig, BackendConfig
 from tatuy.backend.config import (
-    AudioConfig,
-    BackendConfig,
+    BackendConfigError as _SharedBackendConfigError,
+)
+from tatuy.backend.config import (
     CaptureConfig,
     EventsConfig,
     InputConfig,
     RendererConfig,
     WindowConfig,
 )
-from tatuy.backend.exceptions import BackendError
 
-
-class BackendConfigError(BackendError): ...
+# Preserve the historical import path with the canonical error type.
+BackendConfigError = _SharedBackendConfigError
 
 
 @dataclass(frozen=True)

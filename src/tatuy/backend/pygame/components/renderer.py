@@ -102,6 +102,11 @@ class PygameShape:
         color=(255, 255, 255),
         thickness=5,
     ):
+        if thickness < 0:
+            raise ValueError("Line thickness cannot be negative")
+        thickness = int(round(thickness * self._context.viewport_transform.s))
+        if thickness <= 0:
+            return
         x1, y1 = start.x, start.y
         x2, y2 = end.x, end.y
         r, g, b, a = ColorFormatter.rgba(color)
@@ -138,6 +143,10 @@ class PygameShape:
         )
 
     def circle(self, x: int, y: int, radius: int, color=(255, 255, 255)):
+        if radius < 0:
+            raise ValueError("Circle radius cannot be negative")
+        if radius == 0:
+            return
         r, g, b, a = ColorFormatter.rgba(color)
 
         # Map center via viewport
@@ -146,7 +155,9 @@ class PygameShape:
         # Scale radius using map_wh on diameter (works with your current vp API)
         d = int(radius) * 2
         sw, sh = self._context.viewport_transform.map_wh(d, d)
-        sr = max(1, int(min(sw, sh) // 2))
+        sr = int(min(sw, sh) // 2)
+        if sr <= 0:
+            return
 
         if a >= 255:
             pygame.draw.circle(
@@ -225,6 +236,8 @@ class PygameText:
         self._context = ctx
         self._font_paths = {font.name: font.path for font in config.fonts}
         self._font_path = self._font_paths.get(config.default_font)
+        self._default_font = config.default_font
+        self._font_sizes = {font.name: font.size for font in config.fonts}
         self._fonts: dict[tuple[str | None, int], pygame.font.Font] = {}
 
     def _resolve_font_path(self, font_name: str | None) -> str | None:
@@ -237,8 +250,21 @@ class PygameText:
     def _font(
         self, font_size: int | None, font_name: str | None
     ) -> pygame.font.Font:
-        size = int(font_size or 24)
-        size = max(8, size)
+        selected = self._default_font if font_name is None else font_name
+        if selected not in self._font_paths and font_name is not None:
+            selected = (
+                "default"
+                if "default" in self._font_paths
+                else self._default_font
+            )
+        logical_size = (
+            self._font_sizes.get(selected, 24)
+            if font_size is None
+            else font_size
+        )
+        size = max(
+            8, int(round(logical_size * self._context.viewport_transform.s))
+        )
         cache_key = (font_name, size)
         cached = self._fonts.get(cache_key)
         if cached:
@@ -262,14 +288,7 @@ class PygameText:
         """
         Measure the width and height of the given text.
         """
-        scaled_size = (
-            None
-            if font_size is None
-            else max(
-                8, int(round(font_size * self._context.viewport_transform.s))
-            )
-        )
-        f = self._font(scaled_size, font_name)
+        f = self._font(font_size, font_name)
         w_px, h_px = f.size(text)
 
         s = self._context.viewport_transform.s or 1.0
@@ -290,14 +309,7 @@ class PygameText:
         r, g, b, alpha = ColorFormatter.rgba(color)
         sx, sy = self._context.viewport_transform.map_xy(int(x), int(y))
 
-        scaled_size = (
-            None
-            if font_size is None
-            else max(
-                8, int(round(font_size * self._context.viewport_transform.s))
-            )
-        )
-        f = self._font(scaled_size, font_name)
+        f = self._font(font_size, font_name)
 
         surf = f.render(text, True, (r, g, b))
         surf.set_alpha(alpha)
@@ -319,6 +331,10 @@ class PygameTexture:
     ) -> int:
         w = int(w)
         h = int(h)
+        if w <= 0 or h <= 0:
+            raise ValueError("Texture width and height must be positive")
+        if 0 < pitch < w * 4:
+            raise ValueError("Texture pitch must be at least width * 4")
         if pitch <= 0:
             pitch = w * 4
 
@@ -474,12 +490,10 @@ class PygameRenderer(BackendComponent[PygameRendererConfig]):
         Set the clear color for the renderer.
         """
         self._clear = (int(r), int(g), int(b), 255)
-        print(self._clear)
 
     def begin_frame(self):
         """Begin a new rendering frame."""
         r, g, b, _ = self._clear
-        # print(r, g, b)
         self._window.screen.fill((r, g, b))
 
     def end_frame(self):

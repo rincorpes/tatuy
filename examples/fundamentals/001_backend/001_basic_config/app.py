@@ -17,22 +17,14 @@ from tatuy.backend.pygame.config import (
 def main():
     config = PygameBackendConfig(
         window=PygameWindowConfig(
-            width=1200,
-            height=720,
-            title="My Game",
-            resizable=True,
+            width=1200, height=720, title="My Game", resizable=True
         ),
         events=PygameEventsConfig(),
         input=PygameInputConfig(),
         renderer=PygameRendererConfig(
             background_color=(20, 20, 20),
             text=TextConfig(
-                fonts=(
-                    FontConfig(
-                        name="ui",
-                        path="assets/fonts/ui.ttf",
-                    ),
-                ),
+                fonts=(FontConfig(name="ui", path="assets/fonts/ui.ttf"),),
                 default_font="ui",
             ),
         ),
@@ -46,19 +38,12 @@ def main():
         ),
         capture=PygameCaptureConfig(),
     )
-
     backend = PygameBackend(config)
-
-    backend.init()
-
-    print(
-        json.dumps(
-            backend.config.to_dict(),
-            indent=2,
-        )
-    )
-
-    backend.stop()
+    try:
+        backend.init()
+        print(json.dumps(backend.config.to_dict(), indent=2))
+    finally:
+        backend.stop()
 
 
 if __name__ == "__main__":
