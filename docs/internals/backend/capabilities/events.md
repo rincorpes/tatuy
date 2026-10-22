@@ -1,11 +1,29 @@
 # Events Capability
 
-The events capability retrieves platform events and presents them to Tatuy's runtime event layer.
+`get_events()` drains the Pygame event queue, translates recognized native
+events to Tatuy `Event` objects, and preserves their order.
+Each event has a category, type, lowercase type name, and attribute dictionary.
+Polling and translation have separate profiler spans.
 
-Pygame event details should remain inside the Pygame implementation.
+| Native event | Tatuy payload |
+| --- | --- |
+| KEYDOWN / KEYUP | key: Tatuy Key |
+| TEXTINPUT | text: string |
+| MOUSEMOTION | pos and rel: integer pairs |
+| MOUSEBUTTONDOWN / MOUSEBUTTONUP | button: integer; pos: integer pair |
+| MOUSEWHEEL | x and y: floats |
+| Window move/resize/size-change/minimize/maximize/restore/close; QUIT | Copy of native attributes |
 
-Higher layers consume Tatuy event categories and services.
+Keyboard mapping includes letters A–Z, digits, F1–F12, arrows, Escape,
+Enter, Space, Tab, Backspace, and Delete. Unmapped keys are dropped;
+modifier keys, keypad variants, and gamepad input are not comprehensively
+supported. Unknown native event types are dropped.
 
-Migrate the detailed former backend-events documentation here.
+Key events retain only `key`; native modifier/repeat metadata is discarded.
+Mouse coordinates remain window coordinates here. Higher layers manage
+input-frame state and coordinate interpretation.
 
----
+Window payloads are copied unchanged and may contain Pygame-specific values.
+This is a remaining portability boundary to assess before adding another
+backend. Input enable flags are not applied by event translation.
+

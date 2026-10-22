@@ -5,18 +5,26 @@ import pytest
 
 def pytest_sessionstart(session):
     """
+
     This function is called when pytest session starts.
+
     """
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
 def pytest_runtest_makereport(item, call):
     """
+
     This function is called when pytest runtest makes a report.
+
     """
+
+    yield
 
 
 def pytest_sessionfinish(session, exitstatus):
     """
+
     This function is called when pytest session finishes.
+
     """

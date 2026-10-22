@@ -1,37 +1,47 @@
 # Backend Discovery and Construction
 
-Tatuy separates backend lookup from backend creation.
+`BackendFactory.create(name, config)` normalizes the requested name with
+`strip().casefold()`, resolves a `BackendBuilder`, and returns
+`builder_type().build(config)`. It does not initialize the result.
 
-```text
-BackendFactory
-    ↓
-BackendRegistry
-    ↓
-BackendBuilder
-    ↓
-BackendConfig
-    ↓
-Backend
+```python
+from tatuy.backend.factory import BackendFactory
+
+backend = BackendFactory.create(
+    "pygame",
+    {"window": {"width": 640, "height": 360}},
+)
+assert backend.initialized is False
 ```
 
-## Registry
+## Registry and lazy discovery
 
-Maps backend names to builders.
+`BackendRegistry` extends Onomasticon's `ImplementationRegistry` with
+`BackendBuilder` as its implementation base. A builder registers through
+`@BackendRegistry.implementation("pygame")`.
 
-## Builder
+If a normalized name is already registered, the factory uses it directly.
+Otherwise it validates that the name is an identifier that does not start
+with an underscore, then imports `tatuy.backend.<name>.builder`.
+Importing the module runs its registration decorator. Installed custom
+builders outside that package should be imported and registered before
+calling the factory.
 
-Converts raw configuration into the concrete backend/config pair.
+## Error contract
 
-## Factory
+| Condition | Result |
+| --- | --- |
+| Unregistered invalid name | ValueError: Invalid backend name |
+| Backend package or builder module missing | ValueError: Unknown backend, chained from ModuleNotFoundError |
+| Builder's dependency missing | Original ModuleNotFoundError propagates |
+| Module imports without registering the requested name | ValueError: Builder module did not register backend |
+| Builder rejects configuration | Builder/configuration exception propagates |
 
-Looks up the backend name and asks its builder to construct the backend.
+The original configuration dictionary is passed to the builder. Pygame's
+builder decodes it as `PygameBackendConfig`, verifies that concrete type,
+and constructs `PygameBackend`.
 
-## Lazy discovery
-
-If a built-in backend is not already registered, the factory can import its builder module so the registration decorator runs.
-
-This avoids a giant hard-coded backend switch.
-
-The former `registry.md` and `factory.md` should be merged here.
-
----
+The dictionary's `name` field does not override the factory argument.
+Import discovery relies on Python module caching; it is not a hot-reload
+or registry-reset mechanism.
+
