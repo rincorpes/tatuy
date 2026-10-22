@@ -97,7 +97,6 @@ def test_alpha_polygon_includes_last_vertex(render_target):
     assert render_target.screen.get_at((8, 5)).r > 0
 
 
-@pytest.mark.xfail(strict=True, reason="B06: tiled ignores viewport transform")
 def test_tiled_texture_uses_viewport(render_target, textures):
     handle = textures.create(1, 1, bytes((255, 0, 0, 255)))
     render_target.transform.set(10, 10, 2)
@@ -180,3 +179,90 @@ def test_alpha_polygon_matches_opaque_coverage(
 def test_collapsed_alpha_polygon_includes_endpoint(render_target, points):
     render_target.renderer.shape.polygon(points, (255, 0, 0, 128))
     assert render_target.screen.get_at(points[-1]).r == 128
+
+
+@pytest.mark.parametrize(
+    "scale,source_rows,tile_rows",
+    [
+        (0.5, [0, 0, 1, 1], [0, 1]),
+        (1, [0, 1], [0, 1]),
+        (2, [0, 1], [0, 0, 1, 1]),
+    ],
+)
+@pytest.mark.parametrize("height", [1, 5])
+@pytest.mark.parametrize("clip", [None, (5, 6, 4, 5)])
+def test_tiled_texture_pattern_crop_and_clip(
+    render_target, textures, scale, source_rows, tile_rows, height, clip
+):
+    colors = [(255, 0, 0, 255), (0, 255, 0, 255)]
+    pixels = bytes(channel for row in source_rows for channel in colors[row])
+    handle = textures.create(1, len(source_rows), pixels)
+    render_target.transform.set(3, 4, scale)
+    render_target.screen.set_clip(clip)
+    original_clip = render_target.screen.get_clip()
+    textures.tiled(handle, 2, 2, 4, height)
+    bounds = pygame.Rect(
+        round(3 + 2 * scale),
+        round(4 + 2 * scale),
+        round(4 * scale),
+        round(height * scale),
+    )
+    for y in range(render_target.screen.get_height()):
+        for x in range(render_target.screen.get_width()):
+            if bounds.collidepoint(x, y) and original_clip.collidepoint(x, y):
+                expected = colors[tile_rows[(y - bounds.y) % len(tile_rows)]][
+                    :3
+                ]
+            else:
+                expected = (0, 0, 0)
+            assert render_target.screen.get_at((x, y))[:3] == expected
+    assert render_target.screen.get_clip() == original_clip
+
+
+def test_tiled_texture_stretches_width_without_horizontal_repetition(
+    render_target, textures
+):
+    handle = textures.create(2, 1, bytes((255, 0, 0, 255, 0, 0, 255, 255)))
+    textures.tiled(handle, 0, 0, 4, 1)
+    assert [render_target.screen.get_at((x, 0))[:3] for x in range(4)] == [
+        (255, 0, 0),
+        (255, 0, 0),
+        (0, 0, 255),
+        (0, 0, 255),
+    ]
+
+
+@pytest.mark.parametrize("destroyed", [False, True])
+def test_tiled_missing_handle_is_noop(render_target, textures, destroyed):
+    handle = 999
+    if destroyed:
+        handle = textures.create(1, 1, bytes((255, 0, 0, 255)))
+        textures.destroy(handle)
+    before = pygame.image.tostring(render_target.screen, "RGBA")
+    textures.tiled(handle, 0, 0, 4, 4)
+    assert pygame.image.tostring(render_target.screen, "RGBA") == before
+
+
+@pytest.mark.parametrize(
+    "width,height,scale",
+    [
+        (0, 5, 1),
+        (-1, 5, 1),
+        (5, 0, 1),
+        (5, -1, 1),
+        (1, 5, 0.25),
+        (5, 1, 0.25),
+        (8, 8, 0.25),
+    ],
+)
+def test_tiled_empty_mapped_size_or_tile_is_noop(
+    monkeypatch, render_target, textures, width, height, scale
+):
+    handle = textures.create(1, 1, bytes((255, 0, 0, 255)))
+    render_target.transform.set(0, 0, scale)
+    scaling = Mock(side_effect=AssertionError("must not allocate a tile"))
+    monkeypatch.setattr(module.pygame.transform, "scale", scaling)
+    before = pygame.image.tostring(render_target.screen, "RGBA")
+    textures.tiled(handle, 0, 0, width, height)
+    scaling.assert_not_called()
+    assert pygame.image.tostring(render_target.screen, "RGBA") == before

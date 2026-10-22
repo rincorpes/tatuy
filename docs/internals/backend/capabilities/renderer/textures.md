@@ -18,10 +18,14 @@ through the viewport, ignores missing handles and non-positive mapped sizes,
 scales when needed, then rotates clockwise around the destination center
 when an angle is supplied. Scaling/rotation currently occur on every draw.
 
-`tiled(handle, x, y, w, h)` stretches the tile to the requested width,
-repeats it vertically at its original pixel height, and crops the last tile.
-It currently bypasses the viewport transform and raises KeyError for a
-missing handle, unlike `draw`. It is not general two-axis tiling.
+`tiled(handle, x, y, w, h)` maps logical position and destination size
+through the viewport, then stretches the source across the mapped width.
+Its tile height is `round(source_height * viewport_scale)` screen pixels,
+independent of the requested width. It repeats vertically and crops the
+last tile to the remaining mapped destination height, without rescaling it.
+The target surface's active clip applies and is left unchanged.
+Missing/destroyed handles, non-positive mapped destination sizes, and tile
+heights that round to zero are no-ops. Tiling remains vertical-only.
 
 `destroy(handle)` removes a stored surface and silently ignores unknown
 handles. Resource ownership belongs to the renderer instance; the protocol

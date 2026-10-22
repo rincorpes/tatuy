@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Retain normalized master volume for later sound loads; enhance volume handling and tests
 - Update capture functionality to accept optional path; enhance tests for error propagation and default behavior
 - Update translucent polygon rendering to include extreme vertex pixels; enhance tests for alpha coverage
+- Update tiled texture handling to apply viewport transformations; enhance tests for cropping and clipping behavior
 
 ### - 2026-10-21
 

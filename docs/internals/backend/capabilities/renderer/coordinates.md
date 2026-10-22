@@ -17,9 +17,10 @@ Line thickness currently remains in screen pixels. Text's explicit font
 size scales with the viewport, but an omitted size takes the unscaled
 24-pixel fallback.
 
-`texture.tiled()` currently bypasses viewport transformation entirely,
-unlike `texture.draw()`. Treat this as an unresolved inconsistency, not a
-portable rule to reproduce in another backend.
+`texture.tiled()` maps position and destination dimensions like
+`texture.draw()`. Source tile height is treated as logical height and
+scaled independently of the stretched destination width. Repetition and
+the final crop use the resulting integer screen dimensions.
 
 Viewport policy and camera/world-to-view conversion belong to rendering
 infrastructure above this port. Do not add backend-specific coordinate

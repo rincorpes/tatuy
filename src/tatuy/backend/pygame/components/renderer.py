@@ -387,26 +387,26 @@ class PygameTexture:
         self._context.window.screen.blit(draw_surf, (sx, sy))
 
     def tiled(self, tex_id: int, x: int, y: int, w: int, h: int):
-        surf = self._textures[tex_id]  # adapt to your texture store
-        # Scale the tile to target width, keep tile height
-        tile_h = surf.get_height()
-        tile = pygame.transform.scale(surf, (int(w), int(tile_h)))
+        """Stretch to logical width and repeat vertically within logical height."""
+        surf = self._textures.get(int(tex_id))
+        if surf is None:
+            return
 
-        cur_y = int(y)
-        end_y = int(y + h)
+        sx, sy = self._context.viewport_transform.map_xy(int(x), int(y))
+        sw, sh = self._context.viewport_transform.map_wh(int(w), int(h))
+        _, tile_h = self._context.viewport_transform.map_wh(
+            0, surf.get_height()
+        )
+        if sw <= 0 or sh <= 0 or tile_h <= 0:
+            return
 
-        while cur_y < end_y:
-            remaining = end_y - cur_y
-            if remaining >= tile_h:
-                self._context.window.screen.blit(tile, (int(x), cur_y))
-                cur_y += tile_h
-            else:
-                # partial tile at the end
-                partial = tile.subsurface(
-                    pygame.Rect(0, 0, int(w), int(remaining))
-                )
-                self._context.window.screen.blit(partial, (int(x), cur_y))
-                break
+        tile = pygame.transform.scale(surf, (sw, tile_h))
+        for offset in range(0, sh, tile_h):
+            self._context.window.screen.blit(
+                tile,
+                (sx, sy + offset),
+                pygame.Rect(0, 0, sw, min(tile_h, sh - offset)),
+            )
 
     def destroy(self, tex: int):
         self._textures.pop(int(tex), None)
