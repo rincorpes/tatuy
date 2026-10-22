@@ -229,7 +229,7 @@ class PygameText:
 
     def _resolve_font_path(self, font_name: str | None) -> str | None:
         if font_name is None:
-            return self._font_paths.get("default", self._font_path)
+            return self._font_path
         if font_name in self._font_paths:
             return self._font_paths[font_name]
         return self._font_paths.get("default", self._font_path)

@@ -105,9 +105,6 @@ def test_tiled_texture_uses_viewport(render_target, textures):
     assert render_target.screen.get_at((1, 1)).r == 0
 
 
-@pytest.mark.xfail(
-    strict=True, reason="B07: default_font loses to default alias"
-)
 def test_configured_default_font_is_selected(monkeypatch, render_target):
     font_type = Mock()
     font_type.return_value.size.return_value = (10, 10)
@@ -266,3 +263,86 @@ def test_tiled_empty_mapped_size_or_tile_is_noop(
     textures.tiled(handle, 0, 0, width, height)
     scaling.assert_not_called()
     assert pygame.image.tostring(render_target.screen, "RGBA") == before
+
+
+@pytest.mark.parametrize(
+    "fonts,default_font,font_name,expected",
+    [
+        (
+            (FontConfig("default", "old.ttf"), FontConfig("ui", "ui.ttf")),
+            "ui",
+            None,
+            "ui.ttf",
+        ),
+        ((FontConfig("default", "old.ttf"),), "missing", None, None),
+        (
+            (FontConfig("default", "old.ttf"), FontConfig("ui", "ui.ttf")),
+            "ui",
+            "default",
+            "old.ttf",
+        ),
+        (
+            (FontConfig("default", "old.ttf"), FontConfig("ui", "ui.ttf")),
+            "ui",
+            "missing",
+            "old.ttf",
+        ),
+        ((FontConfig("ui", "ui.ttf"),), "ui", "missing", "ui.ttf"),
+        ((), "default", None, None),
+        ((), "default", "missing", None),
+        (
+            (FontConfig("default", "old.ttf"), FontConfig("ui", None)),
+            "ui",
+            "ui",
+            None,
+        ),
+        (
+            (FontConfig("default", "old.ttf"), FontConfig("ui", None)),
+            "ui",
+            None,
+            None,
+        ),
+    ],
+)
+def test_font_selection_matches_for_measure_and_draw(
+    monkeypatch, render_target, fonts, default_font, font_name, expected
+):
+    font_type = Mock()
+    font_type.return_value.size.return_value = (10, 12)
+    font_type.return_value.render.return_value = pygame.Surface((2, 2))
+    monkeypatch.setattr(module.pygame.font, "Font", font_type)
+    text = module.PygameText(
+        module.PygameRendererContext(
+            render_target.window, render_target.transform
+        ),
+        TextConfig(fonts=fonts, default_font=default_font),
+    )
+    assert text.measure("hello", font_size=16, font_name=font_name) == (10, 12)
+    text.draw(1, 1, "hello", font_size=16, font_name=font_name)
+    # Measuring and drawing reuse the selected font at the same size.
+    font_type.assert_called_once_with(expected, 16)
+    font_type.return_value.render.assert_called_once_with(
+        "hello", True, (255, 255, 255)
+    )
+
+
+def test_configured_font_load_errors_propagate(monkeypatch, render_target):
+    error = FileNotFoundError("missing configured font")
+    font_type = Mock(side_effect=error)
+    monkeypatch.setattr(module.pygame.font, "Font", font_type)
+    text = module.PygameText(
+        module.PygameRendererContext(
+            render_target.window, render_target.transform
+        ),
+        TextConfig(
+            fonts=(
+                FontConfig("default", "old.ttf"),
+                FontConfig("ui", "bad.ttf"),
+            ),
+            default_font="ui",
+        ),
+    )
+    with pytest.raises(FileNotFoundError) as caught:
+        text.measure("hello")
+    assert caught.value is error
+    font_type.assert_called_once_with("bad.ttf", 24)

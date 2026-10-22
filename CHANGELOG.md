@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Update capture functionality to accept optional path; enhance tests for error propagation and default behavior
 - Update translucent polygon rendering to include extreme vertex pixels; enhance tests for alpha coverage
 - Update tiled texture handling to apply viewport transformations; enhance tests for cropping and clipping behavior
+- Simplify font path resolution logic; enhance tests for font selection and error propagation
 
 ### - 2026-10-21
 
