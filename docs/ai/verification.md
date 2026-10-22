@@ -17,27 +17,84 @@ Verify the relevant:
 - architectural invariants
 - existing tests
 - canonical documentation
-- nearest fundamental example when applicable
+- for `src/tatuy` changes, the nearest relevant fundamental
+- experiments and games using the affected capability
 
 ## Tests
 
+The Tatuy pytest suite validates Tatuy-owned source and tooling under
+`src/`.
+
+Do not create pytest tests for:
+
+- `examples/fundamentals`
+- `examples/experiments`
+- `examples/games`
+
+Those targets provide executable documentation, architectural pressure,
+and integration validation rather than pytest coverage.
+
+Tests should evaluate each applicable behavior through three lenses:
+
+### Input / output
+
+Verify representative inputs and their observable outputs.
+
+An output may be:
+
+- a return value
+- resulting component/resource state
+- an emitted value
+- a created object
+- an expected exception
+
+### Edge cases
+
+Verify meaningful boundaries and failure conditions such as:
+
+- empty input
+- missing state
+- invalid input
+- minimum/maximum values
+- lifecycle boundaries
+- ordering boundaries
+- duplicate registration
+- absent resources
+- repeated calls
+
+Choose edge cases relevant to the actual contract rather than creating
+arbitrary cases for coverage.
+
+### Side effects
+
+Verify externally observable effects when behavior produces them, such as:
+
+- world mutations
+- resource mutations
+- entity creation/destruction
+- queue operations
+- registrations
+- events
+- filesystem changes
+- backend calls
+- collaborator calls
+
+Use mocks or fakes when the side effect belongs to another subsystem and
+the test is intended to isolate the current behavior.
+
+Not every behavior has meaningful cases in all three categories. Cover
+every category that applies rather than manufacturing unnecessary tests.
+
+For bug fixes, prefer a regression test that demonstrates the original
+failure.
+
 Identify the narrowest relevant tests before changing behavior.
 
-For behavior changes, add or update focused tests when practical.
+Run targeted tests first. Run broader tests when the change affects shared
+infrastructure, cross-cutting behavior, or multiple features.
 
-For bug fixes, prefer a regression test that fails for the original bug
-and passes after the fix.
-
-If the affected behavior has no tests, determine whether the absence is
-intentional or a coverage gap.
-
-When implementation changes are authorized, creating directly relevant
-tests is part of completing the change unless the user limits the scope.
-
-Run targeted tests first.
-
-Run broader tests when the change affects shared infrastructure,
-cross-cutting behavior, or multiple features.
+Test files are formatted with the repository formatter but are not targets
+for mypy or pylint.
 
 Do not claim tests were executed unless a tool or the user confirms
 execution.
@@ -55,12 +112,29 @@ tools are available.
 
 ## Examples
 
-Find the nearest fundamental example.
+Examples are executable documentation and integration pressure for Tatuy.
+
+Every addition, behavior change, or removal under `src/tatuy` requires an
+example audit.
+
+Inspect:
+
+1. the nearest relevant fundamental
+2. experiments using the affected capability
+3. games using the affected capability
+
+Add, update, or remove examples when necessary.
+
+A new public engine capability should normally have a focused fundamental
+unless an existing fundamental already demonstrates it clearly.
+
+Internal changes may require no example edits, but that conclusion should
+be made only after reviewing affected examples.
 
 Use experiments for architecture pressure, not as unquestioned API
 guidance.
 
-Update examples when public usage or recommended workflows change.
+Fundamentals, experiments, and games are not pytest test targets.
 
 ## Documentation
 

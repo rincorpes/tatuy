@@ -16,9 +16,11 @@
 14. Components primarily hold state.
 15. Optimize from profiler evidence.
 16. Experiments are not automatically public API patterns.
-17. Public API changes should update docs/examples/tests.
+17. Public API changes update affected docs, examples, and source tests.
 18. Verify imports, signatures, ordering, and lifecycle timing against source.
 19. Prefer narrow reusable changes over broad framework redesign.
 20. Current intentional source behavior is authoritative when docs are stale.
-
----
+21. Pytest tests validate Tatuy-owned source and tooling, not fundamentals,
+    experiments, or games.
+22. Every Tatuy engine behavior change audits affected examples.
+23. New importable source package directories contain `__init__.py`.

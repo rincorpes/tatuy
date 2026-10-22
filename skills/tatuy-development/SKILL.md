@@ -42,12 +42,14 @@ Before proposing or applying a non-trivial change:
 1. read the applicable AGENTS.md guidance
 2. read docs/ai/index.md when working in the Tatuy engine repository
 3. inspect the relevant implementation
-4. inspect existing tests for that behavior
+4. inspect existing source/tooling tests for that behavior
 5. inspect relevant canonical documentation
-6. inspect a nearby fundamental example when useful
+6. when modifying `src/tatuy`, inspect the nearest relevant fundamental
+   and search experiments and games that use the affected capability
 7. identify the architectural boundary affected by the change
 
-Do not infer an API from documentation alone when current source can verify it.
+Do not infer an API from documentation alone when current source can verify
+it.
 
 Do not treat experiments as authoritative API examples unless current
 engine code supports the same pattern.
@@ -82,18 +84,23 @@ work is included in that authorization unless the user limits the scope.
 This may include:
 
 - modifying implementation files
-- creating or updating focused tests
+- creating or updating focused source/tooling tests
 - updating relevant documentation
-- updating examples when public usage changes
+- adding, updating, or removing affected examples
+- creating required package structure
 - formatting modified Python files
+- removing files or empty directories made obsolete by the change
 
 Do not mechanically add tests or documentation for every edit.
 
-Add or update tests when observable behavior changes or when a regression
-test can protect a bug fix.
+Add or update tests when observable Tatuy-owned behavior changes or when a
+regression test can protect a bug fix.
 
 Update documentation when public APIs, configuration, architecture,
 lifecycle semantics, workflows, or documented behavior change.
+
+Every modification under `src/tatuy` requires an example audit even when
+the conclusion is that no example needs to change.
 
 Internal implementation changes that preserve documented behavior usually
 do not need documentation changes.
@@ -114,10 +121,17 @@ near the requested change.
 
 After modifying Python code:
 
-1. format the modified Python files when formatting tools are available
-2. run the narrowest relevant tests
+1. format all modified Python files, including tests
+2. run the narrowest relevant pytest tests for Tatuy-owned source/tooling
 3. inspect failures and fix regressions caused by the change
 4. run broader tests when shared engine infrastructure was changed
+5. run mypy against relevant non-test implementation code
+6. run pylint against relevant non-test implementation code
+
+Never run mypy or pylint against test files.
+
+Fundamentals, experiments, and games are not pytest targets. Validate them
+through their executable behavior and current Tatuy API usage.
 
 Prefer focused verification first.
 
@@ -129,8 +143,8 @@ Examples:
 - MCP server change -> MCP server tests
 - cross-cutting engine change -> targeted tests followed by the full suite
 
-Do not claim formatting or tests succeeded unless the corresponding tool
-actually ran successfully.
+Do not claim formatting, tests, static analysis, or example validation
+succeeded unless the corresponding tool or the user confirms execution.
 
 If a verification tool is unavailable, say what remains unverified.
 
@@ -161,15 +175,87 @@ For non-trivial findings, report:
 
 Wait for developer approval before applying that solution.
 
+## Tatuy engine changes
+
+When modifying `src/tatuy`, always inspect the example ecosystem before
+considering the implementation complete.
+
+Inspect the nearest relevant fundamental example and search for experiments
+or games that use the affected API or behavior.
+
+Add, update, or remove examples when necessary.
+
+A conclusion that examples need no changes is valid only after relevant
+examples have been inspected.
+
+Examples, experiments, and games are executable validation targets. Do not
+create pytest tests whose purpose is to test those targets.
+
+## Tests
+
+The Tatuy repository pytest suite tests Tatuy-owned source and tooling,
+not fundamentals, experiments, or games.
+
+When behavior changes, design focused tests around every applicable
+category:
+
+- input/output contract
+- meaningful edge cases
+- observable side effects
+
+For bug fixes, prefer regression coverage for the original failure.
+
+Keep tests focused on the behavior owned by the source subsystem.
+
+Test directories do not require `__init__.py` merely because they mirror
+source package directories.
+
+Format modified test Python files.
+
+Do not run mypy or pylint against test files.
+
+## Creating project structure
+
+Use `create_directory` when new structure is required.
+
+Any new importable package directory under `src/` must contain
+`__init__.py`.
+
+When creating a new source package, create its `__init__.py` as part of
+the same authorized implementation.
+
+Verify package exports when introducing public APIs.
+
+Do not apply the source-package `__init__.py` requirement mechanically to
+test directories, fundamentals, experiments, or games.
+
+## Removing project content
+
+Deletion is a project modification and requires the same write
+authorization as editing.
+
+During an authorized implementation, directly obsolete files,
+documentation, tests, or examples may be removed when their removal is
+necessary to complete the requested change.
+
+Inspect a file before deleting it and use its current SHA-256.
+
+Directories must be emptied explicitly before deletion. Do not perform
+recursive bulk deletion.
+
+Review-only requests never authorize deletion.
+
 ## Completion
 
 Before reporting an authorized implementation as complete, account for:
 
 - implementation
-- tests
+- source/tooling tests
 - documentation
-- examples when relevant
+- affected fundamentals, experiments, and games
+- package structure when relevant
 - formatting
+- mypy/pylint findings for non-test code
 - executed verification
 
 Report what changed and which verification was actually executed.

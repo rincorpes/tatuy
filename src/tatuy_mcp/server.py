@@ -544,10 +544,7 @@ def create_file(
     if len(encoded) > 1_000_000:
         raise ValueError("File exceeds the 1 MB writing limit")
 
-    target.write_text(
-        content,
-        encoding="utf-8",
-    )
+    target.write_bytes(encoded)
 
     data = target.read_bytes()
 
@@ -737,6 +734,17 @@ def format_python(
     }
 
 
+def get_project_entry(
+    project: str,
+) -> ProjectEntry:
+    refresh_projects()
+
+    try:
+        return PROJECT_ENTRIES[project]
+    except KeyError as exc:
+        raise ValueError(f"Unknown project: {project}") from exc
+
+
 @mcp.tool()
 def run_tests(
     project: str,
@@ -744,14 +752,25 @@ def run_tests(
     keyword: str | None = None,
 ) -> dict[str, object]:
     """
-    Run pytest for a selected Tatuy development project.
+    Run pytest for Tatuy source/tooling tests or a standalone project's
+    own test suite.
 
-    Prefer the narrowest relevant test paths. If paths are omitted,
-    tests/ is used when it exists; otherwise the project root is used.
+    Tatuy fundamentals, experiments, and games are executable examples,
+    not pytest test targets.
+
+    For the Tatuy engine repository, pytest targets must live under tests/.
 
     Tests execute project Python code in a sanitized environment that
     excludes MCP, tunnel, API, and unrelated server secrets.
     """
+
+    entry = get_project_entry(project)
+
+    if entry.kind in {"experiment", "game"}:
+        raise ValueError(
+            "Tatuy experiments and games are executable validation "
+            "targets, not pytest test suites."
+        )
 
     root = resolve_project_path(project)
 
@@ -763,14 +782,38 @@ def run_tests(
         elif len(keyword) > 200:
             raise ValueError("pytest keyword must not exceed 200 characters")
 
-    if paths:
+    if entry.kind == "engine":
+        tests_root = resolve_project_path(
+            project,
+            "tests",
+        )
+
+        if paths:
+            targets = resolve_command_paths(
+                project,
+                paths,
+            )
+
+            for target in targets:
+                if target != tests_root and not target.is_relative_to(
+                    tests_root
+                ):
+                    raise ValueError(
+                        "Tatuy pytest targets must live under tests/. "
+                        "Examples, experiments, and games are verified "
+                        "as executable examples instead."
+                    )
+        else:
+            targets = [tests_root]
+
+    elif paths:
         targets = resolve_command_paths(
             project,
             paths,
         )
+
     else:
         tests = root / "tests"
-
         targets = [tests if tests.is_dir() else root]
 
     command = [
@@ -877,10 +920,7 @@ def edit_file(
     if len(encoded) > 1_000_000:
         raise ValueError("Updated file exceeds the 1 MB writing limit")
 
-    target.write_text(
-        updated,
-        encoding="utf-8",
-    )
+    target.write_bytes(encoded)
 
     written = target.read_bytes()
 
@@ -895,16 +935,41 @@ def edit_file(
 
 
 def validate_python_analysis_targets(
+    root: Path,
     targets: list[Path],
     *,
     tool_name: str,
 ) -> None:
-    """Require static-analysis targets to be Python files or directories."""
+    """
+    Require static-analysis targets to be non-test Python files or
+    directories.
+    """
+
+    tests_root = root / "tests"
+    has_tests = tests_root.is_dir()
+
+    if has_tests:
+        tests_root = tests_root.resolve(strict=True)
 
     for target in targets:
         if target.is_file() and target.suffix.casefold() != ".py":
             raise ValueError(
                 f"{tool_name} accepts Python files or directories"
+            )
+
+        if not has_tests:
+            continue
+
+        if target == tests_root or target.is_relative_to(tests_root):
+            raise ValueError(
+                f"{tool_name} does not analyze test files. "
+                "Tests are verified with formatting and pytest."
+            )
+
+        if target == root:
+            raise ValueError(
+                f"{tool_name} cannot analyze the project root because "
+                "it contains tests. Select source or example paths instead."
             )
 
 
@@ -946,6 +1011,7 @@ def run_mypy(
         )
 
         validate_python_analysis_targets(
+            root,
             targets,
             tool_name="run_mypy",
         )
@@ -1038,6 +1104,7 @@ def run_pylint(
         targets = [source_root if source_root.is_dir() else root]
 
     validate_python_analysis_targets(
+        root,
         targets,
         tool_name="run_pylint",
     )
@@ -1071,6 +1138,146 @@ def run_pylint(
         ),
         "result": result,
     }
+
+
+@mcp.tool()
+def create_directory(
+    project: str,
+    path: str,
+) -> dict[str, object]:
+    """
+    Create one directory inside a Tatuy development project.
+
+    Use only as part of a user-authorized implementation or when the user
+    explicitly asks to create project structure.
+
+    The parent directory must already exist. This tool does not create
+    parent directories recursively.
+    """
+
+    target = resolve_new_project_path(
+        project,
+        path,
+    )
+
+    target.mkdir()
+
+    return {
+        "created": True,
+        "project": project,
+        "path": path,
+    }
+
+
+def resolve_deletion_path(
+    project: str,
+    relative_path: str,
+) -> Path:
+    """Resolve an existing path that may be safely deleted."""
+
+    refresh_projects()
+
+    if project not in PROJECTS:
+        raise ValueError(f"Unknown project: {project}")
+
+    root = PROJECTS[project].resolve(strict=True)
+    requested = Path(relative_path)
+
+    if requested.is_absolute() or requested.drive or requested.root:
+        raise ValueError("Provide a project-relative path")
+
+    if requested == Path("."):
+        raise ValueError("Cannot delete a project root")
+
+    check_access(requested)
+
+    unresolved = root / requested
+
+    if unresolved.is_symlink():
+        raise ValueError("Deleting symbolic links is not supported")
+
+    target = unresolved.resolve(strict=True)
+
+    if target == root:
+        raise ValueError("Cannot delete a project root")
+
+    if not target.is_relative_to(root):
+        raise ValueError("Path points outside the selected project")
+
+    check_access(target.relative_to(root))
+
+    return target
+
+
+@mcp.tool()
+def delete_path(
+    project: str,
+    path: str,
+    expected_sha256: str | None = None,
+) -> dict[str, object]:
+    """
+    Delete one permitted file or empty directory from a Tatuy development
+    project.
+
+    Use only as part of a user-authorized implementation or when the user
+    explicitly asks to remove project content.
+
+    File deletion requires the SHA-256 returned by read_file so files cannot
+    be silently deleted after changing since inspection.
+
+    Directory deletion is allowed only for empty directories. Recursive
+    deletion is intentionally unsupported.
+    """
+
+    target = resolve_deletion_path(
+        project,
+        path,
+    )
+
+    if target.is_file():
+        check_writable_file(target)
+
+        if expected_sha256 is None:
+            raise ValueError(
+                "File deletion requires expected_sha256 from read_file"
+            )
+
+        data = target.read_bytes()
+        actual_sha256 = hashlib.sha256(data).hexdigest()
+
+        if actual_sha256 != expected_sha256:
+            raise ValueError(
+                "File changed since it was inspected. "
+                "Read the file again before deleting it."
+            )
+
+        target.unlink()
+
+        return {
+            "deleted": True,
+            "project": project,
+            "path": path,
+            "type": "file",
+            "previous_sha256": actual_sha256,
+        }
+
+    if target.is_dir():
+        try:
+            target.rmdir()
+        except OSError as exc:
+            raise ValueError(
+                "Directory is not empty or cannot be deleted. "
+                "Delete its contents explicitly first."
+            ) from exc
+
+        return {
+            "deleted": True,
+            "project": project,
+            "path": path,
+            "type": "directory",
+        }
+
+    raise ValueError("Requested path is not a file or directory")
 
 
 if __name__ == "__main__":

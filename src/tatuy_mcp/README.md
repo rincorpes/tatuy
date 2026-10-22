@@ -1,8 +1,12 @@
 # Tatuy Development MCP Server
 
-A local MCP server that lets ChatGPT inspect the Tatuy engine and game projects.
+A local MCP server that gives ChatGPT controlled development access to the
+Tatuy engine, examples, and configured standalone projects.
 
-It supports a collaborative workflow: ChatGPT reads the codebase, discusses designs, and provides code in chat. You review and apply changes yourself.
+The server supports chat-first collaboration as well as explicitly
+authorized project modifications. Repository behavior and write
+authorization are governed by `AGENTS.md`, `docs/ai/`, and the Tatuy
+Development skill.
 
 ## Tools
 
@@ -14,24 +18,40 @@ It supports a collaborative workflow: ChatGPT reads the codebase, discusses desi
 | `read_file` | Read numbered lines and the current file SHA-256 |
 | `search_code` | Search source and documentation for literal text |
 | `create_tatuy_target` | Create an experiment, game, or standalone project |
+| `create_directory` | Create one project-relative directory |
 | `create_file` | Create a new permitted UTF-8 project file |
 | `edit_file` | Safely edit an existing file using optimistic concurrency |
+| `delete_path` | Delete a guarded file or empty directory |
 | `format_python` | Run isort and Black on selected Python paths |
 | `run_tests` | Run targeted pytest verification |
+| `run_mypy` | Run diagnostic mypy analysis against non-test Python code |
+| `run_pylint` | Run diagnostic pylint analysis against non-test Python code |
 
 The server provides controlled development access to configured projects.
 
-File creation and modification are restricted to permitted project-relative
-paths and supported text file types. Existing-file edits require the
-SHA-256 returned by `read_file`, preventing silent overwrites when a file
-changes after inspection.
+File creation, modification, and deletion are restricted to permitted
+project-relative paths and supported file types.
+
+Existing-file edits and file deletion require the SHA-256 returned by
+`read_file`, preventing silent modification or deletion when a file changes
+after inspection.
+
+Directory creation is explicit. Directory deletion is allowed only for
+empty directories; recursive bulk deletion is intentionally unsupported.
 
 Command execution is intentionally constrained. The server does not expose
-an arbitrary shell tool. Formatting and tests run through dedicated tools
-with bounded output and execution time.
+an arbitrary shell tool.
+
+Formatting, tests, mypy, and pylint run through dedicated tools with
+bounded output and execution time.
 
 Test subprocesses receive a sanitized environment and do not inherit MCP,
 tunnel, API, or unrelated server secrets.
+
+Tatuy pytest targets are restricted to `tests/`. Fundamentals, experiments,
+and games are executable validation targets rather than pytest suites.
+
+Test files may be formatted but are not analyzed by mypy or pylint.
 
 ## Requirements
 
@@ -56,11 +76,12 @@ Copy the root configuration template:
 Copy-Item .env.example .env
 ```
 
-Edit `.env` with your project paths and OpenAI tunnel runtime API key:
+Edit `.env` with the Tatuy engine path, standalone-project root, and OpenAI
+tunnel runtime API key:
 
 ```dotenv
 TATUY_ENGINE_PATH=C:/path/to/tatuy
-TATUY_GAME_PATH=C:/path/to/game
+TATUY_PROJECTS_PATH=C:/path/to/projects
 CONTROL_PLANE_API_KEY=your-runtime-api-key
 ```
 
@@ -72,24 +93,28 @@ The server reads `.env` from the repository root. Existing environment variables
 
 The tunnel launcher uses `CONTROL_PLANE_API_KEY` from its environment when available, otherwise loading it from `.env`. It restores the previous environment value when it exits.
 
-Project access remains read-only and scoped to the configured directories. The MCP tools exclude `.env` files.
+The MCP tools exclude `.env` files.
 
 ## Configure projects
 
-Set project roots in `server.py`:
+The engine repository is configured with `TATUY_ENGINE_PATH`.
 
-```python
-PROJECTS: dict[str, Path] = {
-    "engine": Path(r"C:\path\to\tatuy"),
-    "game": Path(r"C:\path\to\game"),
-}
+Standalone Tatuy projects are discovered dynamically inside
+`TATUY_PROJECTS_PATH` when they contain a `tatuy.toml` manifest.
+
+Experiments and games are discovered dynamically from the Tatuy engine
+repository under:
+
+```text
+examples/experiments/
+examples/games/
 ```
 
-Use repository roots when you want access to documentation, configuration, tests, and source files.
+Tool requests use project keys and project-relative paths. The server
+validates that resolved paths remain inside the selected project.
 
-Tool requests use project names and project-relative paths. The server validates that resolved paths stay inside the selected project.
-
-If configured, the shared access policy also excludes selected directories and sensitive filenames. These rules are filename filters, not secret detection.
+The shared access policy excludes sensitive files and selected directories.
+These rules are filename/path filters rather than secret-content detection.
 
 ## Run locally
 
@@ -176,21 +201,24 @@ The tunnel authenticates separately using the runtime API key.
 ## Development workflow
 
 1. Ask ChatGPT to inspect repository guidance and the relevant subsystem.
-2. ChatGPT reads the implementation, tests, documentation, and nearby
-   examples as appropriate.
-3. For review and design requests, proposed changes remain in chat.
-4. When you explicitly authorize implementation, ChatGPT may apply the
-   implementation and directly necessary supporting tests, documentation,
-   examples, and formatting.
-5. ChatGPT formats modified Python files.
-6. ChatGPT runs the narrowest relevant tests.
-7. Broader verification is run when the change affects shared
-   infrastructure.
-8. ChatGPT reports which checks actually ran and their results.
+2. ChatGPT inspects the implementation, Tatuy-owned tests, canonical
+   documentation, and affected examples.
+3. Review and design requests remain read-only.
+4. When implementation is explicitly authorized, ChatGPT may apply the
+   implementation and directly necessary supporting work.
+5. New importable source packages are created with `__init__.py`.
+6. Tatuy engine changes audit affected fundamentals, experiments, and games.
+7. Modified Python files, including tests, are formatted.
+8. Tatuy-owned source/tooling behavior is verified with targeted pytest
+   tests.
+9. Mypy and pylint are run only against relevant non-test code.
+10. Non-trivial static-analysis fixes are proposed for developer approval
+    before being applied.
+11. Broader verification is run when shared infrastructure is affected.
+12. ChatGPT reports exactly which checks ran and their results.
 
-Repository instruction files are accessible through the tools. Behavioral
-guidance is provided by AGENTS.md, docs/ai/, and the Tatuy Development
-skill.
+Repository behavior is governed by `AGENTS.md`, `docs/ai/`, and the Tatuy
+Development skill.
 
 ## Troubleshooting
 

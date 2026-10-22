@@ -66,35 +66,39 @@ a source-file edit.
 Before changing behavior:
 
 1. inspect the current implementation
-2. inspect relevant tests
+2. inspect relevant source/tooling tests when the change affects `src/`
 3. inspect relevant canonical documentation
-4. inspect the nearest useful example when applicable
+4. for changes under `src/tatuy`, inspect the nearest relevant fundamental
+   and search affected experiments and games
 5. understand the architectural boundary being changed
 
 When behavior changes:
 
-- add or update focused tests when the behavior can reasonably be tested
+- add or update focused source/tooling tests when the behavior can
+  reasonably be tested
 - prefer regression tests for bug fixes
 - update relevant documentation when public APIs, configuration,
   architecture, workflows, or documented behavior change
-- update examples when they are part of the public usage pattern
+- add, update, or remove affected examples after Tatuy engine changes
 - do not create redundant tests or documentation merely because a file
   was edited
 
 After modifying Python:
 
-- format the modified Python files
-- run the narrowest relevant tests
+- format all modified Python files, including tests
+- run the narrowest relevant pytest tests for Tatuy-owned source/tooling
 - run broader tests when the change affects shared engine infrastructure
   or multiple subsystems
+- run mypy and pylint only against relevant non-test Python code
 - distinguish checks actually executed from checks merely recommended
 
 If verification cannot be executed, explain what remains unverified.
 
 An explicit request to implement, apply, refactor, fix, or update a
 feature also authorizes directly necessary supporting changes such as
-tests, documentation, examples, and formatting unless the user limits
-the requested scope.
+tests, documentation, examples, package structure, formatting, and
+removal of content made obsolete by that implementation unless the user
+limits the requested scope.
 
 ## Verification
 
@@ -169,6 +173,68 @@ When reporting a finding, distinguish:
 3. whether it exposes a real defect or only a tooling limitation
 4. the recommended fix
 5. alternatives and tradeoffs when relevant
+
+## Python package structure
+
+New importable Python package directories under `src/` must include an
+`__init__.py`.
+
+When creating a file inside a new source package:
+
+1. create the package directory
+2. create its `__init__.py`
+3. create the implementation files
+4. update package exports when the new API is intended to be exported
+
+Do not require `__init__.py` merely because a corresponding directory
+exists under `tests/`. Test directories may mirror the source hierarchy
+without becoming Python packages unless existing local conventions require
+otherwise.
+
+Examples, experiments, and games follow their existing runnable-target
+layout rather than the source-package rule.
+
+## Examples and engine changes
+
+Examples are executable documentation and integration pressure for Tatuy.
+
+Every addition, behavior change, or removal under `src/tatuy` requires an
+example review.
+
+Inspect:
+
+1. the nearest relevant fundamental example
+2. relevant experiments that exercise the affected capability
+3. relevant games when they depend on the affected behavior
+
+After inspection, add, update, or remove examples as needed.
+
+A new public engine capability should normally have a focused fundamental
+example unless an existing example already demonstrates it clearly.
+
+Internal changes may require no example edits, but that conclusion should
+be made only after reviewing affected examples.
+
+Do not create pytest tests for examples, experiments, or games. They are
+validated through their executable behavior and their use of the current
+Tatuy API.
+
+## Source and test structure
+
+The pytest suite under `tests/` validates Tatuy-owned source and tooling
+under `src/`.
+
+Do not add pytest coverage for fundamentals, experiments, or games.
+Those are executable validation targets with different purposes.
+
+Test directories may mirror the source hierarchy without becoming Python
+packages unless their local structure explicitly requires package
+semantics.
+
+Tests should cover applicable input/output behavior, meaningful edge
+cases, and observable side effects. See docs/ai/verification.md.
+
+Test files are formatted but are not checked with mypy or pylint.
 
 ## Scoped guidance
 
