@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Added support for customizable screenshot formats in CaptureSettings and CaptureWorker.
 - Implemented tests for new input handling features and capture settings.
 - Removed obsolete sample test file and added new tests for input and window services.
+- Enhance engine cleanup process with retry logic and error propagation
 
 ### - 2026-10-21
 

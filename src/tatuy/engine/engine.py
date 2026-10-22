@@ -339,6 +339,8 @@ class Engine:
         )
 
         self.running = False
+        self._capture_cleanup_pending = False
+        self._backend_cleanup_pending = False
         self.scene_context: SceneContext
 
         self.commands = EngineCommandQueue()
@@ -349,6 +351,13 @@ class Engine:
         )
 
     def start(self):
+        if not self.running and (
+            self._capture_cleanup_pending or self._backend_cleanup_pending
+        ):
+            raise RuntimeError("Call stop() to finish cleanup before starting")
+
+        self._capture_cleanup_pending = True
+        self._backend_cleanup_pending = True
         self.running = True
         event_bus.on("quit", self.stop)
 
@@ -481,16 +490,38 @@ class Engine:
                 frame_run.metadata["completed"] = True
 
     def stop(self) -> None:
-        if not self.running:
+        """Stop execution and retry any unfinished resource cleanup.
+
+        Capture closes before the backend is stopped. Successful stages are
+        not repeated; failed stages remain pending even though running is
+        false. Event subscriptions are cleared on every cleanup attempt.
+
+        Returns:
+            None: This method does not return a value.
+
+        Raises:
+            BaseException: Capture or backend cleanup fails. The failed stage
+                remains pending for a later stop() call. If both fail, the
+                backend error propagates with the capture error as context.
+        """
+        if not (
+            self._capture_cleanup_pending or self._backend_cleanup_pending
+        ):
             return
 
         with profiler.trace("engine.stop", "lifecycle"):
             self.running = False
 
             try:
-                self.services.capture.close()
+                try:
+                    if self._capture_cleanup_pending:
+                        self.services.capture.close()
+                        self._capture_cleanup_pending = False
+                finally:
+                    if self._backend_cleanup_pending:
+                        self._backend.stop()
+                        self._backend_cleanup_pending = False
             finally:
-                self._backend.stop()
                 event_bus.clear()
 
         print("Engine stopped.")

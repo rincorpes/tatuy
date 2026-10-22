@@ -67,6 +67,16 @@ failed initialization.
 `PythonLoop.run()` includes startup and frame-clock construction in its
 cleanup boundary. Backend, window, and scene startup failures therefore call
 `Engine.stop()`, which closes capture before stopping the backend.
+Engine cleanup tracks capture and backend shutdown independently from
+`running`. A failed stage remains pending, so another `Engine.stop()` retries
+it without repeating stages that already succeeded. Backend cleanup is still
+attempted if capture closing fails. Event subscriptions are cleared in a
+`finally` block even when either cleanup stage raises, including interruption
+exceptions. Calling `stop()` before startup or after successful cleanup is a
+no-op. `start()` rejects a stopped engine with pending cleanup; finish cleanup
+with `stop()` first. If both cleanup stages fail, the backend error propagates
+with the capture error preserved as exception context.
+
 Startup or execution errors remain primary if cleanup also fails; the cleanup
 error is chained as the cause. Cleanup errors after normal exit propagate
 directly. Interruption exceptions follow the same cleanup rules.
