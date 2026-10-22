@@ -480,6 +480,9 @@ class PygameText:
             None: This method does not return a value.
 
         Raises:
+            ValueError: The color layout, channel value, or alpha value is invalid.
+            TypeError: A color channel or alpha has an unsupported type,
+                including a boolean alpha.
             pygame.error: A required native subsystem is unavailable or the
                 platform operation fails.
             OSError: The selected font file cannot be opened.

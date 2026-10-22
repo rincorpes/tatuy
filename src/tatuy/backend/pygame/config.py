@@ -64,8 +64,7 @@ class PygameAudioConfig(AudioConfig):
     """Configure Pygame mixer initialization and preloaded sounds.
 
     Args:
-        enabled (bool): Whether audio is enabled; deprecated for capture
-            configuration.
+        enabled (bool): Whether audio operations are enabled.
         auto_init (bool): Whether backend startup should initialize enabled
             audio.
         master_volume (float): Initial master gain, clamped to 0.0 through
@@ -77,8 +76,7 @@ class PygameAudioConfig(AudioConfig):
             initialization.
 
     Attributes:
-        enabled (bool): Whether audio is enabled; deprecated for capture
-            configuration.
+        enabled (bool): Whether audio operations are enabled.
         auto_init (bool): Whether backend startup should initialize enabled
             audio.
         master_volume (float): Initial master gain, clamped to 0.0 through
@@ -118,20 +116,21 @@ class PygameCaptureConfig(CaptureConfig):
     """Retain legacy capture options; workflow policy belongs to CaptureSettings.
 
     Args:
-        enabled (bool): Whether audio is enabled; deprecated for capture
-            configuration.
+        enabled (bool): Deprecated capture flag, accepted but ignored.
         directory (str): Deprecated capture directory; save destinations
             belong to the caller.
         format (str): Deprecated image format; concrete capture uses the
             destination suffix.
 
     Attributes:
-        enabled (bool): Whether audio is enabled; deprecated for capture
-            configuration.
+        enabled (bool): Deprecated capture flag, accepted but ignored.
         directory (str): Deprecated capture directory; save destinations
             belong to the caller.
         format (str): Deprecated image format; concrete capture uses the
             destination suffix.
+
+    Warns:
+        DeprecationWarning: Nondefault legacy capture settings are ignored.
     """
 
 

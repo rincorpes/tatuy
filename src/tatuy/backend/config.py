@@ -61,13 +61,13 @@ class FontConfig:
     """Name a font path and its default logical rendering size.
 
     Args:
-        name (str): Configuration alias or backend implementation name.
+        name (str): Alias used to select this font.
         path (str | None): Source file path; None selects the built-in font
             where supported.
         size (int): Default font size in logical units.
 
     Attributes:
-        name (str): Configuration alias or backend implementation name.
+        name (str): Alias used to select this font.
         path (str | None): Source file path; None selects the built-in font
             where supported.
         size (int): Default font size in logical units.
@@ -119,14 +119,12 @@ class SoundConfig:
     """Associate a sound identifier with its source file path.
 
     Args:
-        name (str): Configuration alias or backend implementation name.
-        path (str): Source file path; None selects the built-in font where
-            supported.
+        name (str): Identifier used to load and play this sound.
+        path (str): Required path to the source sound file.
 
     Attributes:
-        name (str): Configuration alias or backend implementation name.
-        path (str): Source file path; None selects the built-in font where
-            supported.
+        name (str): Identifier used to load and play this sound.
+        path (str): Required path to the source sound file.
     """
 
     name: str
@@ -138,8 +136,7 @@ class AudioConfig(BaseConfig):
     """Configure mixer startup, initial master volume, and preloaded sounds.
 
     Args:
-        enabled (bool): Whether audio is enabled; deprecated for capture
-            configuration.
+        enabled (bool): Whether audio operations are enabled.
         auto_init (bool): Whether backend startup should initialize enabled
             audio.
         master_volume (float): Initial master gain, clamped to 0.0 through
@@ -151,8 +148,7 @@ class AudioConfig(BaseConfig):
             initialization.
 
     Attributes:
-        enabled (bool): Whether audio is enabled; deprecated for capture
-            configuration.
+        enabled (bool): Whether audio operations are enabled.
         auto_init (bool): Whether backend startup should initialize enabled
             audio.
         master_volume (float): Initial master gain, clamped to 0.0 through
@@ -204,22 +200,20 @@ class CaptureConfig(BaseConfig):
     """Retain deprecated backend capture fields for configuration compatibility.
 
     Args:
-        enabled (bool): Whether audio is enabled; deprecated for capture
-            configuration.
+        enabled (bool): Deprecated capture flag, accepted but ignored.
         directory (str): Deprecated capture directory; save destinations
             belong to the caller.
         format (str): Deprecated image format; concrete capture uses the
             destination suffix.
 
     Attributes:
-        enabled (bool): Whether audio is enabled; deprecated for capture
-            configuration.
+        enabled (bool): Deprecated capture flag, accepted but ignored.
         directory (str): Deprecated capture directory; save destinations
             belong to the caller.
         format (str): Deprecated image format; concrete capture uses the
             destination suffix.
 
-    Warnings:
+    Warns:
         DeprecationWarning: Nondefault legacy capture settings are ignored.
     """
 
