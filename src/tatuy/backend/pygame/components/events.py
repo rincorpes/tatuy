@@ -187,8 +187,9 @@ class PygameEvents(BackendComponent[PygameEventsConfig]):
 
         return events
 
+    # TODO: Fix too-many-return-statements here
     @staticmethod
-    def _translate_attrs(
+    def _translate_attrs(  # pylint: disable=too-many-return-statements
         event_type: EventType,
         attrs: dict[str, Any],
     ) -> dict[str, Any] | None:

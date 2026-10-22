@@ -10,6 +10,8 @@ from tatuy.graphics.color import Color
 from tatuy.graphics.viewport.transform import ViewportTransform
 from tatuy.math.vec2 import Vec2
 
+# pylint: disable=too-many-arguments,too-many-positional-arguments
+
 
 class Shape(Protocol):
     """Draw logical geometry and colors through the backend viewport."""

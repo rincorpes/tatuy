@@ -17,6 +17,8 @@ from .components.renderer import PygameRenderer
 from .components.window import PygameWindow
 from .config import PygameBackendConfig
 
+# pylint: disable=too-many-instance-attributes
+
 
 class PygameBackend:
     """Compose Pygame capabilities and own their global platform lifetime.

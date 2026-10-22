@@ -20,6 +20,8 @@ from tatuy.tooling.profiler import profiler
 
 from .window import PygameWindow
 
+# pylint: disable=too-many-arguments,too-many-positional-arguments
+
 
 @dataclass(frozen=True)
 class PygameRendererContext:
@@ -87,7 +89,8 @@ class PygameShape:
         draw_fn(surface, local_offset, color)
         self._context.window.screen.blit(surface, clipped.topleft)
 
-    def rect(
+    # TODO: Fix too-many-locals
+    def rect(  # pylint: disable=too-many-locals
         self,
         pos: Vec2,
         size: Size,
@@ -145,7 +148,8 @@ class PygameShape:
             ),
         )
 
-    def line(
+    # TODO: Fix too-many-locals
+    def line(  # pylint: disable=too-many-locals
         self,
         start: Vec2,
         end: Vec2,
@@ -211,7 +215,14 @@ class PygameShape:
             ),
         )
 
-    def circle(self, x: int, y: int, radius: int, color=(255, 255, 255)):
+    # TODO: Fix too-many-locals
+    def circle(  # pylint: disable=too-many-locals
+        self,
+        x: int,
+        y: int,
+        radius: int,
+        color=(255, 255, 255),
+    ):
         """Draw a viewport-mapped circle, blending translucent colors when needed.
 
         Negative radius raises ValueError; zero or rounded-away radius is a no-op.
