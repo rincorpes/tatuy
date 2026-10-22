@@ -89,7 +89,6 @@ def test_texture_rejects_short_buffer(textures):
         textures.create(2, 2, bytes(15))
 
 
-@pytest.mark.xfail(strict=True, reason="B05: alpha polygon omits max boundary")
 def test_alpha_polygon_includes_last_vertex(render_target):
     render_target.renderer.shape.polygon(
         [(2, 2), (8, 2), (8, 8), (2, 8)],
@@ -125,3 +124,59 @@ def test_configured_default_font_is_selected(monkeypatch, render_target):
     text = module.PygameText(context, config)
     text.measure("hello")
     font_type.assert_called_once_with("ui.ttf", 24)
+
+
+@pytest.mark.parametrize("filled", [True, False])
+@pytest.mark.parametrize("transform", [(0, 0, 1), (3, 4, 0.5), (1, 2, 2)])
+@pytest.mark.parametrize(
+    "points,clip",
+    [
+        ([(2, 2), (8, 2), (8, 8), (2, 8)], None),
+        ([(2, 2), (8, 2), (5, 8)], (3, 3, 12, 12)),
+        ([(-4, -4), (8, -4), (8, 8), (-4, 8)], None),
+        ([(16, 16), (44, 16), (44, 44), (16, 44)], (20, 20, 20, 20)),
+        ([(50, 50), (60, 50), (60, 60)], None),
+    ],
+)
+def test_alpha_polygon_matches_opaque_coverage(
+    render_target, filled, transform, points, clip
+):
+    target = render_target
+    target.transform.set(*transform)
+    target.screen.set_clip(clip)
+    target.renderer.shape.polygon(points, (255, 0, 0), filled=filled)
+    opaque_pixels = {
+        (x, y)
+        for y in range(target.screen.get_height())
+        for x in range(target.screen.get_width())
+        if target.screen.get_at((x, y)).r
+    }
+
+    target.screen.set_clip(None)
+    target.screen.fill((0, 0, 0))
+    target.screen.set_clip(clip)
+    original_clip = target.screen.get_clip()
+    target.renderer.shape.polygon(points, (255, 0, 0, 128), filled=filled)
+    alpha_pixels = {
+        (x, y)
+        for y in range(target.screen.get_height())
+        for x in range(target.screen.get_width())
+        if target.screen.get_at((x, y)).r
+    }
+    assert alpha_pixels == opaque_pixels
+    assert target.screen.get_clip() == original_clip
+    for point in alpha_pixels:
+        assert target.screen.get_at(point).r == 128
+
+
+@pytest.mark.parametrize(
+    "points",
+    [
+        [(4, 2), (4, 5), (4, 8)],
+        [(2, 4), (5, 4), (8, 4)],
+        [(4, 4), (4, 4), (4, 4)],
+    ],
+)
+def test_collapsed_alpha_polygon_includes_endpoint(render_target, points):
+    render_target.renderer.shape.polygon(points, (255, 0, 0, 128))
+    assert render_target.screen.get_at(points[-1]).r == 128

@@ -45,6 +45,10 @@ class PygameShape:
             pygame.SRCALPHA,
         )
         local_offset = (-int(clipped.x), -int(clipped.y))
+        # Match direct rasterization, including clipped diagonal outlines.
+        surface.set_clip(
+            self._context.window.screen.get_clip().move(*local_offset)
+        )
         draw_fn(surface, local_offset, color)
         self._context.window.screen.blit(surface, clipped.topleft)
 
@@ -199,9 +203,8 @@ class PygameShape:
         min_y = min(int(y) for _, y in mapped_points)
         max_x = max(int(x) for x, _ in mapped_points)
         max_y = max(int(y) for _, y in mapped_points)
-        rect = pygame.Rect(
-            min_x, min_y, max(1, max_x - min_x), max(1, max_y - min_y)
-        )
+        # Polygon rasterization includes pixels at both extreme vertices.
+        rect = pygame.Rect(min_x, min_y, max_x - min_x + 1, max_y - min_y + 1)
         self._blit_alpha_shape(
             bounds=rect,
             color=(r, g, b, a),

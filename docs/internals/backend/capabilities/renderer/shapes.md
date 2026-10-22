@@ -18,10 +18,10 @@ one-pixel width. Circles currently clamp their mapped radius to at least
 one pixel, even for a zero/negative logical radius. Input range policy is
 not otherwise validated consistently.
 
-Translucent polygon temporary bounds currently use `max - min` rather than
-including the final vertex pixel. This clips the rightmost/bottommost
-boundary compared with opaque rendering; an expected-failure pixel test
-records the issue.
+Translucent polygon bounds include both extreme vertex pixels after
+viewport mapping (`max - min + 1` in screen pixels). The active target clip
+is translated onto the temporary surface before drawing, preserving clipped
+outline rasterization as well as the final blit's clipping.
 
 Temporary alpha surfaces are allocated per draw. Profile actual workloads
 before introducing pooling, batching, or native implementations.
