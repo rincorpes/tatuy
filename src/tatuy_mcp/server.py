@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import hashlib
 import os
+import subprocess
+import sys
 from pathlib import Path
 from typing import Literal
 
@@ -14,7 +16,8 @@ from tatuy_mcp.projects import ProjectEntry, discover_projects
 
 load_dotenv()
 
-mcp = MCPServer("Game Development")
+MCP_SERVER_NAME = "Tatuy Development"
+mcp = MCPServer(MCP_SERVER_NAME)
 
 TargetKind = Literal[
     "experiment",
@@ -242,19 +245,10 @@ def read_file(
         "start_line": start_line,
         "end_line": (start_line + len(selected) - 1 if selected else None),
         "has_more": end_line < len(lines),
+        "sha256": hashlib.sha256(data).hexdigest(),
         "content": content,
     }
 
-
-EXCLUDED_DIRECTORIES = {
-    ".git",
-    ".venv",
-    "venv",
-    "__pycache__",
-    "node_modules",
-    "build",
-    "dist",
-}
 
 SOURCE_EXTENSIONS = {
     ".py",
@@ -452,7 +446,7 @@ def create_tatuy_target(
 def server_info() -> dict[str, str]:
     """Describe this local game development server."""
     return {
-        "name": "Game Development",
+        "name": MCP_SERVER_NAME,
         "status": "ready",
     }
 
@@ -566,6 +560,249 @@ def create_file(
     }
 
 
+COMMAND_TIMEOUT_SECONDS = 120
+MAX_COMMAND_OUTPUT = 30_000
+MAX_COMMAND_PATHS = 25
+
+SAFE_SUBPROCESS_ENVIRONMENT = {
+    "APPDATA",
+    "COMSPEC",
+    "HOME",
+    "LOCALAPPDATA",
+    "PATH",
+    "PATHEXT",
+    "SYSTEMDRIVE",
+    "SYSTEMROOT",
+    "TEMP",
+    "TMP",
+    "USERPROFILE",
+    "VIRTUAL_ENV",
+    "WINDIR",
+}
+
+
+def build_subprocess_environment() -> dict[str, str]:
+    environment = {
+        key: value
+        for key, value in os.environ.items()
+        if key.upper() in SAFE_SUBPROCESS_ENVIRONMENT
+    }
+
+    environment["PYTHONUTF8"] = "1"
+
+    return environment
+
+
+def truncate_command_output(value: str) -> tuple[str, bool]:
+    if len(value) <= MAX_COMMAND_OUTPUT:
+        return value, False
+
+    return value[:MAX_COMMAND_OUTPUT], True
+
+
+def run_project_command(
+    *,
+    command: list[str],
+    cwd: Path,
+) -> dict[str, object]:
+    try:
+        completed = subprocess.run(
+            command,
+            cwd=cwd,
+            env=build_subprocess_environment(),
+            capture_output=True,
+            text=True,
+            timeout=COMMAND_TIMEOUT_SECONDS,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        return {
+            "completed": False,
+            "timed_out": True,
+            "exit_code": None,
+            "stdout": "",
+            "stderr": (
+                "Command exceeded the "
+                f"{COMMAND_TIMEOUT_SECONDS}-second timeout."
+            ),
+            "stdout_truncated": False,
+            "stderr_truncated": False,
+        }
+
+    stdout, stdout_truncated = truncate_command_output(
+        completed.stdout,
+    )
+    stderr, stderr_truncated = truncate_command_output(
+        completed.stderr,
+    )
+
+    return {
+        "completed": True,
+        "timed_out": False,
+        "exit_code": completed.returncode,
+        "stdout": stdout,
+        "stderr": stderr,
+        "stdout_truncated": stdout_truncated,
+        "stderr_truncated": stderr_truncated,
+    }
+
+
+def resolve_command_paths(
+    project: str,
+    paths: list[str],
+) -> list[Path]:
+    if not paths:
+        raise ValueError("Provide at least one project-relative path")
+
+    if len(paths) > MAX_COMMAND_PATHS:
+        raise ValueError(f"Provide at most {MAX_COMMAND_PATHS} paths")
+
+    resolved = []
+
+    for path in paths:
+        resolved.append(
+            resolve_project_path(
+                project,
+                path,
+            )
+        )
+
+    return resolved
+
+
+@mcp.tool()
+def format_python(
+    project: str,
+    paths: list[str],
+) -> dict[str, object]:
+    """
+    Format selected Python files or directories using Tatuy's configured
+    isort and Black tooling.
+
+    Use only as part of a user-authorized implementation or when the user
+    explicitly asks to format project code.
+
+    Paths must remain inside the selected project.
+    """
+
+    root = resolve_project_path(project)
+    targets = resolve_command_paths(
+        project,
+        paths,
+    )
+
+    for target in targets:
+        if target.is_file() and target.suffix.casefold() != ".py":
+            raise ValueError(
+                "format_python accepts Python files or directories"
+            )
+
+    arguments = [str(target) for target in targets]
+
+    isort_result = run_project_command(
+        command=[
+            sys.executable,
+            "-m",
+            "isort",
+            *arguments,
+        ],
+        cwd=root,
+    )
+
+    if isort_result["exit_code"] != 0:
+        return {
+            "project": project,
+            "paths": paths,
+            "formatted": False,
+            "isort": isort_result,
+            "black": None,
+        }
+
+    black_result = run_project_command(
+        command=[
+            sys.executable,
+            "-m",
+            "black",
+            *arguments,
+        ],
+        cwd=root,
+    )
+
+    return {
+        "project": project,
+        "paths": paths,
+        "formatted": black_result["exit_code"] == 0,
+        "isort": isort_result,
+        "black": black_result,
+    }
+
+
+@mcp.tool()
+def run_tests(
+    project: str,
+    paths: list[str] | None = None,
+    keyword: str | None = None,
+) -> dict[str, object]:
+    """
+    Run pytest for a selected Tatuy development project.
+
+    Prefer the narrowest relevant test paths. If paths are omitted,
+    tests/ is used when it exists; otherwise the project root is used.
+
+    Tests execute project Python code in a sanitized environment that
+    excludes MCP, tunnel, API, and unrelated server secrets.
+    """
+
+    root = resolve_project_path(project)
+
+    if keyword is not None:
+        keyword = keyword.strip()
+
+        if not keyword:
+            keyword = None
+        elif len(keyword) > 200:
+            raise ValueError("pytest keyword must not exceed 200 characters")
+
+    if paths:
+        targets = resolve_command_paths(
+            project,
+            paths,
+        )
+    else:
+        tests = root / "tests"
+
+        targets = [tests if tests.is_dir() else root]
+
+    command = [
+        sys.executable,
+        "-m",
+        "pytest",
+        "-q",
+        *(str(target) for target in targets),
+    ]
+
+    if keyword is not None:
+        command.extend(
+            [
+                "-k",
+                keyword,
+            ]
+        )
+
+    result = run_project_command(
+        command=command,
+        cwd=root,
+    )
+
+    return {
+        "project": project,
+        "paths": paths,
+        "keyword": keyword,
+        "passed": (result["completed"] and result["exit_code"] == 0),
+        "result": result,
+    }
+
+
 @mcp.tool()
 def edit_file(
     project: str,
@@ -654,6 +891,185 @@ def edit_file(
         "previous_sha256": actual_sha256,
         "sha256": hashlib.sha256(written).hexdigest(),
         "bytes": len(written),
+    }
+
+
+def validate_python_analysis_targets(
+    targets: list[Path],
+    *,
+    tool_name: str,
+) -> None:
+    """Require static-analysis targets to be Python files or directories."""
+
+    for target in targets:
+        if target.is_file() and target.suffix.casefold() != ".py":
+            raise ValueError(
+                f"{tool_name} accepts Python files or directories"
+            )
+
+
+@mcp.tool()
+def run_mypy(
+    project: str,
+    paths: list[str] | None = None,
+) -> dict[str, object]:
+    """
+    Run mypy static type analysis for a Tatuy development project.
+
+    This is a diagnostic tool only. Findings should be inspected and
+    explained before making non-trivial typing, API, suppression, or
+    architectural changes.
+
+    When paths are provided, analyze only those Python files or
+    directories. When paths are omitted, allow mypy to use the targets
+    configured by the selected project's configuration.
+
+    The command executes in a sanitized environment that excludes MCP,
+    tunnel, API, and unrelated server secrets.
+    """
+
+    root = resolve_project_path(project)
+
+    command = [
+        sys.executable,
+        "-m",
+        "mypy",
+        "--show-error-codes",
+    ]
+
+    resolved_paths: list[str] | None = None
+
+    if paths:
+        targets = resolve_command_paths(
+            project,
+            paths,
+        )
+
+        validate_python_analysis_targets(
+            targets,
+            tool_name="run_mypy",
+        )
+
+        resolved_paths = [str(target.relative_to(root)) for target in targets]
+
+        command.extend(resolved_paths)
+
+    result = run_project_command(
+        command=command,
+        cwd=root,
+    )
+
+    return {
+        "project": project,
+        "paths": paths,
+        "clean": (result["completed"] and result["exit_code"] == 0),
+        "result": result,
+    }
+
+
+def pylint_status_categories(
+    exit_code: object,
+) -> list[str]:
+    """
+    Decode pylint's bit-encoded exit status.
+
+    Pylint uses:
+      1  fatal message
+      2  error message
+      4  warning message
+      8  refactor message
+      16 convention message
+      32 usage error
+    """
+
+    if not isinstance(exit_code, int):
+        return []
+
+    categories = []
+
+    flags = (
+        (1, "fatal"),
+        (2, "error"),
+        (4, "warning"),
+        (8, "refactor"),
+        (16, "convention"),
+        (32, "usage_error"),
+    )
+
+    for flag, name in flags:
+        if exit_code & flag:
+            categories.append(name)
+
+    return categories
+
+
+@mcp.tool()
+def run_pylint(
+    project: str,
+    paths: list[str] | None = None,
+) -> dict[str, object]:
+    """
+    Run pylint static analysis for a Tatuy development project.
+
+    This is a diagnostic tool only. Findings should be inspected and
+    explained before making non-trivial design, API, suppression,
+    configuration, or architectural changes.
+
+    When paths are provided, analyze only those Python files or
+    directories.
+
+    When paths are omitted, analyze src/ when it exists; otherwise
+    analyze the selected project root.
+
+    The command executes in a sanitized environment that excludes MCP,
+    tunnel, API, and unrelated server secrets.
+    """
+
+    root = resolve_project_path(project)
+
+    if paths:
+        targets = resolve_command_paths(
+            project,
+            paths,
+        )
+    else:
+        source_root = root / "src"
+
+        targets = [source_root if source_root.is_dir() else root]
+
+    validate_python_analysis_targets(
+        targets,
+        tool_name="run_pylint",
+    )
+
+    arguments = [
+        ("." if target == root else str(target.relative_to(root)))
+        for target in targets
+    ]
+
+    command = [
+        sys.executable,
+        "-m",
+        "pylint",
+        "--output-format=text",
+        "--reports=no",
+        "--score=no",
+        *arguments,
+    ]
+
+    result = run_project_command(
+        command=command,
+        cwd=root,
+    )
+
+    return {
+        "project": project,
+        "paths": paths,
+        "clean": (result["completed"] and result["exit_code"] == 0),
+        "categories": pylint_status_categories(
+            result["exit_code"],
+        ),
+        "result": result,
     }
 
 

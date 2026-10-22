@@ -11,10 +11,27 @@ It supports a collaborative workflow: ChatGPT reads the codebase, discusses desi
 | `server_info` | Describe the server |
 | `list_projects` | List configured projects and their availability |
 | `list_files` | Browse a project directory |
-| `read_file` | Read numbered lines from a text file |
+| `read_file` | Read numbered lines and the current file SHA-256 |
 | `search_code` | Search source and documentation for literal text |
+| `create_tatuy_target` | Create an experiment, game, or standalone project |
+| `create_file` | Create a new permitted UTF-8 project file |
+| `edit_file` | Safely edit an existing file using optimistic concurrency |
+| `format_python` | Run isort and Black on selected Python paths |
+| `run_tests` | Run targeted pytest verification |
 
-The server provides read-only access. It does not edit files or execute project commands.
+The server provides controlled development access to configured projects.
+
+File creation and modification are restricted to permitted project-relative
+paths and supported text file types. Existing-file edits require the
+SHA-256 returned by `read_file`, preventing silent overwrites when a file
+changes after inspection.
+
+Command execution is intentionally constrained. The server does not expose
+an arbitrary shell tool. Formatting and tests run through dedicated tools
+with bounded output and execution time.
+
+Test subprocesses receive a sanitized environment and do not inherit MCP,
+tunnel, API, or unrelated server secrets.
 
 ## Requirements
 
@@ -158,13 +175,22 @@ The tunnel authenticates separately using the runtime API key.
 
 ## Development workflow
 
-1. Ask ChatGPT to inspect relevant project instructions and code.
-2. Discuss the intended behavior and design.
-3. Review the proposed code in chat.
-4. Apply changes locally.
-5. Ask ChatGPT to re-read changed files when needed.
+1. Ask ChatGPT to inspect repository guidance and the relevant subsystem.
+2. ChatGPT reads the implementation, tests, documentation, and nearby
+   examples as appropriate.
+3. For review and design requests, proposed changes remain in chat.
+4. When you explicitly authorize implementation, ChatGPT may apply the
+   implementation and directly necessary supporting tests, documentation,
+   examples, and formatting.
+5. ChatGPT formats modified Python files.
+6. ChatGPT runs the narrowest relevant tests.
+7. Broader verification is run when the change affects shared
+   infrastructure.
+8. ChatGPT reports which checks actually ran and their results.
 
-Repository instruction files are accessible through the tools, but the server does not automatically load or enforce their contents.
+Repository instruction files are accessible through the tools. Behavioral
+guidance is provided by AGENTS.md, docs/ai/, and the Tatuy Development
+skill.
 
 ## Troubleshooting
 

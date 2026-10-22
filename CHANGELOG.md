@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 #### Added
 
 - Implement file creation and editing tools with path validation and access checks
+- Add tools for static validation, code formatting and tests to the MCP server.
+
+#### Changed
+
+- Refactor verification and development documentation; enhance server functionality
 
 ### - 2026-10-21
 
