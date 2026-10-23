@@ -90,6 +90,24 @@ World.query(Transform, AttachedTo)
 
 Bounds and spatial operations are intentionally separate contracts because they own different data, behavior, and future native implementation concerns.
 
+## Collision detection
+
+`CollisionDetectionSystem` delegates the full broad-phase-like collection and pair-testing pass as one batch operation. The Python reference kernel owns collider collection, deterministic entity ordering, pair generation, geometric contact tests, `CollisionFrame` population, and detection metrics.
+
+```text
+CollisionDetectionSystem.step(ctx)
+    ↓
+CollisionDetectionKernel.detect(world)
+    ↓
+PythonCollisionDetectionKernel
+    ├── collect colliders
+    ├── sort by EntityId
+    ├── test collider pairs
+    └── populate CollisionFrame
+```
+
+Detection remains separate from `CollisionResponseSystem`. Sensors still produce contacts during detection; response decides whether a contact should produce physical separation or velocity changes.
+
 ## Kernel requirements
 
 Each kernelized subsystem should:

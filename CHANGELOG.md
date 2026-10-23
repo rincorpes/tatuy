@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Introduce ECS storage and query strategies with Python implementation
 - Implement movement calculation and velocity integration kernels with corresponding tests
 - Introduce bounds and spatial kernels for performance-sensitive operations with corresponding tests
+- Implement collision detection kernel and related tests for performance-sensitive operations
 
 #### Changed
 

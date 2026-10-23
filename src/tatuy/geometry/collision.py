@@ -11,7 +11,7 @@ class CollisionGeometry:
     def find(
         self,
         first: AABB | Disk | PolygonGeometry,
-        second: AABB | Disk,
+        second: AABB | Disk | PolygonGeometry,
     ) -> tuple[Vec2, float] | None:
         if isinstance(first, PolygonGeometry) or isinstance(
             second, PolygonGeometry

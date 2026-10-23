@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-from itertools import combinations
-
 from tatuy.ecs.system import BaseSystem, SystemPhase
 from tatuy.ecs.world import TWorld
 from tatuy.features.collision.collider_access import ColliderAccess
 from tatuy.features.collision.components import CollisionBody
-from tatuy.features.collision.resources import CollisionContact, CollisionFrame
+from tatuy.features.collision.kernels import (
+    CollisionDetectionKernel,
+    PythonCollisionDetectionKernel,
+)
+from tatuy.features.collision.resources import CollisionFrame
 from tatuy.features.collision.velocity_rule import CollisionVelocityRule
 from tatuy.features.movement.components import (
     DesiredMovement,
@@ -14,102 +16,23 @@ from tatuy.features.movement.components import (
     Velocity,
 )
 from tatuy.features.spatial.components import Transform
-from tatuy.geometry.collision import CollisionGeometry
 from tatuy.scenes.context import SceneTickContext, TContext, TIntent
-from tatuy.tooling.profiler import profiler
 
 
 class CollisionDetectionSystem(BaseSystem[TContext]):
     phase = SystemPhase.SIMULATION
 
-    def __init__(self) -> None:
-        self._colliders = ColliderAccess()
-        self._geometry = CollisionGeometry()
+    def __init__(
+        self,
+        kernel: CollisionDetectionKernel | None = None,
+    ) -> None:
+        self._kernel = kernel or PythonCollisionDetectionKernel()
 
     def step(
         self,
         ctx: SceneTickContext[TWorld, TIntent],
     ) -> None:
-        frame = ctx.world.get_resource(CollisionFrame)
-        frame.contacts.clear()
-
-        colliders = []
-        entities_checked = 0
-
-        with profiler.span(
-            "collect_colliders",
-            "collision",
-        ):
-            for entity, transform in ctx.world.query(Transform):
-                entities_checked += 1
-
-                collider = self._colliders.find(
-                    ctx.world,
-                    entity,
-                )
-
-                if collider is None:
-                    continue
-
-                shape = self._colliders.shape(
-                    transform.position,
-                    collider,
-                )
-
-                colliders.append((entity, shape))
-
-            colliders.sort(key=lambda row: row[0])
-
-        pair_tests = 0
-        contacts = 0
-
-        with profiler.span(
-            "test_pairs",
-            "collision",
-        ):
-            for first, second in combinations(colliders, 2):
-                pair_tests += 1
-
-                entity_a, shape_a = first
-                entity_b, shape_b = second
-
-                result = self._geometry.find(
-                    shape_a,
-                    shape_b,
-                )
-
-                if result is None:
-                    continue
-
-                contacts += 1
-
-                normal, penetration = result
-
-                frame.contacts.append(
-                    CollisionContact(
-                        entity_a=entity_a,
-                        entity_b=entity_b,
-                        normal=normal,
-                        penetration=penetration,
-                    )
-                )
-
-        profiler.metric(
-            "entities_checked",
-            entities_checked,
-        )
-        profiler.metric(
-            "colliders",
-            len(colliders),
-        )
-        profiler.metric(
-            "pair_tests",
-            pair_tests,
-        )
-        profiler.metric(
-            "contacts",
-            contacts,
-        )
+        self._kernel.detect(ctx.world)
 
 
 class CollisionResponseSystem(BaseSystem[TContext]):

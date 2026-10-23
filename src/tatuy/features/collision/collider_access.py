@@ -75,7 +75,7 @@ class ColliderAccess:
     def shape(
         self,
         position: Vec2,
-        collider: BoxCollider | CircleCollider,
+        collider: Collider,
     ) -> AABB | Disk | PolygonGeometry:
         if isinstance(collider, PolygonCollider):
             return PolygonGeometry(
