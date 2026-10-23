@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Callable, Literal
+from typing import Literal
 
-from tatuy.backend.backend import Backend
 from tatuy.geometry.size import Size
 from tatuy.graphics.color import Color
 from tatuy.graphics.render.commands import (
     CircleCommand,
-    CustomCommand,
     DrawCommand,
     LineCommand,
     PolyCommand,
@@ -16,6 +14,7 @@ from tatuy.graphics.render.commands import (
     TextCommand,
     TextureCommand,
 )
+from tatuy.graphics.render.fallback import CustomCommand, PythonRenderCallback
 from tatuy.math.vec2 import Vec2
 
 Layer = Literal["world", "lighting", "ui", "effects", "postfx", "debug"]
@@ -26,21 +25,31 @@ OperationKind = Literal[
     "draw_texture",
     "draw_text",
     "draw_poly",
-    "custom",
 ]
 
 
 @dataclass(slots=True)
 class DrawOperation:
-    """
-    A draw operation for rendering.
-    """
+    """Native-compatible semantic draw operation."""
 
     kind: OperationKind
     layer: Layer
-    z: int = 0  # for sorting within layer
-    seq: int = 0  # for stable sorting of ops with same layer/z
-    payload: DrawCommand | None = None  # operation-specific data
+    z: int = 0
+    seq: int = 0
+    payload: DrawCommand | None = None
+
+
+@dataclass(slots=True)
+class PythonRenderOperation:
+    """Explicit Python-only fallback operation kept in render order."""
+
+    layer: Layer
+    z: int = 0
+    seq: int = 0
+    payload: CustomCommand | None = None
+
+
+RenderOperation = DrawOperation | PythonRenderOperation
 
 
 _LAYER_ORDER: dict[Layer, int] = {
@@ -63,7 +72,7 @@ class RenderQueue:
     scenes that just want to emit draw calls.
     """
 
-    _ops: list[DrawOperation] = field(default_factory=list)
+    _ops: list[RenderOperation] = field(default_factory=list)
     _seq: int = 0
 
     def clear(self) -> None:
@@ -211,18 +220,24 @@ class RenderQueue:
     def custom(
         self,
         *,
-        op: Callable[[Backend], None],
+        op: PythonRenderCallback,
         layer: Layer = "debug",
         z: int = 0,
     ) -> None:
-        """
-        Push a custom draw operation defined by a callable that takes the backend.
-        """
-        self._push("custom", layer, z, CustomCommand(op))
+        """Push an explicit Python-only fallback operation."""
+        self._ops.append(
+            PythonRenderOperation(
+                layer=layer,
+                z=z,
+                seq=self._seq,
+                payload=CustomCommand(op),
+            )
+        )
+        self._seq += 1
 
     def iter_sorted(
         self, layers: tuple[Layer, ...] | list[Layer] | None = None
-    ) -> list[DrawOperation]:
+    ) -> list[RenderOperation]:
         """
         Get draw operations sorted by layer/z/seq, optionally filtered by layers.
         """

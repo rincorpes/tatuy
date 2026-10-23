@@ -6,21 +6,21 @@ from dataclasses import dataclass, field
 
 from tatuy.graphics.camera.transform import ViewTransform
 from tatuy.graphics.render.overlays import ScreenOverlay
-from tatuy.graphics.render.queue import DrawOperation, Layer
+from tatuy.graphics.render.queue import Layer, RenderOperation
 
 
 @dataclass(frozen=True)
 class RenderPacket:
     """Immutable batch of prepared draw operations for one scene."""
 
-    operations: tuple[DrawOperation, ...] = ()
+    operations: tuple[RenderOperation, ...] = ()
     screen_overlays: tuple[ScreenOverlay, ...] = ()
     meta: dict[str, object] = field(default_factory=dict)
     world_view: ViewTransform = field(default_factory=ViewTransform)
 
     def layer_operations(
         self, layer: Layer | str
-    ) -> tuple[DrawOperation, ...]:
+    ) -> tuple[RenderOperation, ...]:
         """Return prepared operations belonging to one render layer."""
         return tuple(
             operation

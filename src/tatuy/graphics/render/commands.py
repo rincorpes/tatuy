@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable, Literal
+from typing import Literal
 
-from tatuy.backend import Backend
 from tatuy.geometry.size import Size
 from tatuy.graphics.color import Color
 from tatuy.math.vec2 import Vec2
@@ -65,11 +64,6 @@ class TextCommand:
     valign: Literal["top", "middle", "bottom"] = "top"
 
 
-@dataclass(frozen=True, slots=True)
-class CustomCommand:
-    op: Callable[[Backend], None]
-
-
 DrawCommand = (
     RectCommand
     | LineCommand
@@ -77,5 +71,4 @@ DrawCommand = (
     | PolyCommand
     | TextureCommand
     | TextCommand
-    | CustomCommand
 )

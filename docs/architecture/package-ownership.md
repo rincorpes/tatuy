@@ -64,6 +64,8 @@ Feature-specific blueprints, resources, components, and policy belong to their o
 
 Owns low-level rendering and view primitives: colors, canvas contracts, viewport/view transforms, semantic render commands, render packets, render queues, executor contracts, and related backend-agnostic presentation data.
 
+The normal `DrawCommand` stream is pure semantic data and does not depend on `Backend`. Python-only custom rendering is isolated as `PythonRenderOperation`/`CustomCommand` fallback data, remains explicitly ordered with normal operations, and receives only the minimal `PythonRenderContext` renderer capability. A future native executor may therefore accept normal draw operations while explicitly rejecting or routing Python fallback operations without putting a Python `Backend` object into the native render ABI.
+
 `tatuy.graphics` must not import concrete feature implementations. Presentation helpers that know about a concrete feature belong to that feature and may depend downward on `tatuy.graphics`.
 
 For example, world-bounds border rendering belongs to `tatuy.features.bounds`, because it consumes `WorldBoundsBorder`, even though it emits generic render commands.

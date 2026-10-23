@@ -3,9 +3,10 @@
 from unittest.mock import Mock
 
 from tatuy.geometry.size import Size
-from tatuy.graphics.render.commands import CustomCommand, RectCommand
+from tatuy.graphics.render.commands import RectCommand
 from tatuy.graphics.render.executor import PythonRenderExecutor
-from tatuy.graphics.render.queue import DrawOperation
+from tatuy.graphics.render.fallback import CustomCommand
+from tatuy.graphics.render.queue import DrawOperation, PythonRenderOperation
 from tatuy.math.vec2 import Vec2
 
 
@@ -36,8 +37,7 @@ def test_custom_command_uses_explicit_fallback_executor():
     backend = Mock()
     fallback = Mock()
     command = CustomCommand(lambda _backend: None)
-    operation = DrawOperation(
-        kind="custom",
+    operation = PythonRenderOperation(
         layer="debug",
         payload=command,
     )

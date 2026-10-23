@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Implement BoundsBorderRenderer and corresponding tests for bounds feature
 - Add UI rendering system and activation logic, including tests for UI and visual components
 - Implement DefaultSceneInitializer for scene feature provisioning and add corresponding tests
+- Introduce Python-only render fallback system and refactor rendering operations
 
 #### Changed
 

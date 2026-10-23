@@ -10,7 +10,7 @@ from tatuy.engine.render.view import world_drawing_scope
 from tatuy.graphics.render.context import RenderContext
 from tatuy.graphics.render.executor import RenderExecutor
 from tatuy.graphics.render.packets import FramePacket, RenderPacket
-from tatuy.graphics.render.queue import DrawOperation
+from tatuy.graphics.render.queue import RenderOperation
 
 
 @dataclass
@@ -47,7 +47,7 @@ class WorldPass:
         backend: Backend,
         ctx: RenderContext,
         packet: RenderPacket,
-        operations: Sequence[DrawOperation],
+        operations: Sequence[RenderOperation],
         executor: RenderExecutor,
     ) -> None:
         if not operations:

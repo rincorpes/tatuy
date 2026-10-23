@@ -9,14 +9,14 @@ from typing import Protocol, Sequence
 from tatuy.backend import Backend
 from tatuy.graphics.render.commands import (
     CircleCommand,
-    CustomCommand,
     LineCommand,
     PolyCommand,
     RectCommand,
     TextCommand,
     TextureCommand,
 )
-from tatuy.graphics.render.queue import DrawOperation
+from tatuy.graphics.render.fallback import CustomCommand
+from tatuy.graphics.render.queue import PythonRenderOperation, RenderOperation
 from tatuy.math.vec2 import Vec2
 
 
@@ -26,7 +26,7 @@ class RenderExecutor(Protocol):
     def execute(
         self,
         backend: Backend,
-        operations: Sequence[DrawOperation],
+        operations: Sequence[RenderOperation],
     ) -> None:
         """Execute a prepared batch while preserving operation order."""
 
@@ -92,7 +92,7 @@ class PythonRenderExecutor:
     def execute(
         self,
         backend: Backend,
-        operations: Sequence[DrawOperation],
+        operations: Sequence[RenderOperation],
     ) -> None:
         """Execute prepared operations in order."""
         for operation in operations:
@@ -101,8 +101,16 @@ class PythonRenderExecutor:
     def _execute_operation(
         self,
         backend: Backend,
-        operation: DrawOperation,
+        operation: RenderOperation,
     ) -> None:
+        if isinstance(operation, PythonRenderOperation):
+            if operation.payload is None:
+                raise TypeError(
+                    "Python render operation requires a fallback payload"
+                )
+            self.fallback.execute(backend, operation.payload)
+            return
+
         command = operation.payload
         renderer = backend.renderer
 
@@ -139,8 +147,6 @@ class PythonRenderExecutor:
             )
         elif isinstance(command, TextCommand):
             TextCommandRenderer().draw(command, backend)
-        elif isinstance(command, CustomCommand):
-            self.fallback.execute(backend, command)
         else:
             raise TypeError(f"Unsupported draw payload: {command!r}")
 
