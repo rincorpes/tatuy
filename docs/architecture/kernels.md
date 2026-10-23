@@ -108,6 +108,28 @@ PythonCollisionDetectionKernel
 
 Detection remains separate from `CollisionResponseSystem`. Sensors still produce contacts during detection; response decides whether a contact should produce physical separation or velocity changes.
 
+## Collision response
+
+`CollisionResponseSystem` delegates contact resolution as one batch operation.
+
+```text
+CollisionResponseSystem.step(ctx)
+    ↓
+CollisionResponseKernel.respond(world)
+    ↓
+PythonCollisionResponseKernel
+    ├── filter incomplete/sensor/immovable contacts
+    ├── correct penetration
+    ├── apply Python CollisionVelocityRule overrides when configured
+    └── otherwise apply the default impulse response
+```
+
+The Python reference kernel preserves the existing `CollisionVelocityRule` extension point and its timing: rules run only after the contact is eligible, penetration has been corrected, and the bodies are still approaching.
+
+System-level Python velocity rules are only valid with the default Python response kernel. A custom/native response kernel must own any custom response policy itself; Tatuy does not design the native boundary around per-contact Python callbacks.
+
+`CollisionDirectionSystem` remains outside the kernel because it translates resulting velocity back into higher-level movement intent.
+
 ## Kernel requirements
 
 Each kernelized subsystem should:
