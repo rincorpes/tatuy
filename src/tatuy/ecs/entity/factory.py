@@ -1,383 +1,14 @@
+"""Entity factory registry and blueprint instantiation."""
+
 from __future__ import annotations
 
-from abc import ABC
-from dataclasses import dataclass, field
-from time import perf_counter_ns
-from typing import Any, Callable, ClassVar, Generic, Iterable, TypeVar, cast
+from typing import Callable, ClassVar
 
 from onomasticon import ImplementationRegistry
 
-from tatuy.ecs.component import TComponent
 from tatuy.ecs.entity import EntityId
-from tatuy.ecs.world import TWorld, World
-from tatuy.features.collision.components import (
-    BoxCollider,
-    CircleCollider,
-    CollisionBody,
-    PolygonCollider,
-)
-from tatuy.features.spatial.components import Transform
-from tatuy.features.visual.components import (
-    Circle,
-    Polygon,
-    Rect,
-    Text,
-    TextAlign,
-    TextVAlign,
-)
-from tatuy.geometry.size import Size
-from tatuy.graphics.color import Color
-from tatuy.math.vec2 import Vec2
-from tatuy.tooling.profiler import profiler
-
-
-class EntityBlueprint(
-    ABC,
-    Generic[TWorld],
-):
-    identity: ClassVar[type[Any] | None] = None
-
-    def create(
-        self,
-        world: TWorld,
-        **kwargs,
-    ) -> EntityId:
-        start = perf_counter_ns()
-        entity = world.create_entity()
-        profiler.increment(
-            "factory.entity_create_ns",
-            perf_counter_ns() - start,
-        )
-
-        start = perf_counter_ns()
-        self.build(world, entity, **kwargs)
-        profiler.increment(
-            "factory.build_ns",
-            perf_counter_ns() - start,
-        )
-
-        start = perf_counter_ns()
-        self._build_identity(world, entity)
-        profiler.increment(
-            "factory.identity_ns",
-            perf_counter_ns() - start,
-        )
-
-        return entity
-
-    def _build_identity(
-        self,
-        world: TWorld,
-        entity: EntityId,
-    ) -> None:
-        if self.identity is not None:
-            world.add_component(
-                entity,
-                self.identity(),
-            )
-
-    def build(
-        self,
-        world: TWorld,
-        entity: EntityId,
-        **kwargs,
-    ):
-        raise NotImplementedError
-
-
-TAttrs = TypeVar("TAttrs", bound="SharedAttrs")
-
-
-class TypedEntityBlueprint(
-    EntityBlueprint[TWorld],
-    Generic[TWorld, TAttrs],
-):
-    attrs_type: ClassVar[type[Any]]
-
-    def get_collider(self, attrs: TAttrs) -> Any:
-        return None
-
-    def build(
-        self,
-        world: TWorld,
-        entity: EntityId,
-        **kwargs: Any,
-    ) -> None:
-        start = perf_counter_ns()
-        attrs = cast(
-            TAttrs,
-            self.attrs_type(**kwargs),
-        )
-        profiler.increment(
-            "factory.attrs_ns",
-            perf_counter_ns() - start,
-        )
-
-        start = perf_counter_ns()
-        self.build_attrs(
-            world,
-            entity,
-            attrs,
-        )
-        profiler.increment(
-            "factory.build_attrs_ns",
-            perf_counter_ns() - start,
-        )
-
-        start = perf_counter_ns()
-        for component in self.compose(attrs):  # type: ignore
-            world.add_component(entity, component)
-        profiler.increment(
-            "factory.compose_ns",
-            perf_counter_ns() - start,
-        )
-
-        start = perf_counter_ns()
-
-        collider = self.get_collider(attrs)
-        profiler.increment(
-            "factory.collider_create_ns",
-            perf_counter_ns() - start,
-        )
-
-        if collider:
-            start = perf_counter_ns()
-
-            if not world.has_component(entity, type(collider)):
-                world.add_component(entity, collider)
-
-            profiler.increment(
-                "factory.collider_add_ns",
-                perf_counter_ns() - start,
-            )
-
-            start = perf_counter_ns()
-
-            if not world.has_component(entity, CollisionBody):
-                world.add_component(
-                    entity,
-                    CollisionBody(
-                        inverse_mass=attrs.collision_body_inverse_mass,
-                        restitution=attrs.collision_body_restitution,
-                    ),
-                )
-
-            profiler.increment(
-                "factory.body_add_ns",
-                perf_counter_ns() - start,
-            )
-
-    def build_attrs(
-        self,
-        world: TWorld,
-        entity: EntityId,
-        attrs: TAttrs,
-    ) -> None:
-        raise NotImplementedError
-
-    def compose(self, attrs: TAttrs) -> Iterable[TComponent]:
-        return ()
-
-
-@dataclass(frozen=True)
-class SharedAttrs:
-    position: Vec2 = field(default_factory=Vec2.zero)
-    color: Color = (255, 255, 255)
-    with_collider: bool = False
-    collision_body_inverse_mass: float = 1
-    collision_body_restitution: float = 1
-
-
-@dataclass(frozen=True, kw_only=True)
-class RectBlueprintAttrs(SharedAttrs):
-    size: Size = field(default_factory=Size.zero)
-
-
-TRectAttrs = TypeVar(
-    "TRectAttrs",
-    bound=RectBlueprintAttrs,
-)
-
-
-class RectBlueprintBase(
-    TypedEntityBlueprint[TWorld, TRectAttrs], Generic[TWorld, TRectAttrs]
-):
-
-    def get_collider(self, attrs: TRectAttrs) -> BoxCollider | None:
-        if not attrs.with_collider:
-            return None
-
-        return BoxCollider(attrs.size)
-
-    def build_attrs(
-        self,
-        world: TWorld,
-        entity: EntityId,
-        attrs: TRectAttrs,
-    ) -> None:
-        world.add_component(
-            entity,
-            Transform(attrs.position),
-        )
-        world.add_component(
-            entity,
-            Rect(
-                attrs.size,
-                attrs.color,
-            ),
-        )
-
-
-class RectBlueprint(
-    RectBlueprintBase[
-        TWorld,
-        RectBlueprintAttrs,
-    ],
-    Generic[TWorld],
-):
-    attrs_type = RectBlueprintAttrs
-
-
-@dataclass(frozen=True, kw_only=True)
-class CircleBlueprintAttrs(SharedAttrs):
-    radius: int = 0
-
-
-TCircleAttrs = TypeVar(
-    "TCircleAttrs",
-    bound=CircleBlueprintAttrs,
-)
-
-
-class CircleBlueprintBase(
-    TypedEntityBlueprint[TWorld, TCircleAttrs], Generic[TWorld, TCircleAttrs]
-):
-    def get_collider(self, attrs: TCircleAttrs) -> CircleCollider | None:
-        if not attrs.with_collider:
-            return None
-
-        return CircleCollider(attrs.radius)
-
-    def build_attrs(
-        self,
-        world: TWorld,
-        entity: EntityId,
-        attrs: TCircleAttrs,
-    ) -> None:
-        world.add_component(
-            entity,
-            Transform(attrs.position),
-        )
-        world.add_component(
-            entity,
-            Circle(attrs.radius, attrs.color),
-        )
-
-
-class CircleBlueprint(
-    CircleBlueprintBase[
-        TWorld,
-        CircleBlueprintAttrs,
-    ],
-    Generic[TWorld],
-):
-    attrs_type = CircleBlueprintAttrs
-
-
-@dataclass(frozen=True, kw_only=True)
-class PolygonBlueprintAttrs(SharedAttrs):
-    vertices: tuple[Vec2, ...]
-
-
-TPolygonAttrs = TypeVar(
-    "TPolygonAttrs",
-    bound=PolygonBlueprintAttrs,
-)
-
-
-class PolygonBlueprintBase(
-    TypedEntityBlueprint[TWorld, TPolygonAttrs],
-    Generic[TWorld, TPolygonAttrs],
-):
-    def get_collider(
-        self,
-        attrs: TPolygonAttrs,
-    ) -> PolygonCollider | None:
-        if not attrs.with_collider:
-            return None
-
-        return PolygonCollider(vertices=attrs.vertices)
-
-    def build_attrs(
-        self,
-        world: TWorld,
-        entity: EntityId,
-        attrs: TPolygonAttrs,
-    ) -> None:
-        polygon = Polygon(
-            vertices=attrs.vertices,
-            color=attrs.color,
-        )
-
-        world.add_component(entity, Transform(attrs.position))
-        world.add_component(entity, polygon)
-
-
-class PolygonBlueprint(
-    PolygonBlueprintBase[TWorld, PolygonBlueprintAttrs],
-    Generic[TWorld],
-):
-    attrs_type = PolygonBlueprintAttrs
-
-
-@dataclass(frozen=True, kw_only=True)
-class TextBlueprintAttrs(SharedAttrs):
-    content: str = ""
-    font_size: int = 16
-    align: TextAlign = "left"
-    valign: TextVAlign = "top"
-
-
-TTextAttrs = TypeVar(
-    "TTextAttrs",
-    bound=TextBlueprintAttrs,
-)
-
-
-class TextBlueprintBase(
-    TypedEntityBlueprint[TWorld, TTextAttrs], Generic[TWorld, TTextAttrs]
-):
-
-    def build_attrs(
-        self,
-        world: TWorld,
-        entity: EntityId,
-        attrs: TTextAttrs,
-    ) -> None:
-        world.add_component(
-            entity,
-            Transform(attrs.position),
-        )
-        world.add_component(
-            entity,
-            Text(
-                attrs.color,
-                attrs.content,
-                attrs.font_size,
-                attrs.align,
-                attrs.valign,
-            ),
-        )
-
-
-class TextBlueprint(
-    TextBlueprintBase[
-        TWorld,
-        TextBlueprintAttrs,
-    ],
-    Generic[TWorld],
-):
-    attrs_type = TextBlueprintAttrs
+from tatuy.ecs.entity.blueprint import EntityBlueprint, TypedEntityBlueprint
+from tatuy.ecs.world import World
 
 
 class _BlueprintRegistry(ImplementationRegistry[EntityBlueprint]):
@@ -385,11 +16,9 @@ class _BlueprintRegistry(ImplementationRegistry[EntityBlueprint]):
 
 
 class EntityFactory:
+    """Create entities from registered generic blueprint types."""
 
-    registry: dict[
-        str,
-        type[EntityBlueprint],
-    ] = {}
+    registry: dict[str, type[EntityBlueprint]] = {}
     _blueprints: ClassVar[type[_BlueprintRegistry]] = _BlueprintRegistry
     _blueprint_instances: dict[str, EntityBlueprint]
 
@@ -397,21 +26,21 @@ class EntityFactory:
         super().__init_subclass__(**kwargs)
 
         class BlueprintRegistry(_BlueprintRegistry):
-            pass
+            """Per-factory blueprint registry."""
 
         cls._blueprints = BlueprintRegistry
 
-    def __init__(
-        self,
-        world: World,
-    ) -> None:
+    def __init__(self, world: World) -> None:
         self._world = world
         self._blueprint_instances = {}
 
     @classmethod
     def blueprint(
-        cls, name: str, replace: bool = False
+        cls,
+        name: str,
+        replace: bool = False,
     ) -> Callable[[type[EntityBlueprint]], type[EntityBlueprint]]:
+        """Register a blueprint implementation for this factory type."""
         return cls._blueprints.implementation(
             name,
             replace=replace,
@@ -422,7 +51,6 @@ class EntityFactory:
         cls,
         name: str,
     ) -> type[EntityBlueprint] | None:
-        # Legacy/manual registry takes precedence.
         blueprint_type = cls.registry.get(name)
 
         if blueprint_type is not None:
@@ -430,11 +58,7 @@ class EntityFactory:
 
         return cls._blueprints.try_get(name)
 
-    def create(
-        self,
-        name: str,
-        **kwargs,
-    ) -> EntityId:
+    def create(self, name: str, **kwargs) -> EntityId:
         blueprint = self._blueprint_instances.get(name)
 
         if blueprint is None:
@@ -446,7 +70,11 @@ class EntityFactory:
             blueprint = blueprint_type()
             self._blueprint_instances[name] = blueprint
 
-        return blueprint.create(
-            self._world,
-            **kwargs,
-        )
+        return blueprint.create(self._world, **kwargs)
+
+
+__all__ = [
+    "EntityBlueprint",
+    "EntityFactory",
+    "TypedEntityBlueprint",
+]

@@ -48,11 +48,16 @@ src/tatuy/scenes/
 src/tatuy/ecs/
 ```
 
-## Entity factory
+## Entity construction
 
 ```text
+src/tatuy/ecs/entity/blueprint.py
 src/tatuy/ecs/entity/factory.py
+src/tatuy/features/visual/blueprints.py
+src/tatuy/features/collision/blueprints.py
 ```
+
+The ECS-owned blueprint/factory layer is feature-agnostic. Built-in visual and collision construction policy lives with the owning features.
 
 ## Structural commands
 

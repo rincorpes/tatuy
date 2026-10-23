@@ -5,15 +5,15 @@ from math import cos, pi, sin
 from random import Random
 
 from tatuy.ecs.entity import EntityId
-from tatuy.ecs.entity.factory import (
-    CircleBlueprint,
-    CircleBlueprintAttrs,
-    EntityFactory,
-)
+from tatuy.ecs.entity.factory import EntityFactory
 from tatuy.ecs.world import TWorld
 from tatuy.features.fx.components import Particle
 from tatuy.features.lifecycle.components import Lifetime
 from tatuy.features.movement.components import Velocity
+from tatuy.features.visual.blueprints import (
+    CircleBlueprintAttrs,
+    CircleBlueprintBase,
+)
 from tatuy.features.visual.components import Circle
 from tatuy.graphics.color import Color, ColorFormatter
 from tatuy.math.vec2 import Vec2
@@ -30,7 +30,7 @@ class ParticleBlueprintAttrs(CircleBlueprintAttrs):
 
 
 @ParticlesFactory.blueprint("particle")
-class ParticleBlueprint(CircleBlueprint[TWorld]):
+class ParticleBlueprint(CircleBlueprintBase[TWorld, ParticleBlueprintAttrs]):
     attrs_type = ParticleBlueprintAttrs
 
     def compose(self, attrs: ParticleBlueprintAttrs):

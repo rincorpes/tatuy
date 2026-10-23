@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Register tools for file management, project listing, and verification in the MCP server.
 - Add tests for access policy and server creation functionality.
 - Update query strategy implementation for storage independence and clean up unused code
+- Change entity blueprints and factories for enhanced entity construction and management
 
 ### - 2026-10-22
 

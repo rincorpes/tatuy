@@ -38,4 +38,12 @@ Query strategy objects are storage-independent selectors: they provide a strateg
 
 Games should normally keep the default strategy unless profiling demonstrates a reason to change it.
 
+## Entity construction boundary
+
+`EntityFactory` and the generic blueprint lifecycle live under `tatuy.ecs.entity` and depend only on world/entity/component operations. They do not own concrete visual, spatial, or collision feature policy.
+
+Built-in shape blueprints live with the visual feature in `tatuy.features.visual.blueprints`. Optional collider/body construction is owned by `tatuy.features.collision.blueprints`.
+
+This keeps the generic entity-construction path compatible with both the current Python store and a future native-backed store while allowing feature-owned convenience blueprints to compose normal public components.
+
 ---
