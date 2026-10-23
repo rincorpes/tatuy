@@ -6,6 +6,7 @@ from tatuy.features.bounds.kernels import (
     BoundsConstraintKernel,
     PythonBoundsConstraintKernel,
 )
+from tatuy.features.bounds.render import BoundsBorderRenderer
 from tatuy.features.bounds.resources import (
     BoundsFrame,
     WorldBounds,
@@ -16,7 +17,6 @@ from tatuy.features.movement.components import (
     MovementControls,
     Velocity,
 )
-from tatuy.graphics.bounds_border import BoundsBorderRenderer
 from tatuy.scenes.context import SceneTickContext, TContext, TIntent
 from tatuy.tooling.profiler import profiler
 

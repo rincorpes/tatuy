@@ -1,3 +1,5 @@
+"""Presentation helpers owned by the bounds feature."""
+
 from __future__ import annotations
 
 from tatuy.features.bounds.resources import WorldBoundsBorder
@@ -9,6 +11,8 @@ from tatuy.math.vec2 import Vec2
 
 
 class BoundsBorderRenderer:
+    """Submit world-bounds border geometry to the render queue."""
+
     def __init__(self) -> None:
         self._geometry = BoundsBorderGeometry()
 
@@ -18,6 +22,7 @@ class BoundsBorderRenderer:
         border: WorldBoundsBorder,
         queue: RenderQueue,
     ) -> None:
+        """Submit enabled world-bounds border strips to the render queue."""
         if not border.enabled:
             return
 

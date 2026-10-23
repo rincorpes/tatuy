@@ -1,5 +1,7 @@
 # Architecture Map
 
+Canonical package ownership and dependency-direction rules are defined in `docs/architecture/package-ownership.md`. Use that document when deciding where a new type belongs or whether a cross-package import is allowed.
+
 ## Application
 
 ```text
