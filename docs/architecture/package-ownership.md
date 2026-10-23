@@ -134,9 +134,9 @@ graphics.render
 
 `ViewTransform` remains a graphics/view primitive because it is semantic view data.
 
-Camera shake policy (`CameraFX`) and screen-effect state/policy (`ScreenEffectStack`, `ScreenEffect`, `FlashEffect`) behave as optional reusable effects rather than low-level render infrastructure. Their current ownership under `graphics` should therefore be treated as provisional and reviewed as part of the graphics/feature ownership cleanup.
+Camera shake policy (`CameraFX`) and screen-effect state/policy (`ScreenEffectStack`, `ScreenEffect`, `FlashEffect`) are owned by `tatuy.features.fx` because they are optional reusable game/presentation behavior rather than low-level render infrastructure.
 
-The deciding rule is not folder symmetry: move them only when the resulting dependencies remain one-way and their feature-facing API is clear. Low-level render overlay data may remain under `graphics.render`.
+`CameraFX` depends downward on the graphics-owned `ViewTransform` value. Screen effects depend downward on `Color` and low-level `ScreenOverlay` render data. The dependency therefore remains one-way: feature policy produces graphics primitives, while `tatuy.graphics` has no knowledge of the FX feature.
 
 ## UI ownership
 

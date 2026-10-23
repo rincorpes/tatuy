@@ -13,17 +13,17 @@ from tatuy.features.bounds.resources import (
     WorldBounds,
     WorldBoundsBorder,
 )
+from tatuy.features.fx.camera import CameraFX
 from tatuy.features.fx.particles import ParticleEmitter
+from tatuy.features.fx.screen import ScreenEffectStack
 from tatuy.features.lifecycle.resources import (
     LifecycleQueue,
     SpawnDefinition,
     SpawnRegistry,
 )
 from tatuy.geometry.bounds import Bounds
-from tatuy.graphics.camera.fx import CameraFX
 from tatuy.graphics.canvas import Canvas
 from tatuy.graphics.render.queue import RenderQueue
-from tatuy.graphics.screenfx.stack import ScreenEffectStack
 from tatuy.scenes.context import SceneContext, TContext, TIntent
 from tatuy.tooling.profiler import profiler
 

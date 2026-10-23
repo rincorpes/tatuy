@@ -1,22 +1,27 @@
+"""Scene-owned screen effect composition."""
+
 from __future__ import annotations
 
 from math import isfinite
 
+from tatuy.features.fx.screen_effects import FlashEffect, ScreenEffect
 from tatuy.graphics.color import Color
 from tatuy.graphics.render.overlays import ScreenOverlay
-from tatuy.graphics.screenfx.effects import FlashEffect, ScreenEffect
 
 
 class ScreenEffectStack:
+    """Own and update active screen effects for a scene."""
+
     def __init__(self) -> None:
         self._effects: list[ScreenEffect] = []
 
     @property
     def effects(self) -> tuple[ScreenEffect, ...]:
+        """Return the active effects in insertion order."""
         return tuple(self._effects)
 
     def add(self, effect: ScreenEffect) -> None:
-        """Transfer ownership of an effect to this stack."""
+        """Transfer ownership of an unfinished effect to this stack."""
         if not effect.finished:
             self._effects.append(effect)
 
@@ -27,13 +32,13 @@ class ScreenEffectStack:
         color: Color = (255, 255, 255),
         peak_alpha: int = 255,
     ) -> None:
+        """Replace the convenience flash while preserving its strongest peak."""
         flash = FlashEffect(
             duration=duration,
             color=color,
             peak_alpha=peak_alpha,
         )
 
-        # Preserve the strongest active peak for matching colors.
         previous_peak = max(
             (
                 effect.peak_alpha
@@ -49,7 +54,6 @@ class ScreenEffectStack:
             previous_peak,
         )
 
-        # The convenience API maintains one flash.
         self._effects[:] = [
             effect
             for effect in self._effects
@@ -58,6 +62,7 @@ class ScreenEffectStack:
         self.add(flash)
 
     def update(self, dt: float) -> None:
+        """Advance all active effects and remove completed effects."""
         if not isfinite(dt) or dt < 0:
             raise ValueError("dt must be finite and nonnegative")
 
@@ -69,6 +74,7 @@ class ScreenEffectStack:
         ]
 
     def snapshot(self) -> tuple[ScreenOverlay, ...]:
+        """Return the render overlays produced by active effects."""
         return tuple(
             overlay
             for effect in self._effects
@@ -76,4 +82,5 @@ class ScreenEffectStack:
         )
 
     def clear(self) -> None:
+        """Remove all active screen effects."""
         self._effects.clear()

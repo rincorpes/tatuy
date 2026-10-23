@@ -1,3 +1,5 @@
+"""Camera effect state and behavior."""
+
 from __future__ import annotations
 
 from math import cos, isfinite, sin
@@ -6,7 +8,7 @@ from tatuy.graphics.camera.transform import ViewTransform
 
 
 class CameraFX:
-    """One scene-owned shake with a linear decay."""
+    """One scene-owned camera shake with a linear decay."""
 
     _remaining: float
     _peak_strength: float
@@ -17,6 +19,7 @@ class CameraFX:
 
     @property
     def active(self) -> bool:
+        """Return whether a camera shake is currently active."""
         return self._remaining > 0.0
 
     def shake(
@@ -25,6 +28,7 @@ class CameraFX:
         duration: float,
         strength: float,
     ) -> None:
+        """Start or strengthen a camera shake."""
         if not isfinite(duration) or duration <= 0:
             raise ValueError("duration must be finite and positive")
 
@@ -44,9 +48,8 @@ class CameraFX:
         )
         self._decay_duration = self._remaining
 
-        # Keep the current phase when refreshing an active shake.
-
     def update(self, dt: float) -> None:
+        """Advance the active shake by one frame."""
         if not isfinite(dt) or dt < 0:
             raise ValueError("dt must be finite and nonnegative")
 
@@ -65,6 +68,7 @@ class CameraFX:
         self._phase += dt
 
     def snapshot(self) -> ViewTransform:
+        """Return the current camera transform produced by the effect."""
         if not self.active:
             return ViewTransform()
 
@@ -78,6 +82,7 @@ class CameraFX:
         )
 
     def clear(self) -> None:
+        """Clear the current camera shake."""
         self._remaining = 0.0
         self._decay_duration = 0.0
         self._peak_strength = 0.0

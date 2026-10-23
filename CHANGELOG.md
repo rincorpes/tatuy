@@ -45,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Add tests for access policy and server creation functionality.
 - Update query strategy implementation for storage independence and clean up unused code
 - Change entity blueprints and factories for enhanced entity construction and management
+- Refactor FX features by moving CameraFX and ScreenEffectStack to dedicated modules and adding corresponding tests
 
 ### - 2026-10-22
 
