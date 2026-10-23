@@ -130,6 +130,27 @@ System-level Python velocity rules are only valid with the default Python respon
 
 `CollisionDirectionSystem` remains outside the kernel because it translates resulting velocity back into higher-level movement intent.
 
+## Lifecycle bulk commits
+
+`LifecycleCommitter` remains the structural-barrier orchestration object, but delegates the ready lifecycle batch as one operation.
+
+```text
+LifecycleCommitter.commit(ctx)
+    ↓
+LifecycleCommitKernel.commit(world, factory)
+    ↓
+PythonLifecycleCommitKernel
+    ├── take the ready LifecycleQueue batch
+    ├── apply despawns and respawn policy
+    ├── resolve SpawnRegistry definitions
+    ├── call EntityFactory for Python blueprint spawns
+    └── attach lifecycle metadata
+```
+
+The default Python kernel preserves arbitrary Python blueprint construction. That factory path is an explicit Python extension point rather than a requirement that a future native kernel call back into Python once per spawned entity.
+
+A future native lifecycle implementation may batch native-known creation/destruction while falling back to the Python reference path for blueprint-driven spawns. Game code and the structural commit barrier continue to depend on `LifecycleCommitter`, not on native storage or handles.
+
 ## Kernel requirements
 
 Each kernelized subsystem should:

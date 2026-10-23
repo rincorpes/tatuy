@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Introduce bounds and spatial kernels for performance-sensitive operations with corresponding tests
 - Implement collision detection kernel and related tests for performance-sensitive operations
 - Implement collision response kernel and corresponding tests for batch contact resolution
+- Add lifecycle commit kernel and corresponding tests for structural mutation
 
 #### Changed
 
