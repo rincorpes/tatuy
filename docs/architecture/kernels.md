@@ -151,6 +151,23 @@ The default Python kernel preserves arbitrary Python blueprint construction. Tha
 
 A future native lifecycle implementation may batch native-known creation/destruction while falling back to the Python reference path for blueprint-driven spawns. Game code and the structural commit barrier continue to depend on `LifecycleCommitter`, not on native storage or handles.
 
+## Particle processing
+
+`ParticleUpdateSystem` delegates per-frame particle visual/drag updates as one batch operation.
+
+```text
+ParticleUpdateSystem.step(ctx)
+    ↓
+ParticleProcessingKernel.update(world, dt)
+    ↓
+PythonParticleProcessingKernel
+    └── World.query(Particle, Lifetime, Circle, Velocity)
+```
+
+The reference kernel preserves the existing lifetime fraction, visibility, radius, alpha fade, and exponential drag behavior. `ParticleEmitter` remains in Python because burst configuration, randomness, and blueprint-driven entity creation are authoring/creation policy rather than the hot per-frame processing loop.
+
+Trail update/render systems remain separate. They own different data and rendering policy and should only receive their own kernel boundary if profiling later justifies it.
+
 ## Kernel requirements
 
 Each kernelized subsystem should:

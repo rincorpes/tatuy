@@ -1,41 +1,26 @@
 from __future__ import annotations
 
-from math import exp
-
 from tatuy.ecs.system import BaseSystem, SystemPhase
 from tatuy.ecs.world import TWorld
-from tatuy.features.fx.components import Particle, Trail, TrailPoint
-from tatuy.features.lifecycle.components import Lifetime
-from tatuy.features.movement.components import Velocity
+from tatuy.features.fx.components import Trail, TrailPoint
+from tatuy.features.fx.kernels import (
+    ParticleProcessingKernel,
+    PythonParticleProcessingKernel,
+)
 from tatuy.features.spatial.components import Transform
-from tatuy.features.visual.components import Circle
-from tatuy.graphics.color import ColorFormatter
 from tatuy.math.vec2 import Vec2
 from tatuy.scenes.context import SceneTickContext, TContext, TIntent
 
 
 class ParticleUpdateSystem(BaseSystem[TContext]):
-    def step(self, ctx: SceneTickContext[TWorld, TIntent]):
-        for _, particle, lifetime, circle, velocity in ctx.world.query(
-            Particle, Lifetime, Circle, Velocity
-        ):
-            fraction = max(
-                0.0,
-                lifetime.remaining / particle.duration,
-            )
+    def __init__(
+        self,
+        kernel: ParticleProcessingKernel | None = None,
+    ) -> None:
+        self._kernel = kernel or PythonParticleProcessingKernel()
 
-            circle.visible = fraction > 0
-            circle.radius = max(1.0, particle.radius * fraction)
-
-            r, g, b, alpha = ColorFormatter.rgba(particle.color)
-            circle.color = (
-                r,
-                g,
-                b,
-                int(alpha * (220 / 255) * fraction),
-            )
-
-            velocity.value *= exp(-particle.drag * ctx.dt)
+    def step(self, ctx: SceneTickContext[TWorld, TIntent]) -> None:
+        self._kernel.update(ctx.world, ctx.dt)
 
 
 class TrailSystem(BaseSystem[TContext]):

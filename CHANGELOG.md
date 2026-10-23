@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Implement collision detection kernel and related tests for performance-sensitive operations
 - Implement collision response kernel and corresponding tests for batch contact resolution
 - Add lifecycle commit kernel and corresponding tests for structural mutation
+- Add particle processing kernel and system with corresponding tests for FX features
 
 #### Changed
 
