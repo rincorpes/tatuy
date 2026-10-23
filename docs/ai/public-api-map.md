@@ -2,6 +2,8 @@
 
 Use this page to choose an existing Tatuy mechanism before proposing a new one.
 
+The canonical boundary between normal game-authoring APIs and implementation details is defined in [Game authoring contract](../architecture/game-authoring-contract.md). This map helps locate existing mechanisms; it does not imply that every current deep import path is a stable public API.
+
 ## Start a game
 
 ```text

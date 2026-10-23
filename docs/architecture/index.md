@@ -11,5 +11,6 @@ Architecture pages explain why Tatuy is designed the way it is.
 - [Services](services.md)
 - [Configuration](configuration.md)
 - [Backend boundary](backend-boundary.md)
+- [Game authoring contract](game-authoring-contract.md)
 
 ---

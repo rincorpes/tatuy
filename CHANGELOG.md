@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 ### - 2026-10-23
 
+#### Added
+
+- Add Game Authoring Contract documentation and update API map references
+
 #### Changed
 
 - Moved PythonLoop and related runtime loop components to a new runtime loop module.
