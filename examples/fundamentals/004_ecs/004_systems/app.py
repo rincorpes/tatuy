@@ -1,0 +1,113 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from tatuy import TatuyApp
+from tatuy.ecs import (
+    BaseSystem,
+    EntityBlueprint,
+    EntityFactory,
+    SystemPhase,
+    World,
+)
+from tatuy.geometry.size import Size
+from tatuy.math.vec2 import Vec2
+from tatuy.scenes import Intent, Scene, SceneRegistry, SceneTickContext
+
+
+@dataclass
+class MyGameStateResource:
+    mouse_inside_count: int = 0
+    count_up: bool = True
+
+
+class MyGameWorld(World): ...
+
+
+class MyGameIntent(Intent):
+    mouse_inside: bool = False
+
+    def update_from(self, input_frame):
+        self.mouse_inside = input_frame.mouse_inside
+
+
+class MyGameSceneTickContext(SceneTickContext[MyGameWorld, MyGameIntent]): ...
+
+
+@dataclass
+class MyGameComponent:
+    pos: Vec2
+
+
+class MyGameEntityBlueprint(EntityBlueprint[MyGameWorld]):
+    def create(self, world, **kwargs):
+        entity = world.create_entity()
+        w, h = kwargs.get("window_size")
+        world.add_component(
+            entity, MyGameComponent(Vec2(w / 2 - 25, h / 2 - 25))
+        )
+
+
+class MyGameEntityFactory(EntityFactory):
+    registry = {"entity": MyGameEntityBlueprint}
+
+
+class MyGameSimSystem(BaseSystem[MyGameSceneTickContext]):
+    phase = SystemPhase.SIMULATION
+
+    def step(self, ctx):
+        state = ctx.world.get_resource(MyGameStateResource)
+        if ctx.intent.mouse_inside:
+            if state.count_up:
+                state.mouse_inside_count += 1
+                state.count_up = False
+        else:
+            state.count_up = True
+
+
+class MyGamePresentationSystem(BaseSystem[MyGameSceneTickContext]):
+    phase = SystemPhase.PRESENTATION
+
+    def step(self, ctx):
+        state = ctx.world.get_resource(MyGameStateResource)
+        kwargs = {
+            "position": Vec2(
+                100,
+                100,
+            ),
+            "text": (
+                f"The mouse has been inside the canvas {state.mouse_inside_count} times and "
+                f"There are {len(ctx.world.entities)} entities"
+            ),
+            "font_size": 25,
+        }
+        ctx.canvas.text(**kwargs)
+
+        for _, my_comp in ctx.world.query(MyGameComponent):
+            ctx.canvas.rect(
+                position=my_comp.pos, size=Size(10, 10), color=(200, 200, 200)
+            )
+
+
+@SceneRegistry.implementation("main")
+class MyGameScene(Scene[MyGameWorld, MyGameIntent, MyGameSceneTickContext]):
+
+    world_type = MyGameWorld
+    intent_type = MyGameIntent
+    tick_context_type = MyGameSceneTickContext
+    factory_type = MyGameEntityFactory
+
+    def on_enter(self, ctx):
+        self.world.add_resource(MyGameStateResource())
+        window_size = (ctx.viewport.window_w, ctx.viewport.window_h)
+        self.factory.create("entity", window_size=window_size)
+        self.systems = (MyGameSimSystem(), MyGamePresentationSystem())
+
+
+def main():
+    my_game = TatuyApp()
+    my_game.run()
+
+
+if __name__ == "__main__":
+    main()

@@ -131,6 +131,22 @@ examples/fundamentals/*
 !examples/fundamentals/001_backend
 !examples/fundamentals/002_running
 !examples/fundamentals/003_scenes
+!examples/fundamentals/004_ecs
+!examples/fundamentals/005_multiple_scenes
+!examples/fundamentals/006_shared_scene_settings
+!examples/fundamentals/007_transform_component
+!examples/fundamentals/008_visual_components
+!examples/fundamentals/009_rendering
+!examples/fundamentals/010_movement
+!examples/fundamentals/011_collisions
+!examples/fundamentals/012_bounds
+!examples/fundamentals/013_lifecycle
+!examples/fundamentals/014_particles
+!examples/fundamentals/015_trails
+!examples/fundamentals/016_camera_effects
+!examples/fundamentals/017_screen_effects
+!examples/fundamentals/018_audio
+!examples/fundamentals/020_ui
 !examples/fundamentals/__init__.py
 
 examples/games/*
