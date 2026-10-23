@@ -58,6 +58,38 @@ The system owns pre-simulation scheduling. The kernel owns iteration over matchi
 
 A future native movement kernel may replace the entire Python batch path without changing game code or `MovementSystem` usage.
 
+## Bounds constraints
+
+`BoundsConstraintSystem` delegates bounds processing as one batch operation. The Python reference kernel owns collider lookup plus clamp, bounce, wrap, and despawn constraint application.
+
+```text
+BoundsConstraintSystem.step(ctx)
+    ↓
+BoundsConstraintKernel.apply(world)
+    ↓
+PythonBoundsConstraintKernel
+    ↓
+World.query(BoundsConstraint, Transform)
+```
+
+`BoundsDirectionSystem` remains outside the kernel because it consumes bounce events to update higher-level movement intent. That post-simulation policy should remain in Python unless profiling later proves it belongs in a native batch operation.
+
+## Spatial attachments
+
+`AttachmentSystem` uses a separate spatial kernel rather than sharing the bounds kernel.
+
+```text
+AttachmentSystem.step(ctx)
+    ↓
+AttachmentKernel.update(world)
+    ↓
+PythonAttachmentKernel
+    ↓
+World.query(Transform, AttachedTo)
+```
+
+Bounds and spatial operations are intentionally separate contracts because they own different data, behavior, and future native implementation concerns.
+
 ## Kernel requirements
 
 Each kernelized subsystem should:

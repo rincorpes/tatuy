@@ -78,7 +78,7 @@ src/tatuy/features/
 └── visual/
 ```
 
-Performance-sensitive feature work may be delegated to replaceable kernels. See `docs/architecture/kernels.md`; `features/movement/kernels.py` is the first reference pattern.
+Performance-sensitive feature work may be delegated to replaceable kernels. See `docs/architecture/kernels.md`; current reference kernels live under movement, bounds, and spatial features.
 
 ## Graphics
 
