@@ -5,10 +5,38 @@ from __future__ import annotations
 from mcp.server import MCPServer
 
 from tatuy_mcp.context import MCPContext
+from tatuy_mcp.ui.git_review import (
+    GIT_REVIEW_HTML,
+    GIT_REVIEW_MIME_TYPE,
+    GIT_REVIEW_RESOURCE_URI,
+)
 
 
 def register_git_tools(server: MCPServer, context: MCPContext) -> None:
     """Register guarded Git review and commit tools."""
+
+    @server.resource(
+        GIT_REVIEW_RESOURCE_URI,
+        name="tatuy-git-review",
+        title="Tatuy Git Review",
+        description="Interactive working-tree review for Tatuy projects.",
+        mime_type=GIT_REVIEW_MIME_TYPE,
+        meta={"ui": {"prefersBorder": True}},
+    )
+    def git_review_resource() -> str:
+        """Return the Git review MCP App document."""
+        return GIT_REVIEW_HTML
+
+    @server.tool(
+        title="Review Git changes",
+        meta={
+            "ui": {"resourceUri": GIT_REVIEW_RESOURCE_URI},
+            "openai/outputTemplate": GIT_REVIEW_RESOURCE_URI,
+        },
+    )
+    def git_review(project: str = "engine") -> dict[str, object]:
+        """Render an interactive working-tree review for a project."""
+        return {"project": project, **context.git.snapshot(project)}
 
     @server.tool()
     def git_status(project: str) -> dict[str, object]:

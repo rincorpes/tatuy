@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Implement DefaultSceneInitializer for scene feature provisioning and add corresponding tests
 - Introduce Python-only render fallback system and refactor rendering operations
 - Add guarded Git review, staging, commit, and history tools to the Tatuy MCP server
+- Add an interactive MCP Apps Git review panel with per-file counts, diffs, and refresh support
 
 #### Changed
 

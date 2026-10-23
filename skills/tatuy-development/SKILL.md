@@ -156,6 +156,8 @@ Commit subjects must always be short Conventional Commit messages using prefixes
 
 Never stage unrelated working-tree changes merely to make the repository clean.
 
+When the user wants a visual working-tree review in ChatGPT, use `git_review` to render the interactive changed-files panel. Treat it as presentation: use `git_snapshot` and `git_diff` as the authoritative data for reasoning, verification, and staging decisions.
+
 ## Static analysis
 
 Use mypy and pylint as diagnostic tools when available.

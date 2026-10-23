@@ -72,11 +72,17 @@ def test_status_and_snapshot_include_untracked_files(tmp_path: Path) -> None:
 def test_diff_includes_untracked_file_contents(tmp_path: Path) -> None:
     initialize_repo(tmp_path)
     workspace = create_workspace(tmp_path)
-    (tmp_path / "new_file.txt").write_text("hello\n", encoding="utf-8")
+    nested = tmp_path / "new" / "nested"
+    nested.mkdir(parents=True)
+    (nested / "file.txt").write_text("hello\n", encoding="utf-8")
 
+    status = workspace.status("engine")
     result = workspace.diff("engine")
 
-    assert "b/new_file.txt" in result["diff"]
+    assert {item["path"] for item in status["files"]} == {
+        "new/nested/file.txt"
+    }
+    assert "b/new/nested/file.txt" in result["diff"]
     assert "+hello" in result["diff"]
 
 

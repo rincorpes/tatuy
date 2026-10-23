@@ -54,7 +54,13 @@ class GitWorkspace:
     def status(self, project: str) -> dict[str, object]:
         """Return the current branch and working-tree changes."""
         root = self._git_root(project)
-        result = self._run(root, "status", "--porcelain=v1", "--branch")
+        result = self._run(
+            root,
+            "status",
+            "--porcelain=v1",
+            "--branch",
+            "--untracked-files=all",
+        )
         self._require_success(result, "git status")
         branch = ""
         changes: list[GitFileChange] = []

@@ -26,6 +26,7 @@ Development skill.
 | `run_tests` | Run targeted pytest verification |
 | `run_mypy` | Run diagnostic mypy analysis against non-test Python code |
 | `run_pylint` | Run diagnostic pylint analysis against non-test Python code |
+| `git_review` | Render an interactive changed-files panel in MCP Apps-compatible hosts |
 | `git_status` | Return the current branch and changed files |
 | `git_snapshot` | Summarize changed files and line counts |
 | `git_diff` | Review tracked and untracked changes |
