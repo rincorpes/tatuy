@@ -34,7 +34,7 @@ Resources remain owned by `World`; they are not part of the ECS storage migratio
 
 `World.query()` delegates query execution to `ECSStore.query()` using the selected strategy name. The store owns the storage-specific iteration required to produce query rows.
 
-Python query strategies remain selectable by name, but raw component mappings are now an implementation detail of `PythonECSStore` rather than part of the `World.query()` contract.
+Query strategy objects are storage-independent selectors: they provide a strategy name, while the active `ECSStore` owns the corresponding execution. Raw component mappings are no longer part of the query contract.
 
 Games should normally keep the default strategy unless profiling demonstrates a reason to change it.
 

@@ -95,7 +95,7 @@ class PythonECSStore:
         if not component_types:
             return
 
-        stores = self.component_stores(component_types)
+        stores = self._component_stores(component_types)
 
         if len(stores) == 1:
             store = stores[0]
@@ -117,7 +117,7 @@ class PythonECSStore:
 
         raise ValueError(f"Unknown query strategy: {strategy_name}")
 
-    def component_stores(
+    def _component_stores(
         self,
         component_types: Sequence[type],
     ) -> list[ComponentStore]:

@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Add TatuyScaffolding for creating new project targets.
 - Register tools for file management, project listing, and verification in the MCP server.
 - Add tests for access policy and server creation functionality.
+- Update query strategy implementation for storage independence and clean up unused code
 
 ### - 2026-10-22
 

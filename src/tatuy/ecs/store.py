@@ -55,8 +55,3 @@ class ECSStore(Protocol):
         component_types: Sequence[type],
         strategy_name: str,
     ) -> Iterator[tuple[Any, ...]]: ...
-
-    def component_stores(
-        self,
-        component_types: Sequence[type],
-    ) -> list[ComponentStore]: ...

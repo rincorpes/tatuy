@@ -1,15 +1,12 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
 from collections.abc import Iterator, Mapping
-from time import perf_counter_ns
 from typing import Any, TypeVar, overload
 
 from tatuy.ecs.component import TComponent
 from tatuy.ecs.entity import EntityId
 from tatuy.ecs.python_store import PythonECSStore
 from tatuy.ecs.store import ComponentStore, ECSStore
-from tatuy.tooling.profiler import profiler
 
 TWorld = TypeVar("TWorld", bound="World")
 TResource = TypeVar("TResource")
@@ -36,65 +33,22 @@ C19 = TypeVar("C19")
 C20 = TypeVar("C20")
 
 
-class BaseQueryStrategy(ABC):
+class BaseQueryStrategy:
+    """Storage-independent query strategy selection."""
 
     name = "base"
 
-    def _base_index(self, stores: list[ComponentStore]) -> int:
-        return min(
-            range(len(stores)),
-            key=lambda index: len(stores[index]),
-        )
-
-    @abstractmethod
-    def execute(
-        self, stores: list[ComponentStore]
-    ) -> Iterator[tuple[Any, ...]]: ...
-
 
 class SmallestQueryStrategy(BaseQueryStrategy):
+    """Select the smallest-component-store query implementation."""
+
     name = "smallest"
-
-    def execute(self, stores):
-        base_index = self._base_index(stores)
-
-        base_store = stores[base_index]
-
-        for entity in base_store:
-            if all(
-                entity in store
-                for index, store in enumerate(stores)
-                if index != base_index
-            ):
-                yield entity, *(store[entity] for store in stores)
-
-        return
 
 
 class IntersectionQueryStrategy(BaseQueryStrategy):
+    """Select the set-intersection query implementation."""
+
     name = "intersection"
-
-    def execute(self, stores):
-        base_index = self._base_index(stores)
-        base_store = stores[base_index]
-
-        entity_ids = set(base_store)
-
-        for index, store in enumerate(stores):
-            if index == base_index:
-                continue
-
-            entity_ids.intersection_update(store)
-
-            if not entity_ids:
-                return
-
-        # Preserve the exact same entity order as SmallestQueryStrategy.
-        for entity in base_store:
-            if entity not in entity_ids:
-                continue
-
-            yield entity, *(store[entity] for store in stores)
 
 
 class World:
@@ -739,79 +693,3 @@ class World:
             self.query_strategy.name,
         )
         return
-
-    def legacy_query(
-        self, *component_types: type
-    ) -> Iterator[tuple[Any, ...]]:
-        try:
-            if not component_types:
-                return
-
-            if len(component_types) == 1:
-                store = self._store.component_stores(component_types)[0]
-
-                if not store:
-                    return
-
-                for entity, component in store.items():
-                    yield entity, component
-
-                return
-
-            query_ns = 0
-            candidates = 0
-            matches = 0
-
-            start = perf_counter_ns()
-
-            stores = self._store.component_stores(tuple(component_types))
-
-            if any(not store for store in stores):
-                query_ns += perf_counter_ns() - start
-
-                profiler.increment("world.query.calls")
-                profiler.increment("world.query.ns", query_ns)
-                return
-
-            base_index = min(
-                range(len(stores)),
-                key=lambda index: len(stores[index]),
-            )
-
-            base_store = stores[base_index]
-
-            query_ns += perf_counter_ns() - start
-
-            for entity in base_store:
-                start = perf_counter_ns()
-
-                candidates += 1
-
-                matched = all(
-                    entity in store
-                    for index, store in enumerate(stores)
-                    if index != base_index
-                )
-
-                if not matched:
-                    query_ns += perf_counter_ns() - start
-                    continue
-
-                row = (
-                    entity,
-                    *(store[entity] for store in stores),
-                )
-
-                matches += 1
-                query_ns += perf_counter_ns() - start
-
-                yield row
-        finally:
-            profiler.increment("world.query.calls")
-            profiler.increment("world.query.ns", query_ns)
-            profiler.increment(
-                "world.query.components",
-                len(component_types),
-            )
-            profiler.increment("world.query.candidates", candidates)
-            profiler.increment("world.query.matches", matches)
