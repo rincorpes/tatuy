@@ -32,7 +32,20 @@ Game code may depend on stable concepts such as:
 - game audio abstractions
 - settings/configuration APIs intended for game use
 
-The exact canonical import surface may evolve while this contract is being established. Once an import path is designated as canonical, examples and games should teach that path instead of deep implementation imports.
+The canonical import strategy is domain-oriented rather than root-flattened. Normal game code should prefer:
+
+```python
+from tatuy import TatuyApp
+from tatuy.ecs import World, GameSystem, EntityFactory
+from tatuy.engine import SystemRegistration
+from tatuy.scenes import Scene, Intent, SceneRegistry, SceneTickContext
+from tatuy.features.movement import Movement, Velocity
+from tatuy.features.collision import CollisionFrame, ColliderAccess
+from tatuy.features.visual import Rect, RectBlueprint
+from tatuy.ui import UiNode
+```
+
+The root `tatuy` package intentionally remains small. Domain facades expose stable authoring concepts and supported extension points; implementation modules remain deep. Examples and games should teach the facade path unless the example is explicitly about the internal implementation.
 
 ## Internal implementation layer
 
