@@ -1,11 +1,12 @@
+"""Background capture workers and optional image encoding support."""
+
 from __future__ import annotations
 
+from importlib import import_module
 from queue import Empty, Queue
 from threading import Event, Thread
 from time import monotonic, sleep
-from typing import Callable
-
-from PIL import Image
+from typing import Any, Callable, Generic, TypeVar
 
 from tatuy.capture.models import (
     BaseJob,
@@ -15,12 +16,28 @@ from tatuy.capture.models import (
 )
 
 
-class BaseWorker:
+JobT = TypeVar("JobT", bound=BaseJob)
+
+
+def _load_image_module() -> Any:
+    """Load Pillow only when image encoding is actually requested."""
+    try:
+        return import_module("PIL.Image")
+    except ModuleNotFoundError as exc:
+        if exc.name in {"PIL", "PIL.Image"}:
+            raise ModuleNotFoundError(
+                "Image capture requires Pillow. Install Tatuy with the "
+                "'capture' or 'tooling' extra."
+            ) from exc
+        raise
+
+
+class BaseWorker(Generic[JobT]):
     """Base worker thread for capture tasks."""
 
     _thread: Thread
     _stop: Event
-    _q: Queue[BaseJob]
+    _q: Queue[JobT]
 
     def start(self):
         """Start the capture worker thread."""
@@ -35,7 +52,7 @@ class BaseWorker:
         if self._thread.is_alive():
             self._thread.join(timeout=2.0)
 
-    def enqueue(self, job: BaseJob) -> bool:
+    def enqueue(self, job: JobT) -> bool:
         """
         Enqueue a capture job.
         """
@@ -78,12 +95,12 @@ class BaseWorker:
             except Empty:
                 continue
 
-    def _process_job(self, job: BaseJob):
+    def _process_job(self, job: JobT):
         """Process a single job. To be implemented by subclasses."""
         raise NotImplementedError("Subclasses must implement _process_job()")
 
 
-class CaptureWorker(BaseWorker):
+class CaptureWorker(BaseWorker[CaptureJob]):
     """Capture worker thread for saving screenshots asynchronously."""
 
     def __init__(
@@ -114,16 +131,17 @@ class CaptureWorker(BaseWorker):
         temporary = job.out_path.with_name(job.out_path.name + ".tmp")
 
         try:
+            image_module = _load_image_module()
             job.out_path.parent.mkdir(parents=True, exist_ok=True)
 
             if job.bmp_path is not None:
-                with Image.open(job.bmp_path) as source:
+                with image_module.open(job.bmp_path) as source:
                     image = source.convert("RGBA")
             else:
                 if job.pixels is None:
                     raise ValueError("Capture job has no pixels")
 
-                image = Image.frombytes(
+                image = image_module.frombytes(
                     "RGBA",
                     (job.w, job.h),
                     job.pixels,

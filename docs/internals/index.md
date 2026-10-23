@@ -18,6 +18,7 @@ Sections:
 - [Profiler](profiler/index.md)
 - [MCP](mcp/index.md)
 - [Dependency constraints](dependency-constraints.md)
+- [Runtime dependencies and extras](runtime-dependencies.md)
 
 Important contributor contracts:
 

@@ -51,6 +51,8 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Update query strategy implementation for storage independence and clean up unused code
 - Change entity blueprints and factories for enhanced entity construction and management
 - Refactor FX features by moving CameraFX and ScreenEffectStack to dedicated modules and adding corresponding tests
+- Split runtime, backend, capture, CLI, and MCP dependencies into optional extras so the core Tatuy install no longer requires Pygame or development tooling
+- Load Pillow lazily at the capture image-encoding boundary and report a targeted missing-dependency error when capture support is not installed
 
 ### - 2026-10-22
 

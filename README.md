@@ -75,18 +75,29 @@ The architecture is still evolving as increasingly complex games and experiments
 Current requirements:
 
 - Python 3.10–3.12
-- Poetry
-- Pygame
-- FFmpeg for MP4 capture
+- `onomasticon` for the core runtime registries
+- Pygame only for the current reference desktop backend
+- Pillow only for image capture
+- FFmpeg only for MP4 capture
 
 ## Get started
 
+For repository development:
+
 ```bash
-poetry install
+poetry install -E dev
 poetry run python manage.py run example scenes.on_present
 ```
 
-A desktop environment is required for interactive examples.
+For a packaged desktop game install:
+
+```bash
+pip install "tatuy[pygame]"
+```
+
+The minimal `tatuy` install intentionally excludes Pygame, capture, CLI, and MCP dependencies. See [`docs/internals/runtime-dependencies.md`](docs/internals/runtime-dependencies.md) for the extras model.
+
+A desktop environment is required for interactive Pygame examples.
 
 ## Core architecture
 
