@@ -55,7 +55,7 @@ class CollisionResponseSystem(BaseSystem[TContext]):
 
 
 class CollisionDirectionSystem(BaseSystem[TContext]):
-    phase = SystemPhase.SIMULATION
+    phase = SystemPhase.POST_SIMULATION
 
     def step(self, ctx: SceneTickContext[TWorld, TIntent]):
         frame = ctx.world.get_resource(CollisionFrame)

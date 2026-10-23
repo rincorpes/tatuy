@@ -15,8 +15,6 @@ from tatuy.features.bounds.systems import (
     BoundsDirectionSystem,
     WorldBoundsRenderSystem,
 )
-from tatuy.features.collision.collider_access import ColliderAccess
-from tatuy.features.collision.components import CollisionBody
 from tatuy.features.collision.resources import CollisionFrame
 from tatuy.features.collision.systems import (
     CollisionDetectionSystem,
@@ -75,65 +73,27 @@ class VelocityIntegrationActivation:
 
 
 class BoundsConstraintActivation:
-
-    def __init__(self):
-        self._collider_access = ColliderAccess()
-
     def matches(self, ctx: SceneTickContext[TWorld, TIntent]) -> bool:
         world = ctx.world
-
-        if not world.has_resource(WorldBounds):
-            return False
-
-        if not world.has_resource(BoundsFrame):
-            return False
-
-        constraints = tuple(world.query(BoundsConstraint, Transform))
-
-        if not constraints:
-            return False
-
-        for entity, _, _ in constraints:
-            collider = self._collider_access.find(world, entity)
-
-            if collider is None:
-                return False
-
-        return True
+        return (
+            world.has_resource(WorldBounds)
+            and world.has_resource(BoundsFrame)
+            and next(world.query(BoundsConstraint, Transform), None)
+            is not None
+        )
 
 
 class CollisionDetectionActivation:
-
-    def __init__(self):
-        self._collider_access = ColliderAccess()
-
     def matches(self, ctx: SceneTickContext[TWorld, TIntent]) -> bool:
         return ctx.world.has_resource(CollisionFrame)
 
 
 class CollisionResponseActivation:
-
-    def __init__(self):
-        self._collider_access = ColliderAccess()
-
     def matches(self, ctx: SceneTickContext[TWorld, TIntent]) -> bool:
         world = ctx.world
-
         if not world.has_resource(CollisionFrame):
             return False
-
-        transforms = tuple(world.query(Transform, CollisionBody, Velocity))
-
-        if not transforms:
-            return False
-
-        for entity, _, _, _ in transforms:
-            collider = self._collider_access.find(world, entity)
-
-            if collider is None:
-                return False
-
-        return True
+        return bool(world.get_resource(CollisionFrame).contacts)
 
 
 class AttachmentActivation:
@@ -144,14 +104,18 @@ class AttachmentActivation:
 
 class BoundsDirectionActivation:
     def matches(self, ctx: SceneTickContext[TWorld, TIntent]) -> bool:
-        bounds_frame = ctx.world.has_resource(BoundsFrame)
-        return any(ctx.world.query(Velocity)) and bounds_frame
+        world = ctx.world
+        if not world.has_resource(BoundsFrame):
+            return False
+        return bool(world.get_resource(BoundsFrame).bounces)
 
 
 class CollisionDirectionActivation:
     def matches(self, ctx: SceneTickContext[TWorld, TIntent]) -> bool:
-        collision_frame = ctx.world.has_resource(CollisionFrame)
-        return any(ctx.world.query(Velocity)) and collision_frame
+        world = ctx.world
+        if not world.has_resource(CollisionFrame):
+            return False
+        return bool(world.get_resource(CollisionFrame).contacts)
 
 
 class LifetimeActivation:
