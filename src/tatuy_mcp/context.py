@@ -7,6 +7,7 @@ from tatuy_mcp.access.policy import DEFAULT_ACCESS_POLICY, AccessPolicy
 from tatuy_mcp.config import MCPConfig
 from tatuy_mcp.execution.analysis import PythonAnalyzer
 from tatuy_mcp.execution.formatting import PythonFormatter
+from tatuy_mcp.execution.git import GitWorkspace
 from tatuy_mcp.execution.runner import CommandRunner
 from tatuy_mcp.execution.testing import TestRunner
 from tatuy_mcp.projects.registry import ProjectRegistry
@@ -26,6 +27,7 @@ class MCPContext:
     formatter: PythonFormatter
     tests: TestRunner
     analysis: PythonAnalyzer
+    git: GitWorkspace
     scaffolding: TatuyScaffolding
 
 
@@ -72,6 +74,12 @@ def create_context(
         commands,
         max_paths=config.max_command_paths,
     )
+    git = GitWorkspace(
+        projects,
+        paths,
+        commands,
+        max_paths=config.max_command_paths,
+    )
     scaffolding = TatuyScaffolding(config, projects)
     return MCPContext(
         config=config,
@@ -83,5 +91,6 @@ def create_context(
         formatter=formatter,
         tests=tests,
         analysis=analysis,
+        git=git,
         scaffolding=scaffolding,
     )

@@ -148,6 +148,14 @@ succeeded unless the corresponding tool or the user confirms execution.
 
 If a verification tool is unavailable, say what remains unverified.
 
+## Finishing work with Git
+
+Use the dedicated Git tools when the user asks to finish, review changes, prepare a commit, or commit authorized work. Verify first, inspect status and diff, update CHANGELOG.md when appropriate, inspect the final diff, stage only intended files, commit, and report the hash.
+
+Commit subjects must always be short Conventional Commit messages using prefixes such as feat:, fix:, docs:, chore:, refactor:, test:, perf:, build:, ci:, style:, or revert:. Keep the subject at 72 characters or fewer.
+
+Never stage unrelated working-tree changes merely to make the repository clean.
+
 ## Static analysis
 
 Use mypy and pylint as diagnostic tools when available.

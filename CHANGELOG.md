@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Add UI rendering system and activation logic, including tests for UI and visual components
 - Implement DefaultSceneInitializer for scene feature provisioning and add corresponding tests
 - Introduce Python-only render fallback system and refactor rendering operations
+- Add guarded Git review, staging, commit, and history tools to the Tatuy MCP server
 
 #### Changed
 
