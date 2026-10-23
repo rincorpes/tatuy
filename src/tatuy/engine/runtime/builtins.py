@@ -46,6 +46,7 @@ from tatuy.features.visual.systems import RenderSystem
 from tatuy.scenes.context import SceneTickContext, TIntent
 from tatuy.ui.components import UiNode
 from tatuy.ui.resources import UIFrame
+from tatuy.ui.systems import UiRenderSystem
 
 
 class MovementControlActivation:
@@ -161,17 +162,20 @@ class LifetimeActivation:
 
 class RenderActivation:
     def matches(self, ctx: SceneTickContext[TWorld, TIntent]) -> bool:
-        drawable = any(
+        return any(
             next(ctx.world.query(Transform, visual), None) is not None
             for visual in (Rect, Circle, Polygon, Text)
         )
 
+
+class UiRenderActivation:
+    def matches(self, ctx: SceneTickContext[TWorld, TIntent]) -> bool:
         ui = next(ctx.world.query(UiNode), None) is not None
 
         if ui and not ctx.world.has_resource(UIFrame):
             raise ValueError("UI rendering requires UIFrame")
 
-        return drawable or ui
+        return ui
 
 
 class WorldBoundsRenderActivation:
@@ -254,6 +258,10 @@ class BuiltinSystemCatalog:
             "render": SystemRegistration(
                 system=RenderSystem(),
                 active=RenderActivation().matches,
+            ),
+            "ui_render": SystemRegistration(
+                system=UiRenderSystem(),
+                active=UiRenderActivation().matches,
             ),
             "bounds_border": SystemRegistration(
                 system=WorldBoundsRenderSystem(),

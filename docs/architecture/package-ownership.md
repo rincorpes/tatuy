@@ -140,9 +140,19 @@ Camera shake policy (`CameraFX`) and screen-effect state/policy (`ScreenEffectSt
 
 ## UI ownership
 
-UI and visual presentation must not depend on each other cyclically. The visual feature must not know that UI exists. UI should render independently into semantic render data.
+UI is intentionally kept as the top-level `tatuy.ui` subsystem for now. It owns UI-specific components, resources, layout, interaction, rendering policy, intent handling, and presentation systems. It is broader than a single ECS feature because it defines an authoring/input subsystem as well as presentation behavior.
 
-Whether UI remains a top-level subsystem or becomes `features.ui` is a separate ownership decision; whichever choice is made must preserve one-way dependencies and be documented explicitly.
+The visual feature must not know that UI exists. `tatuy.features.visual.RenderSystem` renders only world/visual components into semantic render data. `tatuy.ui.UiRenderSystem` renders UI independently into the same `RenderQueue`, and runtime composition activates the two systems separately.
+
+UI intentionally reuses `tatuy.features.visual.Text` as its text-content/style component. This is a one-way dependency from UI to the visual feature and avoids maintaining two nearly identical text value types. If UI text later needs semantics that differ materially from world text, it can gain a dedicated component without changing the current presentation boundary.
+
+UI activation and `UIFrame` validation belong with UI composition, not visual rendering. The dependency direction is therefore:
+
+```text
+features.visual -> graphics.render
+ui -> features.visual.Text + graphics.render
+runtime composition -> features.visual + ui
+```
 
 ## Prohibited directions
 

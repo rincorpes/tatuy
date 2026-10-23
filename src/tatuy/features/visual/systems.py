@@ -6,14 +6,10 @@ from tatuy.features.spatial.components import Transform
 from tatuy.features.visual.components import Circle, Polygon, Rect, Text
 from tatuy.scenes.context import SceneTickContext, TContext, TIntent
 from tatuy.tooling.profiler import profiler
-from tatuy.ui.render import UiRenderer
 
 
 class RenderSystem(BaseSystem[TContext]):
     phase = SystemPhase.PRESENTATION
-
-    def __init__(self) -> None:
-        self._ui_renderer = UiRenderer()
 
     def step(self, ctx: SceneTickContext[TWorld, TIntent]):
         with profiler.span("render.submit", "render"):
@@ -68,4 +64,3 @@ class RenderSystem(BaseSystem[TContext]):
                     layer=polygon.layer,
                     z=polygon.z,
                 )
-            self._ui_renderer.submit(ctx.world, ctx.render_queue)

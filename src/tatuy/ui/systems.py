@@ -6,6 +6,7 @@ from tatuy.scenes.context import SceneTickContext, TContext, TIntent
 from tatuy.ui.intent import UiIntent
 from tatuy.ui.interaction import UiPointerController
 from tatuy.ui.layout import UiLayoutResolver
+from tatuy.ui.render import UiRenderer
 
 
 class UiLayoutSystem(BaseSystem[TContext]):
@@ -32,3 +33,13 @@ class UiPointerSystem(BaseSystem[TContext]):
             ctx.intent,
             ctx.scene_context.commands,
         )
+
+
+class UiRenderSystem(BaseSystem[TContext]):
+    phase = SystemPhase.PRESENTATION
+
+    def __init__(self) -> None:
+        self._renderer = UiRenderer()
+
+    def step(self, ctx: SceneTickContext[TWorld, TIntent]) -> None:
+        self._renderer.submit(ctx.world, ctx.render_queue)

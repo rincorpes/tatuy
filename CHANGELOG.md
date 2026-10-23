@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Add lifecycle commit kernel and corresponding tests for structural mutation
 - Add particle processing kernel and system with corresponding tests for FX features
 - Implement BoundsBorderRenderer and corresponding tests for bounds feature
+- Add UI rendering system and activation logic, including tests for UI and visual components
 
 #### Changed
 
