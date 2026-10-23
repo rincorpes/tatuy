@@ -2,12 +2,16 @@ from __future__ import annotations
 
 from tatuy.ecs.system import BaseSystem, SystemPhase
 from tatuy.ecs.world import TWorld
-from tatuy.features.movement.components import (  # MovementControls,
+from tatuy.features.movement.components import (
     DesiredMovement,
     MotionSample,
-    Movement,
     MovementControls,
-    Velocity,
+)
+from tatuy.features.movement.kernels import (
+    MovementCalculationKernel,
+    PythonMovementCalculationKernel,
+    PythonVelocityIntegrationKernel,
+    VelocityIntegrationKernel,
 )
 from tatuy.features.movement.motor import MovementMotor
 from tatuy.features.spatial.components import Transform
@@ -42,32 +46,29 @@ class MovementControlSystem(BaseSystem[TContext]):
 class MovementSystem(BaseSystem[TContext]):
     phase = SystemPhase.PRE_SIMULATION
 
-    def __init__(self, motor: MovementMotor | None = None):
-        self._motor = motor or MovementMotor()
+    def __init__(
+        self,
+        motor: MovementMotor | None = None,
+        *,
+        kernel: MovementCalculationKernel | None = None,
+    ) -> None:
+        self._kernel = kernel or PythonMovementCalculationKernel(motor)
 
     def step(self, ctx: SceneTickContext[TWorld, TIntent]) -> None:
-        for _, movement, desired, velocity in ctx.world.query(
-            Movement,
-            DesiredMovement,
-            Velocity,
-        ):
-            velocity.value = self._motor.calculate_velocity(
-                current=velocity.value,
-                desired=desired.direction,
-                movement=movement,
-                dt=ctx.dt,
-            )
+        self._kernel.update(ctx.world, ctx.dt)
 
 
 class VelocityIntegrationSystem(BaseSystem[TContext]):
     phase = SystemPhase.SIMULATION
 
+    def __init__(
+        self,
+        kernel: VelocityIntegrationKernel | None = None,
+    ) -> None:
+        self._kernel = kernel or PythonVelocityIntegrationKernel()
+
     def step(self, ctx: SceneTickContext[TWorld, TIntent]) -> None:
-        for _, transform, velocity in ctx.world.query(
-            Transform,
-            Velocity,
-        ):
-            transform.position += velocity.value * ctx.dt
+        self._kernel.integrate(ctx.world, ctx.dt)
 
 
 class MotionSnapshotSystem(BaseSystem[TContext]):

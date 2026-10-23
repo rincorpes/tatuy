@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 - Add Game Authoring Contract documentation and update API map references
 - Introduce ECS storage and query strategies with Python implementation
+- Implement movement calculation and velocity integration kernels with corresponding tests
 
 #### Changed
 

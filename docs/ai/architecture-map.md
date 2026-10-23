@@ -78,6 +78,8 @@ src/tatuy/features/
 └── visual/
 ```
 
+Performance-sensitive feature work may be delegated to replaceable kernels. See `docs/architecture/kernels.md`; `features/movement/kernels.py` is the first reference pattern.
+
 ## Graphics
 
 ```text

@@ -8,6 +8,7 @@ Architecture pages explain why Tatuy is designed the way it is.
 - [Scene stack](scene-stack.md)
 - [Render pipeline](render-pipeline.md)
 - [ECS](ecs.md)
+- [Kernel boundaries](kernels.md)
 - [Services](services.md)
 - [Configuration](configuration.md)
 - [Backend boundary](backend-boundary.md)
