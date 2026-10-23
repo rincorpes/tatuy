@@ -10,6 +10,7 @@ from tatuy.scenes.registry import SceneRegistry
 from tatuy.scenes.scene import Scene
 
 SceneFactory = Callable[[], Scene]
+SceneInitializer = Callable[[Scene, SceneContext], None]
 
 
 @dataclass(frozen=True)
@@ -47,10 +48,15 @@ class StackItem:
 
 class SceneService:
 
-    def __init__(self, system_pipeline_factory: SystemPipelineFactory):
+    def __init__(
+        self,
+        system_pipeline_factory: SystemPipelineFactory,
+        scene_initializer: SceneInitializer | None = None,
+    ):
         self._stack: list[StackItem] = []
         self._factories: dict[str, SceneFactory] = {}
         self._system_pipeline_factory = system_pipeline_factory
+        self._scene_initializer = scene_initializer
 
     def register_factory(self, scene_id: str, factory: SceneFactory):
         self._factories[scene_id] = factory
@@ -101,7 +107,11 @@ class SceneService:
             factory = SceneRegistry.get(scene_id)
         scene = factory()
 
-        scene.enter(scene_context)
+        if self._scene_initializer is None:
+            scene.enter(scene_context)
+        else:
+            self._scene_initializer(scene, scene_context)
+            scene.on_enter(scene_context)
         scene.system_pipeline = self._system_pipeline_factory.create(
             scene,
             scene_context,

@@ -21,3 +21,20 @@ def test_scene_service_uses_injected_system_pipeline_factory():
     scene.enter.assert_called_once_with(scene_context)
     pipeline_factory.create.assert_called_once_with(scene, scene_context)
     assert scene.system_pipeline is pipeline
+
+
+def test_scene_service_uses_initializer_before_on_enter():
+    pipeline_factory = Mock()
+    pipeline_factory.create.return_value = Mock()
+    initializer = Mock()
+    scene = Mock()
+    scene_context = Mock()
+
+    service = SceneService(pipeline_factory, initializer)
+    service.register_factory("main", lambda: scene)
+
+    service.push("main", scene_context)
+
+    initializer.assert_called_once_with(scene, scene_context)
+    scene.enter.assert_not_called()
+    scene.on_enter.assert_called_once_with(scene_context)

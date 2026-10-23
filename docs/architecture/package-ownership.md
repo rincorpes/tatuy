@@ -86,7 +86,9 @@ Scenes may consume public feature contracts, but generic Scene code should not b
 
 Owns default built-in composition: which built-in features are installed, their activation rules, and their default ordering.
 
-Runtime composition is intentionally allowed to depend on concrete built-in features because composition is its responsibility. This is the dependency root, not a lower-level reusable primitive.
+Runtime composition is intentionally allowed to depend on concrete built-in features because composition is its responsibility. `DefaultSceneInitializer` owns default scene feature provisioning (shared/user resources, structural commands, lifecycle/spawn plumbing, bounds resources, and default FX services) before `Scene.on_enter()` runs. This is the dependency root, not a lower-level reusable primitive.
+
+`Scene` authoring hooks such as `bounds()`, `bounds_border()`, `spawn_definitions()`, `entities()`, and `resources()` remain declarations. They describe what a scene wants; the default runtime decides which concrete resources/services implement those declarations.
 
 ### `tatuy.backend`
 

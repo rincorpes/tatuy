@@ -8,6 +8,7 @@ from tatuy.capture.service import CaptureService
 from tatuy.engine.runtime.bootstrap import (
     create_default_system_pipeline_factory,
 )
+from tatuy.engine.runtime.scene_composition import DefaultSceneInitializer
 from tatuy.engine.scene import SceneService
 from tatuy.events.service import EventsService
 from tatuy.graphics.viewport.service import ViewportService
@@ -16,7 +17,10 @@ from tatuy.window.service import WindowService
 
 
 def _default_scene_service() -> SceneService:
-    return SceneService(create_default_system_pipeline_factory())
+    return SceneService(
+        create_default_system_pipeline_factory(),
+        DefaultSceneInitializer().initialize,
+    )
 
 
 @dataclass

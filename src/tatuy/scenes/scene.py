@@ -8,26 +8,15 @@ from tatuy.ecs.structural import StructuralCommandBuffer
 from tatuy.ecs.system import BaseSystem, GameSystem
 from tatuy.ecs.world import BaseQueryStrategy, SmallestQueryStrategy, TWorld
 from tatuy.engine.system import SystemPipeline, SystemRegistration
-from tatuy.features.bounds.resources import (
-    BoundsFrame,
-    WorldBounds,
-    WorldBoundsBorder,
-)
-from tatuy.features.fx.camera import CameraFX
-from tatuy.features.fx.particles import ParticleEmitter
-from tatuy.features.fx.screen import ScreenEffectStack
-from tatuy.features.lifecycle.resources import (
-    LifecycleQueue,
-    SpawnDefinition,
-    SpawnRegistry,
-)
+from tatuy.features.bounds.resources import WorldBoundsBorder
+from tatuy.features.lifecycle.resources import SpawnDefinition
 from tatuy.geometry.bounds import Bounds
 from tatuy.graphics.canvas import Canvas
 from tatuy.graphics.render.queue import RenderQueue
 from tatuy.scenes.context import SceneContext, TContext, TIntent
 from tatuy.tooling.profiler import profiler
 
-# pylint: disable=unused-argument
+# pylint: disable=unused-argument  # Scene authoring hooks accept shared context.
 
 
 @dataclass(frozen=True)
@@ -44,11 +33,10 @@ class Scene(Generic[TWorld, TIntent, TContext]):
     tick_context_type: Type[TContext]
     factory_type: Type[EntityFactory] = EntityFactory
 
-    query_strategy_type: BaseQueryStrategy | None = None
+    query_strategy_type: type[BaseQueryStrategy] | None = None
 
-    particles: ParticleEmitter
-    screen_fx: ScreenEffectStack
-    camera_fx: CameraFX
+    screen_fx: Any
+    camera_fx: Any
 
     systems: Sequence[BaseSystem[TContext]] = ()
 
@@ -111,9 +99,6 @@ class Scene(Generic[TWorld, TIntent, TContext]):
 
     def configure(self, ctx: SceneContext):
         with profiler.span("scene.configure", "scene"):
-            self.screen_fx = ScreenEffectStack()
-            self.camera_fx = CameraFX()
-
             for resource_type in self.shared_resource_types:
                 resource = ctx.resources.get(resource_type)
                 self.world.add_resource(resource)
@@ -123,51 +108,6 @@ class Scene(Generic[TWorld, TIntent, TContext]):
 
             self.structural_commands = StructuralCommandBuffer()
             self.world.add_resource(self.structural_commands)
-
-            if not self.world.has_resource(LifecycleQueue):
-                self.world.add_resource(LifecycleQueue())
-
-            if not self.world.has_resource(SpawnRegistry):
-                self.world.add_resource(SpawnRegistry())
-
-            registry = self.world.get_resource(SpawnRegistry)
-            queue = self.world.get_resource(LifecycleQueue)
-
-            definitions = dict(self.spawn_definitions(ctx))
-
-            duplicates = registry.definitions.keys() & definitions.keys()
-            if duplicates:
-                raise ValueError(
-                    f"Duplicate spawn definitions: {sorted(duplicates)}"
-                )
-
-            registry.definitions.update(definitions)
-
-            placements = tuple(self.entities(ctx))
-
-            # Validate the complete population before queueing it.
-            for placement in placements:
-                if placement.definition not in registry.definitions:
-                    raise ValueError(
-                        f"Unknown spawn definition: " f"{placement.definition}"
-                    )
-
-            for placement in placements:
-                queue.request_spawn(
-                    placement.definition,
-                    delay=placement.delay,
-                    kwargs=placement.kwargs,
-                )
-
-            # pylint: disable=assignment-from-none
-            bounds = self.bounds(ctx)
-            if bounds is not None:
-                self.world.add_resource(WorldBounds(bounds))
-                self.world.add_resource(BoundsFrame())
-
-            bounds_border = self.bounds_border(ctx)
-            if bounds_border is not None:
-                self.world.add_resource(bounds_border)
 
     def bounds(self, ctx: SceneContext) -> Bounds | None:
         return None

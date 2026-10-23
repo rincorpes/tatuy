@@ -142,6 +142,9 @@ class WorkspaceFiles:
             )
 
         content = self._decode(data)
+        newline = "\r\n" if "\r\n" in content else "\n"
+        old_text = self._normalize_newlines(old_text, newline)
+        new_text = self._normalize_newlines(new_text, newline)
         occurrences = content.count(old_text)
         if occurrences == 0:
             raise ValueError("old_text was not found in the file")
@@ -234,6 +237,11 @@ class WorkspaceFiles:
             return data.decode("utf-8-sig")
         except UnicodeDecodeError as exc:
             raise ValueError("File is not valid UTF-8 text") from exc
+
+    @staticmethod
+    def _normalize_newlines(text: str, newline: str) -> str:
+        normalized = text.replace("\r\n", "\n").replace("\r", "\n")
+        return normalized.replace("\n", newline)
 
     def _validate_size(self, data: bytes, label: str) -> None:
         if len(data) > self._max_file_bytes:

@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Add particle processing kernel and system with corresponding tests for FX features
 - Implement BoundsBorderRenderer and corresponding tests for bounds feature
 - Add UI rendering system and activation logic, including tests for UI and visual components
+- Implement DefaultSceneInitializer for scene feature provisioning and add corresponding tests
 
 #### Changed
 

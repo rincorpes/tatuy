@@ -18,6 +18,7 @@ from tatuy.engine.runtime.bootstrap import (
 )
 from tatuy.engine.runtime.loop.python_loop import PythonLoop
 from tatuy.engine.runtime.runtime import Runtime
+from tatuy.engine.runtime.scene_composition import DefaultSceneInitializer
 from tatuy.engine.runtime.services import RuntimeServices
 from tatuy.engine.scene import SceneService
 from tatuy.events.service import EventsService
@@ -132,7 +133,10 @@ class TatuyApp:
             resources=self.resources,
             pipelines=EnginePipelines(),
             services=RuntimeServices(
-                SceneService(create_default_system_pipeline_factory()),
+                SceneService(
+                    create_default_system_pipeline_factory(),
+                    DefaultSceneInitializer().initialize,
+                ),
                 ViewportService(),
                 events=events_service,
                 window=window_service,
