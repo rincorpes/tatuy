@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from tatuy.backend import Backend
-from tatuy.capture.service import CaptureService
+from tatuy.capture.contracts import CaptureCapability
 from tatuy.engine.render.contracts import FrameRenderDriver
 from tatuy.graphics.render.context import RenderContext
 from tatuy.graphics.render.packets import FramePacket
@@ -21,7 +21,7 @@ class FrameRenderer:
         pipeline: FrameRenderDriver,
         viewport: ViewportService,
         window: WindowService,
-        capture: CaptureService,
+        capture: CaptureCapability,
         *,
         debug_overlay: bool = False,
     ) -> None:

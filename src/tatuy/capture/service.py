@@ -27,6 +27,11 @@ from tatuy.input.frame import InputFrame
 
 
 class CaptureService:
+    @property
+    def enabled(self) -> bool:
+        """Whether capture/replay functionality is available."""
+        return True
+
     def __init__(
         self, backend: Backend, settings: CaptureSettings | None = None
     ):

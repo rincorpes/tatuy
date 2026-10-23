@@ -36,6 +36,20 @@ Installs Pillow for screenshot/frame image encoding. Capture modules remain impo
 
 FFmpeg is an external executable requirement for MP4 encoding and is not installed by Python packaging.
 
+Installing the `capture` extra and enabling the capture runtime capability are separate decisions. Desktop behavior remains unchanged by default: capture is enabled. A host that cannot or should not provide capture can disable it without changing game code:
+
+```python
+TatuyApp({
+    "capabilities": {
+        "capture": False,
+    }
+})
+```
+
+When disabled, Tatuy composes `NullCaptureService` instead of `CaptureService`. The concrete capture/worker/video stack is imported lazily only when capture is enabled, no capture worker is started, capture/replay hotkeys are not reserved, and engine/render lifecycle code continues through the same `CaptureCapability` contract. Direct capture API calls against the null service report that capture is disabled; normal engine capture commands safely no-op.
+
+`RuntimeServices.defaults(backend, capture_enabled=False)` exposes the same lower-level composition switch for hosts that construct the engine without `TatuyApp`.
+
 ### `cli`
 
 ```bash

@@ -13,3 +13,10 @@ class RuntimeLoop(Protocol):
 
     def run(self, engine: Engine) -> None:
         """Start, step, and stop an engine session."""
+
+
+class AsyncRuntimeLoop(Protocol):
+    """Drive an engine session while yielding control to an async host."""
+
+    async def run(self, engine: Engine) -> None:
+        """Start, step, yield, and stop an engine session."""

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from tatuy.capture.service import CaptureService
+from tatuy.capture.contracts import CaptureCapability
 from tatuy.capture.settings import ReplaySettings
 from tatuy.commands import (
     EngineCommand,
@@ -27,7 +27,7 @@ class CaptureInputProcessor:
 
     def __init__(
         self,
-        capture: CaptureService,
+        capture: CaptureCapability,
         replay_settings: ReplaySettings,
         commands: EngineCommandQueue,
         command_processor: EngineCommandProcessor,
@@ -42,7 +42,7 @@ class CaptureInputProcessor:
         reserved: set[Key] = set()
         queued = False
 
-        if self._capture.settings.hotkeys_enabled:
+        if self._capture.enabled and self._capture.settings.hotkeys_enabled:
             reserved.update({Key.F2, Key.F7, Key.F8})
 
             if live_input.is_pressed(Key.F2):
@@ -58,7 +58,7 @@ class CaptureInputProcessor:
                 self._commands.push(StartVideoRecording())
                 queued = True
 
-        if self._replay_settings.enabled:
+        if self._capture.enabled and self._replay_settings.enabled:
             reserved.update({Key.F3, Key.F4, Key.F5, Key.F6})
 
             filename = self._replay_settings.filename

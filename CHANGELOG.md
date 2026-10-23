@@ -25,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Introduce Python-only render fallback system and refactor rendering operations
 - Add guarded Git review, staging, commit, and history tools to the Tatuy MCP server
 - Add an interactive MCP Apps Git review panel with per-file counts, diffs, and refresh support
+- Add configurable runtime capture composition with a no-op disabled capability for browser-safe hosts
+- Add an opt-in asyncio runtime host and `TatuyApp.run_async()` for cooperative/browser schedulers
 
 #### Changed
 

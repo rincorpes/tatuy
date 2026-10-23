@@ -105,6 +105,9 @@ class StartRecording(EngineCommand):
         capture = engine.services.capture
         settings = engine.replay_settings
 
+        if not capture.enabled:
+            return
+
         if capture.replay_recording or capture.replay_playing:
             return
 
@@ -168,6 +171,9 @@ class StartReplay(EngineCommand):
     def execute(self, ctx: EngineCommandContext) -> None:
         engine = ctx.engine
         capture = engine.services.capture
+
+        if not capture.enabled:
+            return
 
         if capture.replay_playing:
             return
@@ -245,7 +251,10 @@ class Screenshot(EngineCommand):
     label: str | None = None
 
     def execute(self, ctx: EngineCommandContext) -> None:
-        path = ctx.engine.services.capture.request_screenshot(self.label)
+        capture = ctx.engine.services.capture
+        if not capture.enabled:
+            return
+        path = capture.request_screenshot(self.label)
         print(f"Screenshot requested: {path}")
 
 
@@ -253,10 +262,13 @@ class Screenshot(EngineCommand):
 class StartVideoRecording(EngineCommand):
     def execute(self, ctx: EngineCommandContext) -> None:
         engine = ctx.engine
-        entry = engine.services.scene.input_entry()
+        capture = engine.services.capture
+        if not capture.enabled:
+            return
 
+        entry = engine.services.scene.input_entry()
         label = entry.scene_id if entry is not None else "capture"
-        engine.services.capture.start_video_record(label)
+        capture.start_video_record(label)
 
 
 @dataclass(frozen=True)

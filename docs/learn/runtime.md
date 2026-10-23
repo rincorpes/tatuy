@@ -6,11 +6,13 @@ Underneath that convenience layer are several smaller pieces:
 
 ```text
 TatuyApp
-    ↓
-Runtime
-├── Engine
-└── PythonLoop
+    ├── run()       → Runtime + PythonLoop
+    └── run_async() → AsyncRuntime + AsyncioLoop
+                     ↓
+                   Engine
 ```
+
+The synchronous desktop path remains the default. The async path is explicit and intended for cooperative hosts such as browser runtimes; Tatuy does not detect the browser implicitly.
 
 ## TatuyApp
 
@@ -29,15 +31,32 @@ It:
 
 ## Runtime
 
-`Runtime` bundles an engine and a loop.
+`Runtime` bundles an engine and a synchronous loop. `AsyncRuntime` provides the equivalent composition for an asynchronous host.
 
-It is composition, not a second hidden execution system.
+Neither is a second hidden execution system; both delegate lifecycle ownership to the configured loop.
 
 ## PythonLoop
 
-The loop repeatedly advances the engine and controls frame pacing.
+`PythonLoop` repeatedly advances the engine and controls desktop frame pacing with the configured target FPS.
 
 Game code usually does not need to manage this directly.
+
+## AsyncioLoop
+
+`AsyncioLoop` preserves the same `Engine.start()` / `Engine.step()` / `Engine.stop()` lifecycle while yielding to the host with `await asyncio.sleep(0)` after each successful frame.
+
+Use it explicitly through:
+
+```python
+await TatuyApp(
+    {
+        "app": {"async_loop": "asyncio"},
+        "capabilities": {"capture": False},
+    }
+).run_async()
+```
+
+`run()` still uses `PythonLoop`; adding async/browser hosting does not change existing desktop execution.
 
 ## Engine
 
@@ -56,9 +75,12 @@ The engine coordinates:
 
 | Need | Start with |
 | --- | --- |
-| Normal game | `TatuyApp` |
-| Manually supply engine + loop | `Runtime` |
-| Use Tatuy's loop with custom composition | `PythonLoop` |
+| Normal desktop game | `TatuyApp.run()` |
+| Cooperative/browser-style host | `TatuyApp.run_async()` |
+| Manually supply engine + sync loop | `Runtime` |
+| Manually supply engine + async loop | `AsyncRuntime` |
+| Use Tatuy's desktop loop with custom composition | `PythonLoop` |
+| Use Tatuy's cooperative loop with custom composition | `AsyncioLoop` |
 | Control stepping yourself | `Engine` |
 
 Normal game code should usually choose `TatuyApp`.

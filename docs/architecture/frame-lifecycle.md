@@ -72,4 +72,24 @@ It is not the target frame duration.
 
 The target FPS controls pacing rather than replacing measured elapsed time.
 
+## Host ownership
+
+`Engine` does not own the outer scheduling loop. The host selects how the same lifecycle is driven:
+
+```text
+PythonLoop (default desktop)
+    Engine.start()
+    Engine.step(...)
+    sleep/pacing
+    Engine.stop()
+
+AsyncioLoop (opt-in cooperative/browser host)
+    Engine.start()
+    Engine.step(...)
+    await asyncio.sleep(0)
+    Engine.stop()
+```
+
+`TatuyApp.run()` continues to use the synchronous `PythonLoop`. `TatuyApp.run_async()` is an explicit alternate host path; Tatuy does not switch execution models by detecting a browser implicitly.
+
 ---
