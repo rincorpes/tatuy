@@ -43,11 +43,25 @@ runtime/
     runtime composition/services and execution loop
     bootstrap.py assembles default scene-system dependencies
     builtins.py owns Tatuy's default feature registrations
+    scene_composition.py provisions default Scene feature state
 
 command_processor.py
     engine commands
 ```
 
+Contributor topics:
+
+- [Runtime feature composition](runtime-feature-composition.md)
+- [Render fallback handling](render-fallback.md)
+- [Kernel/reference implementation conventions](kernel-conventions.md)
+
 `QueuedCanvas` is owned by `src/tatuy/graphics/canvas.py` alongside the `Canvas` contract. Prepared `RenderPacket`/`FramePacket` data lives under `src/tatuy/graphics/render/packets.py`, while `src/tatuy/graphics/render/executor.py` defines the replaceable typed-command execution boundary.
+
+Architecture references:
+
+- [Feature composition](../../architecture/feature-composition.md)
+- [Render pipeline](../../architecture/render-pipeline.md)
+- [System pipeline](../../architecture/system-pipeline.md)
+- [Kernel boundaries](../../architecture/kernels.md)
 
 ---

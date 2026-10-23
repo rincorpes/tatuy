@@ -17,6 +17,13 @@ Sections:
 - [Lifecycle](lifecycle/index.md)
 - [Profiler](profiler/index.md)
 - [MCP](mcp/index.md)
+- [Dependency constraints](dependency-constraints.md)
+
+Important contributor contracts:
+
+- [Runtime feature composition](engine/runtime-feature-composition.md)
+- [Render fallback handling](engine/render-fallback.md)
+- [Kernel/reference implementation conventions](engine/kernel-conventions.md)
 
 Read [`AGENTS.md`](../../AGENTS.md) before changing engine internals.
 

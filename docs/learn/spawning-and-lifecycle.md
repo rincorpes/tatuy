@@ -1,65 +1,103 @@
 # Spawning and Lifecycle
 
-Tatuy uses lifecycle requests rather than requiring game systems to create and destroy entities immediately.
+Tatuy treats entity creation/destruction as structured lifecycle work rather than requiring arbitrary immediate mutation from game systems.
 
 ## Spawn definitions
 
+A `SpawnDefinition` names a reusable blueprint plus optional construction policy:
+
 ```python
 SpawnDefinition(
-    "enemy",
-    make_kwargs=lambda: {...},
+    blueprint="enemy",
+    make_kwargs=lambda: {"lane": 2},
+    lifetime=8.0,
+    respawn=Respawn(delay=1.0),
 )
 ```
 
-A definition describes:
+A scene exposes definitions through `spawn_definitions()` and initial placements through `entities()`.
 
-- blueprint
-- default kwargs
-- optional respawn policy
-- optional lifetime
+Runtime composition validates those declarations, creates the spawn registry/queue, and schedules initial spawns before `on_enter()`.
 
-## Spawn registry
+## Runtime spawning
 
-Scenes register definitions by game-facing name:
+Game systems request future creation through `LifecycleQueue`:
 
-```text
-"enemy"
-"player"
-"ball"
+```python
+queue.request_spawn("enemy", delay=0.5)
 ```
 
-## Spawn requests
+Requests may override or extend default blueprint kwargs.
 
-Systems request:
-
-```text
-spawn "enemy"
-```
-
-rather than reconstructing its blueprint every time.
-
-## Lifecycle queue
-
-Requests wait in `LifecycleQueue`.
-
-They are committed at structural barriers.
+`SpawnDelaySystem` advances delayed requests. Ready work is committed at structural barriers rather than mutating the world during arbitrary system iteration.
 
 ## Despawning
 
 A despawn request records:
 
 - entity
-- reason
+- `DespawnReason`
 - whether respawn is allowed
+
+The first request for an entity normally wins. An explicit permanent removal (`allow_respawn=False`) overrides an earlier request that allowed respawn.
+
+Common reasons include:
+
+- `OUT_OF_BOUNDS`
+- `LIFETIME_EXPIRED`
+- `DEFEATED`
+- `SCRIPTED`
 
 ## Lifetime
 
-A `Lifetime` component allows generic expiration.
+A `Lifetime` component stores remaining lifetime. `LifetimeSystem` decrements it after simulation and requests `LIFETIME_EXPIRED` when it reaches zero.
 
 ## Respawn
 
-Entities created from a spawn definition can remember their origin.
+Entities created from a spawn definition carry their spawn origin. If that definition has a `Respawn` policy and the despawn reason is allowed, lifecycle commit can queue a replacement after the configured delay.
 
-If the entity has a matching respawn policy when despawned, the lifecycle system can queue a replacement.
+Respawn therefore depends on declaration-time origin plus runtime despawn reason; game code does not reconstruct the entity manually.
+
+## Ordering contract
+
+Default lifecycle behavior is distributed across the frame intentionally:
+
+```text
+PRE_SIMULATION
+    SpawnDelaySystem
+
+POST_SIMULATION
+    LifetimeSystem
+
+structural commit barriers
+    apply ready spawn/despawn work
+```
+
+This keeps entity-set mutation outside normal iteration-sensitive simulation work.
+
+## What is implementation detail?
+
+Normal game code should not install `SpawnSystem`/`DespawnSystem` manually or depend on lifecycle committer internals. The runtime owns default lifecycle commit plumbing.
+
+## Native preservation contract
+
+A replacement implementation must preserve:
+
+- spawn-definition meaning and validation
+- delayed spawn timing
+- queue batching semantics
+- first-request-wins despawn behavior
+- permanent-removal override behavior
+- lifetime expiration reason
+- respawn reason filtering and delay
+- structural-barrier timing visible to game systems
+
+## Examples
+
+- `examples/fundamentals/013_lifecycle/001_lifetime/app.py`
+- `examples/fundamentals/013_lifecycle/002_respawn/app.py`
+- `examples/fundamentals/013_lifecycle/003_runtime_spawn_queue/app.py`
+
+See [Create a spawn definition](../guides/create-a-spawn-definition.md).
 
 ---
