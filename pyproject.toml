@@ -79,6 +79,9 @@ packages = ["tatuy", "tatuy_cli", "tatuy_mcp", "tatuy_profiler"]
 ignore_missing_imports = true
 strict = false
 
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+
 [tool.pylint.messages_control]
 disable = [
     # Justification: Classes with few public methods are common, specially interfaces,

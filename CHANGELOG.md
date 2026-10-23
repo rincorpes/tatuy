@@ -20,6 +20,17 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Added built-in system registrations and activation predicates for scene systems.
 - Updated tests to cover new runtime and rendering functionalities, ensuring proper execution and cleanup.
 - Removed obsolete test files and refactored existing tests to align with new architecture.
+- Add MCPContext to manage configuration, projects, paths, files, and execution components.
+- Introduce CommandRunner for executing commands with timeout and output management.
+- Implement PythonAnalyzer for running mypy and pylint analysis on projects.
+- Create PythonFormatter for formatting Python files using isort and black.
+- Develop TestRunner for executing pytest tests within projects.
+- Establish ProjectRegistry for managing project entries and discovery.
+- Implement WorkspaceFiles for file operations within the workspace.
+- Create WorkspaceSearch for searching text within project files.
+- Add TatuyScaffolding for creating new project targets.
+- Register tools for file management, project listing, and verification in the MCP server.
+- Add tests for access policy and server creation functionality.
 
 ### - 2026-10-22
 

@@ -1,15 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from pathlib import Path
 
-
-@dataclass(frozen=True, slots=True)
-class ProjectEntry:
-    key: str
-    name: str
-    kind: str
-    path: Path
+from tatuy_mcp.projects.model import ProjectEntry, ProjectKind
 
 
 def discover_projects(
@@ -28,32 +21,28 @@ def discover_projects(
             path=engine_root,
         )
     ]
-
     entries.extend(
-        _discover_standalone_projects(
+        discover_standalone_projects(
             engine_root=engine_root,
             projects_root=projects_root,
         )
     )
-
     entries.extend(
-        _discover_example_targets(
+        discover_example_targets(
             engine_root / "examples" / "experiments",
             kind="experiment",
         )
     )
-
     entries.extend(
-        _discover_example_targets(
+        discover_example_targets(
             engine_root / "examples" / "games",
             kind="game",
         )
     )
-
     return entries
 
 
-def _discover_standalone_projects(
+def discover_standalone_projects(
     *,
     engine_root: Path,
     projects_root: Path,
@@ -62,7 +51,6 @@ def _discover_standalone_projects(
         return []
 
     entries: list[ProjectEntry] = []
-
     for directory in sorted(
         projects_root.iterdir(),
         key=lambda item: item.name.casefold(),
@@ -71,13 +59,9 @@ def _discover_standalone_projects(
             continue
 
         resolved = directory.resolve()
-
         if resolved == engine_root:
             continue
-
-        manifest = resolved / "tatuy.toml"
-
-        if not manifest.is_file():
+        if not (resolved / "tatuy.toml").is_file():
             continue
 
         entries.append(
@@ -88,34 +72,31 @@ def _discover_standalone_projects(
                 path=resolved,
             )
         )
-
     return entries
 
 
-def _discover_example_targets(
+def discover_example_targets(
     root: Path,
     *,
-    kind: str,
+    kind: ProjectKind,
 ) -> list[ProjectEntry]:
     if not root.is_dir():
         return []
 
     entries: list[ProjectEntry] = []
-
-    _walk_example_targets(
+    walk_example_targets(
         root,
         kind=kind,
         logical_prefix="",
         entries=entries,
     )
-
     return entries
 
 
-def _walk_example_targets(
+def walk_example_targets(
     directory: Path,
     *,
-    kind: str,
+    kind: ProjectKind,
     logical_prefix: str,
     entries: list[ProjectEntry],
 ) -> None:
@@ -126,8 +107,7 @@ def _walk_example_targets(
         if not child.is_dir() or child.is_symlink():
             continue
 
-        logical_name = _logical_directory_name(child.name)
-
+        logical_name = logical_directory_name(child.name)
         if logical_name is None:
             continue
 
@@ -147,7 +127,7 @@ def _walk_example_targets(
                 )
             )
 
-        _walk_example_targets(
+        walk_example_targets(
             child,
             kind=kind,
             logical_prefix=logical_path,
@@ -155,15 +135,10 @@ def _walk_example_targets(
         )
 
 
-def _logical_directory_name(
-    directory_name: str,
-) -> str | None:
+def logical_directory_name(directory_name: str) -> str | None:
     number, separator, name = directory_name.partition("_")
-
     if not separator or not number.isdigit():
         return None
-
     if not name.isidentifier() or name.startswith("_"):
         return None
-
     return name
