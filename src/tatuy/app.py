@@ -13,7 +13,10 @@ from tatuy.capture.settings import (  # pylint: disable=unused-import
     ReplaySettingsBuilder,
 )
 from tatuy.engine.engine import Engine, EngineConfig, EnginePipelines
-from tatuy.engine.loop.python_loop import PythonLoop
+from tatuy.engine.runtime.bootstrap import (
+    create_default_system_pipeline_factory,
+)
+from tatuy.engine.runtime.loop.python_loop import PythonLoop
 from tatuy.engine.runtime.runtime import Runtime
 from tatuy.engine.runtime.services import RuntimeServices
 from tatuy.engine.scene import SceneService
@@ -129,7 +132,7 @@ class TatuyApp:
             resources=self.resources,
             pipelines=EnginePipelines(),
             services=RuntimeServices(
-                SceneService(),
+                SceneService(create_default_system_pipeline_factory()),
                 ViewportService(),
                 events=events_service,
                 window=window_service,
@@ -165,7 +168,7 @@ class TatuyApp:
         gc.disable()
 
         try:
-            runtime.loop.run(runtime.engine)
+            runtime.run()
         finally:
             gc.collect()
             gc.enable()

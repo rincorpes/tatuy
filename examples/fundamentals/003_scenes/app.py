@@ -3,7 +3,7 @@ from __future__ import annotations
 from tatuy.backend.pygame import PygameBackend, PygameBackendConfig
 from tatuy.ecs.world import World
 from tatuy.engine.engine import Engine
-from tatuy.engine.loop.python_loop import PythonLoop
+from tatuy.engine.runtime.loop.python_loop import PythonLoop
 from tatuy.input.frame import InputFrame
 from tatuy.scenes.context import Intent, SceneTickContext
 from tatuy.scenes.registry import SceneRegistry

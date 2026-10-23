@@ -3,45 +3,53 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Sequence
 
 from tatuy.backend import Backend
-from tatuy.engine.loop.frame_packet import FramePacket
-from tatuy.engine.render.pipeline.passes.world import WorldPass
 from tatuy.graphics.render.context import RenderContext
+from tatuy.graphics.render.executor import RenderExecutor
+from tatuy.graphics.render.packets import FramePacket
 
 
 @dataclass
 class UIPass:
+    """Render selected screen-space layers and optional overlay scenes."""
+
     name: str = "UIPass"
     layers: tuple[str, ...] = ("ui",)
     include_overlays: bool = True
 
     def run(
-        self, backend: Backend, ctx: RenderContext, packets: list[FramePacket]
+        self,
+        backend: Backend,
+        ctx: RenderContext,
+        packets: Sequence[FramePacket],
+        executor: RenderExecutor,
     ) -> None:
+        """Execute screen-space operations with viewport transforms cleared."""
         backend.renderer.viewport_transform.clear()
         backend.renderer.clip.clear()
+
         try:
-            for fp in packets:
-                if fp.is_overlay:
+            for frame in packets:
+                if frame.is_overlay:
                     if not self.include_overlays:
                         continue
-                    ops = fp.packet.ops
+                    operations = frame.packet.operations
                 else:
-                    ops = tuple(
-                        op
+                    operations = tuple(
+                        operation
                         for layer in self.layers
-                        for op in (
-                            WorldPass._layer_ops(fp.packet, layer) or ()
-                        )
+                        for operation in frame.packet.layer_operations(layer)
                     )
-                if not ops:
+
+                if not operations:
                     continue
+
                 ctx.stats.packets += 1
-                ctx.stats.renderables += len(ops)
+                ctx.stats.renderables += len(operations)
                 ctx.stats.draw_groups += 1
-                for op in ops:
-                    op(backend)
+                executor.execute(backend, operations)
         finally:
             backend.renderer.clip.clear()
             backend.renderer.viewport_transform.clear()

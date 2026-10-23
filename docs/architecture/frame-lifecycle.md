@@ -49,14 +49,18 @@ scene.on_present()
        ↓
 system_pipeline.present()
        ↓
-compile queue
+compile queue into typed draw operations
        ↓
 attach camera/screen effect snapshots
+       ↓
+RenderPacket
        ↓
 FramePacket
 ```
 
-Packets are then passed to rendering.
+`RenderPacket` and `FramePacket` are graphics-owned prepared frame data. Render passes select ordered operation batches, and a replaceable `RenderExecutor` consumes those batches. Custom Python callbacks use an explicit fallback path rather than the primary rendering representation.
+
+Frame rendering is split into content execution and presentation. Capture runs after frame content has been rendered and before the frame is presented.
 
 ## Timing
 

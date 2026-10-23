@@ -1,17 +1,21 @@
+"""Python-hosted runtime loop implementation."""
+
 from __future__ import annotations
 
 from time import perf_counter, sleep
 
 from tatuy.engine.engine import Engine
-from tatuy.engine.timing import FrameClock
+from tatuy.engine.runtime.loop.clock import FrameClock
 
 
 class PythonLoop:
+    """Run an engine session on the Python host thread."""
 
     def __init__(self, target_fps: int = 60):
         self._target_dt = 1.0 / target_fps if target_fps > 0 else 0.0
 
     def run(self, engine: Engine) -> None:
+        """Run the engine until it stops or raises."""
         try:
             engine.start()
             clock = FrameClock()

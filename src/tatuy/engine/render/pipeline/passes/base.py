@@ -1,72 +1,27 @@
-"""
-Render pass base protocol.
-"""
+"""Render-pass contracts for prepared frame data."""
 
 from __future__ import annotations
 
-from typing import Protocol
+from typing import Protocol, Sequence
 
 from tatuy.backend import Backend
-from tatuy.engine.loop.frame_packet import FramePacket
 from tatuy.graphics.render.context import RenderContext
-from tatuy.graphics.render.packets import RenderPacket
-
-
-class RenderPacketPass(Protocol):
-    """
-    Render pass protocol.
-
-    :ivar name: str: Name of the render pass.
-    """
-
-    @property
-    def name(self) -> str: ...
-
-    def run(
-        self,
-        backend: Backend,
-        ctx: RenderContext,
-        packets: list[RenderPacket],
-    ) -> None:
-        """
-        Run the render pass.
-
-        :param backend: Backend: The rendering backend.
-        :type backend: Backend
-
-        :param ctx: RenderContext: The rendering context.
-        :type ctx: RenderContext
-
-        :param packets: list[RenderPacket]: List of render packets to process.
-        :type packets: list[RenderPacket]
-        """
+from tatuy.graphics.render.executor import RenderExecutor
+from tatuy.graphics.render.packets import FramePacket
 
 
 class FramePacketPass(Protocol):
-    """
-    Frame pass protocol.
-
-    :ivar name: str: Name of the render pass.
-    """
+    """Consume prepared frame packets as one render-pipeline stage."""
 
     @property
-    def name(self) -> str: ...
+    def name(self) -> str:
+        """Return the pass name used by diagnostics."""
 
     def run(
         self,
         backend: Backend,
         ctx: RenderContext,
-        packets: list[FramePacket],
+        packets: Sequence[FramePacket],
+        executor: RenderExecutor,
     ) -> None:
-        """
-        Run the render pass.
-
-        :param backend: Backend: The rendering backend.
-        :type backend: Backend
-
-        :param ctx: RenderContext: The rendering context.
-        :type ctx: RenderContext
-
-        :param packets: list[RenderPacket]: List of render packets to process.
-        :type packets: list[RenderPacket]
-        """
+        """Run the render pass against prepared frame data."""

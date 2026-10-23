@@ -1,40 +1,38 @@
-from __future__ import annotations
-from collections.abc import Iterable
-from dataclasses import dataclass, field
-from typing import Callable
+"""Prepared rendering data passed from scene presentation to render execution."""
 
-from tatuy.backend import Backend
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+
 from tatuy.graphics.camera.transform import ViewTransform
 from tatuy.graphics.render.overlays import ScreenOverlay
-
-DrawOp = Callable[[Backend], None]
+from tatuy.graphics.render.queue import DrawOperation, Layer
 
 
 @dataclass(frozen=True)
 class RenderPacket:
-    """
-    Minimal render packet for v1.
+    """Immutable batch of prepared draw operations for one scene."""
 
-    It is intentionally backend-agnostic: each op is a callable that knows
-    how to draw itself using the Backend instance.
-
-    Later you can replace DrawOp with typed primitives + passes.
-    """
-
-    ops: tuple[DrawOp, ...] = ()
+    operations: tuple[DrawOperation, ...] = ()
     screen_overlays: tuple[ScreenOverlay, ...] = ()
     meta: dict[str, object] = field(default_factory=dict)
     world_view: ViewTransform = field(default_factory=ViewTransform)
 
-    @staticmethod
-    def from_ops(ops: Iterable[DrawOp], **meta: object) -> "RenderPacket":
-        """
-        Create a RenderPacket from an iterable of DrawOps and optional meta.
+    def layer_operations(
+        self, layer: Layer | str
+    ) -> tuple[DrawOperation, ...]:
+        """Return prepared operations belonging to one render layer."""
+        return tuple(
+            operation
+            for operation in self.operations
+            if operation.layer == layer
+        )
 
-        :param ops: Iterable of DrawOp callables.
-        :type ops: Iterable[DrawOp]
 
-        :return: RenderPacket instance.
-        :rtype: RenderPacket
-        """
-        return RenderPacket(ops=tuple(ops), meta=dict(meta))
+@dataclass(frozen=True)
+class FramePacket:
+    """Associate prepared scene rendering data with scene-stack metadata."""
+
+    scene_id: str
+    is_overlay: bool
+    packet: RenderPacket

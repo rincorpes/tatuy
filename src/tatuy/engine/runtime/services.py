@@ -5,6 +5,9 @@ from dataclasses import dataclass, field
 from tatuy.audio.service import AudioService
 from tatuy.backend.backend import Backend
 from tatuy.capture.service import CaptureService
+from tatuy.engine.runtime.bootstrap import (
+    create_default_system_pipeline_factory,
+)
 from tatuy.engine.scene import SceneService
 from tatuy.events.service import EventsService
 from tatuy.graphics.viewport.service import ViewportService
@@ -12,9 +15,13 @@ from tatuy.input.service import InputService
 from tatuy.window.service import WindowService
 
 
+def _default_scene_service() -> SceneService:
+    return SceneService(create_default_system_pipeline_factory())
+
+
 @dataclass
 class RuntimeServices:
-    scene: SceneService = field(default=SceneService())
+    scene: SceneService = field(default_factory=_default_scene_service)
     viewport: ViewportService = field(default=ViewportService())
     events: EventsService = field(kw_only=True)
     window: WindowService = field(kw_only=True)

@@ -47,10 +47,10 @@ class StackItem:
 
 class SceneService:
 
-    def __init__(self):
+    def __init__(self, system_pipeline_factory: SystemPipelineFactory):
         self._stack: list[StackItem] = []
         self._factories: dict[str, SceneFactory] = {}
-        self._system_pipeline_factory = SystemPipelineFactory()
+        self._system_pipeline_factory = system_pipeline_factory
 
     def register_factory(self, scene_id: str, factory: SceneFactory):
         self._factories[scene_id] = factory
@@ -172,9 +172,3 @@ class SceneService:
             if entry.policy.blocks_update:
                 break
         return list(reversed(out))  # bottom->top order
-
-    def set_system_pipeline_factory(
-        self,
-        factory: SystemPipelineFactory,
-    ) -> None:
-        self._system_pipeline_factory = factory

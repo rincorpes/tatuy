@@ -16,13 +16,25 @@ Important:
 
 ```text
 engine.py
+config.py
+frame_input.py
+capture_input.py
+scene_update.py
+scene_presentation.py
 scene.py
 system.py
-builtins.py
 pipelines.py
 render/
+    contracts.py
+    renderer.py
+    compiler.py
+    pipeline/
 runtime/
+    bootstrap.py
+    builtins.py
 ```
+
+`system.py` and `pipelines.py` define generic scheduling contracts. Default feature registrations and lifecycle-aware structural commitment are assembled under `runtime/` so the engine core does not import concrete feature implementations.
 
 ## Scenes
 
@@ -66,6 +78,10 @@ src/tatuy/features/
 ```text
 src/tatuy/graphics/
 ```
+
+`graphics/canvas.py` owns the `Canvas` contract and the queue-backed `QueuedCanvas` implementation used by scene execution.
+
+`graphics/render/packets.py` owns prepared `RenderPacket` and `FramePacket` data. `graphics/render/executor.py` owns the replaceable command-execution boundary. Compiled packets contain typed draw operations; custom Python callbacks remain an explicit fallback path rather than the primary rendering representation.
 
 ## Backend
 

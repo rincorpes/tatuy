@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+### - 2026-10-23
+
+#### Changed
+
+- Moved PythonLoop and related runtime loop components to a new runtime loop module.
+- Introduced FrameClock for managing frame timing in the runtime loop.
+- Added ScenePresenter and SceneUpdater for handling scene presentation and updates.
+- Created CaptureInputProcessor for managing input capture and replay.
+- Implemented FrameRenderer for coordinating frame rendering and capture.
+- Established contracts for rendering operations with RenderExecutor and PythonRenderExecutor.
+- Added built-in system registrations and activation predicates for scene systems.
+- Updated tests to cover new runtime and rendering functionalities, ensuring proper execution and cleanup.
+- Removed obsolete test files and refactored existing tests to align with new architecture.
+
 ### - 2026-10-22
 
 #### Added

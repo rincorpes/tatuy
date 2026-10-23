@@ -12,9 +12,7 @@ from typing import (
     TypeVar,
 )
 
-from tatuy.ecs.structural import StructuralCommandBuffer
 from tatuy.ecs.system import BaseSystem, GameSystem, SystemPhase
-from tatuy.features.lifecycle.commit import LifecycleCommitter
 from tatuy.scenes.context import SceneTickContext, TContext
 from tatuy.tooling.profiler import profiler
 
@@ -106,20 +104,6 @@ class SystemRegistration(Generic[TContext]):
 
 class StructuralCommitter(Protocol[TContext_contra]):
     def commit(self, ctx: TContext_contra) -> None: ...
-
-
-class SceneStructuralCommitter(Generic[TContext]):
-    def __init__(
-        self,
-        components: StructuralCommandBuffer[TContext],
-        lifecycle: LifecycleCommitter[TContext],
-    ) -> None:
-        self._components = components
-        self._lifecycle = lifecycle
-
-    def commit(self, ctx: TContext) -> None:
-        self._components.commit(ctx)
-        self._lifecycle.commit(ctx)
 
 
 class StepState(Enum):

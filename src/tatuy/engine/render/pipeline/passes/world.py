@@ -1,77 +1,60 @@
-"""
-World render pass implementation.
-"""
+"""World-space render pass implementation."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Sequence
 
 from tatuy.backend import Backend
-
-# from tatuy.graphics.render.camera import viewport_transform_for_packet
-from tatuy.engine.loop.frame_packet import FramePacket
 from tatuy.engine.render.view import world_drawing_scope
 from tatuy.graphics.render.context import RenderContext
-from tatuy.graphics.render.packets import DrawOp, RenderPacket
+from tatuy.graphics.render.executor import RenderExecutor
+from tatuy.graphics.render.packets import FramePacket, RenderPacket
+from tatuy.graphics.render.queue import DrawOperation
 
 
 @dataclass
 class WorldPass:
-    """
-    World Render Pass.
-    This pass handles rendering of world-space objects.
-    """
+    """Render selected non-overlay layers using each packet's world view."""
 
     name: str = "WorldPass"
     layers: tuple[str, ...] = ("world",)
 
     def run(
-        self, backend: Backend, ctx: RenderContext, packets: list[FramePacket]
-    ) -> None:
-        """Run the world render pass."""
-        for fp in packets:
-            if fp.is_overlay:
-                continue
-            for layer in self.layers:
-                layer_ops = self._layer_ops(fp.packet, layer)
-                if layer_ops is not None:
-                    self._draw_ops(backend, ctx, fp.packet, layer_ops)
-                elif layer == "world":
-                    self._draw_packet(backend, ctx, fp.packet)
-
-    @staticmethod
-    def _layer_ops(
-        packet: RenderPacket, key: str
-    ) -> tuple[DrawOp, ...] | None:
-        if not packet:
-            return None
-        raw = packet.meta.get("pass_ops")
-        if not isinstance(raw, dict):
-            return None
-        ops = raw.get(key)
-        if ops is None:
-            return tuple()
-        return tuple(ops)
-
-    def _draw_packet(
-        self, backend: Backend, ctx: RenderContext, packet: RenderPacket
-    ):
-        if not packet or not packet.ops:
-            return
-        self._draw_ops(backend, ctx, packet, packet.ops)
-
-    def _draw_ops(
         self,
         backend: Backend,
         ctx: RenderContext,
-        packet: RenderPacket,
-        ops: tuple[DrawOp, ...],
+        packets: Sequence[FramePacket],
+        executor: RenderExecutor,
     ) -> None:
-        if not ops:
+        """Execute selected world-space operations for visible scene packets."""
+        for frame in packets:
+            if frame.is_overlay:
+                continue
+
+            for layer in self.layers:
+                operations = frame.packet.layer_operations(layer)
+                self._draw_operations(
+                    backend,
+                    ctx,
+                    frame.packet,
+                    operations,
+                    executor,
+                )
+
+    @staticmethod
+    def _draw_operations(
+        backend: Backend,
+        ctx: RenderContext,
+        packet: RenderPacket,
+        operations: Sequence[DrawOperation],
+        executor: RenderExecutor,
+    ) -> None:
+        if not operations:
             return
 
         ctx.stats.packets += 1
-        ctx.stats.renderables += len(ops)
+        ctx.stats.renderables += len(operations)
         ctx.stats.draw_groups += 1
 
         with world_drawing_scope(
@@ -79,5 +62,4 @@ class WorldPass:
             ctx.viewport,
             packet.world_view,
         ):
-            for op in ops:
-                op(backend)
+            executor.execute(backend, operations)

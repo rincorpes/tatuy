@@ -1,29 +1,29 @@
-"""
-Begin Frame Render Pass
-"""
+"""Begin-frame render pass."""
 
 from dataclasses import dataclass
+from typing import Sequence
 
 from tatuy.backend import Backend
 from tatuy.graphics.render.context import RenderContext
-from tatuy.engine.loop.frame_packet import FramePacket
+from tatuy.graphics.render.executor import RenderExecutor
+from tatuy.graphics.render.packets import FramePacket
 
 
 @dataclass
 class BeginFramePass:
-    """
-    Begin Frame Render Pass.
-    This pass signals the start of a new frame to the backend.
-    """
+    """Signal the start of a new frame to the backend."""
 
     name: str = "BeginFrame"
 
-    # Justification: some arguments are unused but required by the protocol
-    # pylint: disable=unused-argument
     def run(
-        self, backend: Backend, ctx: RenderContext, packets: list[FramePacket]
-    ):
-        """Run the begin frame pass."""
+        self,
+        backend: Backend,
+        ctx: RenderContext,
+        packets: Sequence[FramePacket],
+        executor: RenderExecutor,
+    ) -> None:
+        """Begin a backend frame."""
+        del ctx, packets, executor
         if (
             not hasattr(backend.renderer, "begin_frame")
             or backend.renderer is None

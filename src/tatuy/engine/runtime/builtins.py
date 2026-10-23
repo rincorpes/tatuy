@@ -1,3 +1,5 @@
+"""Default Tatuy feature-system registrations and activation predicates."""
+
 from __future__ import annotations
 
 from tatuy.ecs.world import TWorld
@@ -159,9 +161,6 @@ class LifetimeActivation:
 
 class RenderActivation:
     def matches(self, ctx: SceneTickContext[TWorld, TIntent]) -> bool:
-        # Any entity with transform and a visual component.
-        # NOTE: Currently supported visual components are (Rect, Circle, Text), more
-        # will be added in the future.
         drawable = any(
             next(ctx.world.query(Transform, visual), None) is not None
             for visual in (Rect, Circle, Polygon, Text)
@@ -184,12 +183,13 @@ class WorldBoundsRenderActivation:
 
 # pylint: disable=unused-argument
 class BuiltinSystemCatalog:
+    """Create Tatuy's default feature-system registrations."""
+
     def create(
         self,
         scene,
         ctx,
     ) -> dict[str, SystemRegistration]:
-
         return {
             # CONTROL
             "movement_control": SystemRegistration(

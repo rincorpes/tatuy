@@ -4,7 +4,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from tatuy.engine.loop.python_loop import PythonLoop
+from tatuy.engine.runtime.loop.python_loop import PythonLoop
 
 
 @pytest.mark.parametrize("stage", ["start", "step"])

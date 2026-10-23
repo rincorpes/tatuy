@@ -1,43 +1,38 @@
-"""
-Post-processing effects render pass implementation.
-"""
+"""Post-processing effects render pass implementation."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Sequence
 
 from tatuy.backend import Backend
-from tatuy.engine.loop.frame_packet import FramePacket
-from tatuy.engine.render.pipeline.passes.world import WorldPass
 from tatuy.geometry.size import Size
 from tatuy.graphics.render.context import RenderContext
+from tatuy.graphics.render.executor import RenderExecutor
+from tatuy.graphics.render.packets import FramePacket
 from tatuy.math.vec2 import Vec2
 
 
 @dataclass
 class PostFXPass:
-    """
-    PostFX Render Pass.
-    This pass handles scene effect-layer draw ops and optional post-processing.
-    """
+    """Render post-FX operations and screen overlays."""
 
     name: str = "PostFXPass"
-    # registry: EffectRegistry | None = None
 
     def run(
-        self, backend: Backend, ctx: RenderContext, packets: list[FramePacket]
+        self,
+        backend: Backend,
+        ctx: RenderContext,
+        packets: Sequence[FramePacket],
+        executor: RenderExecutor,
     ) -> None:
-        """Run the post-processing effects render pass."""
+        """Execute post-FX operations in logical screen coordinates."""
         renderer = backend.renderer
         viewport = ctx.viewport
         origin = Vec2(0, 0)
-        size = Size(
-            viewport.virtual_w,
-            viewport.virtual_h,
-        )
+        size = Size(viewport.virtual_w, viewport.virtual_h)
 
         try:
-            # Logical screen coordinates, without a camera transform.
             renderer.viewport_transform.set(
                 viewport.offset_x,
                 viewport.offset_y,
@@ -49,26 +44,20 @@ class PostFXPass:
                 if frame.is_overlay:
                     continue
 
-                packet = frame.packet
-                ops = WorldPass._layer_ops(packet, "postfx") or ()
-                overlays = packet.screen_overlays
+                operations = frame.packet.layer_operations("postfx")
+                overlays = frame.packet.screen_overlays
 
-                if not ops and not overlays:
+                if not operations and not overlays:
                     continue
 
                 ctx.stats.packets += 1
-                ctx.stats.renderables += len(ops) + len(overlays)
+                ctx.stats.renderables += len(operations) + len(overlays)
                 ctx.stats.draw_groups += 1
 
-                for op in ops:
-                    op(backend)
+                executor.execute(backend, operations)
 
                 for overlay in overlays:
-                    renderer.shape.rect(
-                        origin,
-                        size,
-                        overlay.color,
-                    )
+                    renderer.shape.rect(origin, size, overlay.color)
         finally:
             renderer.clip.clear()
             renderer.viewport_transform.clear()

@@ -5,7 +5,7 @@ from unittest.mock import Mock
 import pytest
 
 from tatuy.engine import engine as module
-from tatuy.engine.loop.python_loop import PythonLoop
+from tatuy.engine.runtime.loop.python_loop import PythonLoop
 
 
 @pytest.mark.parametrize("stage", ["backend", "window", "scene"])

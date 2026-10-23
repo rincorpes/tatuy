@@ -1,28 +1,27 @@
-"""
-End Frame render pass implementation.
-"""
+"""End-frame render pass implementation."""
 
 from dataclasses import dataclass
+from typing import Sequence
 
 from tatuy.backend import Backend
 from tatuy.graphics.render.context import RenderContext
-from tatuy.engine.loop.frame_packet import FramePacket
+from tatuy.graphics.render.executor import RenderExecutor
+from tatuy.graphics.render.packets import FramePacket
 
 
 @dataclass
 class EndFramePass:
-    """
-    End Frame Render Pass.
-    This pass signals the end of the current frame to the backend.
-    """
+    """Present the current backend frame."""
 
     name: str = "EndFrame"
 
-    # Justification: some arguments are unused but required by the protocol
-    # pylint: disable=unused-argument
     def run(
-        self, backend: Backend, ctx: RenderContext, packets: list[FramePacket]
-    ):
-        """Run the end frame pass."""
-        # Signal the end of the frame to the backend
+        self,
+        backend: Backend,
+        ctx: RenderContext,
+        packets: Sequence[FramePacket],
+        executor: RenderExecutor,
+    ) -> None:
+        """Signal the end of the frame to the backend."""
+        del ctx, packets, executor
         backend.renderer.end_frame()
