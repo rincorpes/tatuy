@@ -37,6 +37,19 @@ def test_python_kernel_updates_all_matching_children():
     assert second_transform.position == Vec2(2.0, 11.0)
 
 
+def test_python_kernel_raises_when_attachment_parent_has_no_transform():
+    world = World()
+    parent = world.create_entity()
+    child = world.create_entity()
+    world.add_component(child, Transform(Vec2.zero()))
+    world.add_component(child, AttachedTo(parent, Vec2(1.0, 2.0)))
+
+    import pytest
+
+    with pytest.raises(KeyError):
+        PythonAttachmentKernel().update(world)
+
+
 def test_system_delegates_one_batch_call_to_injected_kernel():
     world = World()
     calls = []

@@ -4,18 +4,34 @@ import pytest
 
 from tatuy.ecs.system import SystemPhase
 from tatuy.engine.runtime.builtins import (
+    AttachmentActivation,
     BoundsConstraintActivation,
     BoundsDirectionActivation,
     BuiltinSystemCatalog,
     CollisionDirectionActivation,
     CollisionResponseActivation,
+    LifetimeActivation,
+    MotionSnapshotActivation,
+    MovementActivation,
+    MovementControlActivation,
     RenderActivation,
+    SpawnDelayActivation,
     UiRenderActivation,
+    VelocityIntegrationActivation,
 )
 from tatuy.features.bounds.components import BoundsConstraint
 from tatuy.features.bounds.resources import BoundsFrame, WorldBounds
 from tatuy.features.collision.resources import CollisionFrame
-from tatuy.features.spatial.components import Transform
+from tatuy.features.lifecycle.components import Lifetime
+from tatuy.features.lifecycle.resources import LifecycleQueue
+from tatuy.features.movement.components import (
+    DesiredMovement,
+    MotionSample,
+    Movement,
+    MovementControls,
+    Velocity,
+)
+from tatuy.features.spatial.components import AttachedTo, Transform
 from tatuy.features.visual.components import Circle, Polygon, Rect, Text
 from tatuy.ui.components import UiNode
 from tatuy.ui.resources import UIFrame
@@ -25,6 +41,47 @@ def _context_with_world(world):
     ctx = Mock()
     ctx.world = world
     return ctx
+
+
+def test_movement_and_attachment_activations_match_required_components():
+    from tatuy.ecs.world import World
+
+    world = World()
+    entity = world.create_entity()
+    world.add_component(entity, MovementControls())
+    world.add_component(entity, DesiredMovement())
+    from tatuy.math.vec2 import Vec2
+
+    world.add_component(entity, Movement())
+    world.add_component(entity, Velocity())
+    world.add_component(entity, Transform(Vec2.zero()))
+    world.add_component(entity, MotionSample())
+    world.add_component(entity, AttachedTo(entity, Vec2.zero()))
+    ctx = _context_with_world(world)
+
+    assert MovementControlActivation().matches(ctx) is True
+    assert MotionSnapshotActivation().matches(ctx) is True
+    assert MovementActivation().matches(ctx) is True
+    assert VelocityIntegrationActivation().matches(ctx) is True
+    assert AttachmentActivation().matches(ctx) is True
+
+
+def test_lifecycle_activations_require_expected_resource_and_component():
+    from tatuy.ecs.world import World
+
+    world = World()
+    ctx = _context_with_world(world)
+
+    assert SpawnDelayActivation().matches(ctx) is False
+    assert LifetimeActivation().matches(ctx) is False
+
+    world.add_resource(LifecycleQueue())
+    assert SpawnDelayActivation().matches(ctx) is True
+    assert LifetimeActivation().matches(ctx) is False
+
+    entity = world.create_entity()
+    world.add_component(entity, Lifetime(remaining=1.0))
+    assert LifetimeActivation().matches(ctx) is True
 
 
 def test_bounds_activation_checks_resources_and_one_matching_entity():

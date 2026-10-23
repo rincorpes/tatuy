@@ -66,3 +66,47 @@ def test_default_scene_initializer_processes_spawn_declarations():
     assert queue.spawns[0].definition == "enemy"
     assert queue.spawns[0].remaining == 0.25
     assert queue.spawns[0].kwargs == {"hp": 3}
+
+
+def test_default_scene_initializer_adds_shared_and_declared_resources():
+    class SharedResource:
+        pass
+
+    class DeclaredResource:
+        pass
+
+    shared = SharedResource()
+    declared = DeclaredResource()
+    scene = _scene()
+    scene.shared_resource_types = (SharedResource,)
+    scene.resources.return_value = (declared,)
+    ctx = Mock()
+    ctx.resources.get.return_value = shared
+
+    DefaultSceneInitializer().initialize(scene, ctx)
+
+    ctx.resources.get.assert_called_once_with(SharedResource)
+    assert scene.world.get_resource(SharedResource) is shared
+    assert scene.world.get_resource(DeclaredResource) is declared
+
+
+def test_default_scene_initializer_rejects_duplicate_spawn_definitions():
+    import pytest
+
+    scene = _scene()
+    scene.world.add_resource(
+        SpawnRegistry({"enemy": SpawnDefinition(blueprint="old")})
+    )
+
+    with pytest.raises(ValueError, match="Duplicate spawn definitions"):
+        DefaultSceneInitializer().initialize(scene, Mock())
+
+
+def test_default_scene_initializer_rejects_unknown_initial_entity_definition():
+    import pytest
+
+    scene = _scene()
+    scene.spawn_definitions.return_value = {}
+
+    with pytest.raises(ValueError, match="Unknown spawn definition: enemy"):
+        DefaultSceneInitializer().initialize(scene, Mock())
