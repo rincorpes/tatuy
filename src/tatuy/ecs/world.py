@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections import defaultdict
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from time import perf_counter_ns
 from typing import Any, TypeVar, overload
 
 from tatuy.ecs.component import TComponent
 from tatuy.ecs.entity import EntityId
+from tatuy.ecs.python_store import PythonECSStore
+from tatuy.ecs.store import ComponentStore, ECSStore
 from tatuy.tooling.profiler import profiler
 
 TWorld = TypeVar("TWorld", bound="World")
@@ -39,7 +40,7 @@ class BaseQueryStrategy(ABC):
 
     name = "base"
 
-    def _base_index(self, stores: list[dict[EntityId, Any]]) -> int:
+    def _base_index(self, stores: list[ComponentStore]) -> int:
         return min(
             range(len(stores)),
             key=lambda index: len(stores[index]),
@@ -47,7 +48,7 @@ class BaseQueryStrategy(ABC):
 
     @abstractmethod
     def execute(
-        self, stores: list[dict[EntityId, Any]]
+        self, stores: list[ComponentStore]
     ) -> Iterator[tuple[Any, ...]]: ...
 
 
@@ -98,17 +99,12 @@ class IntersectionQueryStrategy(BaseQueryStrategy):
 
 class World:
     def __init__(
-        self, query_strategy: BaseQueryStrategy | None = None
+        self,
+        query_strategy: BaseQueryStrategy | None = None,
+        store: ECSStore | None = None,
     ) -> None:
-        self._next_entity_id = 1
-
-        self._entities: set[EntityId] = set()
-
+        self._store = store or PythonECSStore()
         self._resources: dict[type, Any] = {}
-        self._components: dict[
-            type,
-            dict[EntityId, Any],
-        ] = defaultdict(dict)
 
         self.query_strategy = query_strategy or SmallestQueryStrategy()
 
@@ -117,27 +113,19 @@ class World:
         return self.query_strategy.name
 
     @property
-    def entities(self) -> set[EntityId]:
-        return self._entities
+    def entities(self):
+        return self._store.entities
 
     @property
-    def components(self) -> dict[type, dict[EntityId, Any]]:
-        return self._components
+    def components(self) -> Mapping[type, ComponentStore]:
+        return self._store.components
 
     def create_entity(self) -> EntityId:
-        entity = EntityId(self._next_entity_id)
-        self._next_entity_id += 1
-
-        self._entities.add(entity)
-
-        return entity
+        return self._store.create_entity()
 
     def destroy_entity(self, entity: EntityId) -> None:
         """Remove the entity and all of its components."""
-        self._entities.discard(entity)
-
-        for store in self._components.values():
-            store.pop(entity, None)
+        self._store.destroy_entity(entity)
 
     def add_resource(self, resource: TResource) -> TResource:
         self._resources[type(resource)] = resource
@@ -177,55 +165,28 @@ class World:
         entity: EntityId,
         component: TComponent,
     ) -> TComponent:
-        if entity not in self._entities:
-            raise KeyError(f"Unknown entity: {entity}")
-
-        self._components[type(component)][entity] = component
-
-        return component
+        return self._store.add_component(entity, component)
 
     def get_component(
         self,
         entity: EntityId,
         component_type: type[TComponent],
     ) -> TComponent:
-        try:
-            return self._components[component_type][entity]
-        except KeyError as exc:
-            raise KeyError(
-                f"Entity {entity} has no {component_type.__name__}"
-            ) from exc
+        return self._store.get_component(entity, component_type)
 
     def has_component(
         self,
         entity: EntityId,
         component_type: type,
     ) -> bool:
-        return entity in self._components.get(
-            component_type,
-            {},
-        )
+        return self._store.has_component(entity, component_type)
 
     def remove_component(
         self,
         entity: EntityId,
         component_type: type[TComponent],
     ) -> TComponent:
-        if entity not in self._entities:
-            raise KeyError(f"Unknown entity: {entity}")
-
-        store = self._components.get(component_type)
-
-        if store is None or entity not in store:
-            raise KeyError(f"Entity {entity} has no {component_type.__name__}")
-
-        component = store.pop(entity)
-
-        # Avoid retaining empty component stores.
-        if not store:
-            del self._components[component_type]
-
-        return component
+        return self._store.remove_component(entity, component_type)
 
     @overload
     def query(
@@ -773,25 +734,11 @@ class World:
         if not component_types:
             return
 
-        # Fast path shared by both implementations.
-        if len(component_types) == 1:
-            store = self._components.get(component_types[0])
-
-            if not store:
-                return
-
-            yield from store.items()
-            return
-
-        stores = [
-            self._components.get(component_type, {})
-            for component_type in component_types
-        ]
-
-        if any(not store for store in stores):
-            return
-
-        yield from self.query_strategy.execute(stores or [])
+        yield from self._store.query(
+            component_types,
+            self.query_strategy.name,
+        )
+        return
 
     def legacy_query(
         self, *component_types: type
@@ -801,7 +748,7 @@ class World:
                 return
 
             if len(component_types) == 1:
-                store = self._components.get(component_types[0])
+                store = self._store.component_stores(component_types)[0]
 
                 if not store:
                     return
@@ -817,10 +764,7 @@ class World:
 
             start = perf_counter_ns()
 
-            stores = [
-                self._components.get(component_type, {})
-                for component_type in component_types
-            ]
+            stores = self._store.component_stores(tuple(component_types))
 
             if any(not store for store in stores):
                 query_ns += perf_counter_ns() - start
