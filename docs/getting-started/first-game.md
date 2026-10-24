@@ -3,7 +3,7 @@
 This creates one rectangle using Tatuy's normal scene, ECS, factory, and lifecycle APIs.
 
 ```python
-from tatuy.app import TatuyApp
+from tatuy import TatuyApp, TatuyConfigDict
 from tatuy.ecs.entity.factory import EntityFactory, RectBlueprint
 from tatuy.ecs.world import World
 from tatuy.features.lifecycle.resources import SpawnDefinition
@@ -58,8 +58,8 @@ class MainScene(Scene[GameWorld, GameIntent, GameContext]):
         pass
 
 
-def create_app() -> TatuyApp:
-    return TatuyApp()
+def create_app(config: TatuyConfigDict | None = None) -> TatuyApp:
+    return TatuyApp(config)
 
 
 def main() -> None:
@@ -70,7 +70,7 @@ if __name__ == "__main__":
     main()
 ```
 
-`create_app()` is the reusable construction seam for Tatuy targets. Desktop launchers call `run()` through `main()`, while hosted launchers such as the web builder can construct the same application and choose an appropriate runtime host without rewriting game code.
+`create_app()` is the reusable construction seam for Tatuy targets. Desktop launchers call it without overrides and run synchronously through `main()`. Hosted launchers such as the web builder can pass host-safe configuration, for example disabling capture, then run the same application through an asynchronous runtime host without rewriting game code.
 
 ## What happened?
 
