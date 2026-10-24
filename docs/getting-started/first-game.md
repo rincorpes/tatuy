@@ -58,9 +58,19 @@ class MainScene(Scene[GameWorld, GameIntent, GameContext]):
         pass
 
 
+def create_app() -> TatuyApp:
+    return TatuyApp()
+
+
+def main() -> None:
+    create_app().run()
+
+
 if __name__ == "__main__":
-    TatuyApp().run()
+    main()
 ```
+
+`create_app()` is the reusable construction seam for Tatuy targets. Desktop launchers call `run()` through `main()`, while hosted launchers such as the web builder can construct the same application and choose an appropriate runtime host without rewriting game code.
 
 ## What happened?
 

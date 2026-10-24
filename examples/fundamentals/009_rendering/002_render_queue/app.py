@@ -1,3 +1,5 @@
+"""Render semantic rectangle and circle commands through Tatuy's render queue."""
+
 from tatuy import TatuyApp
 from tatuy.ecs import GameSystem, World
 from tatuy.geometry.size import Size
@@ -5,18 +7,25 @@ from tatuy.math.vec2 import Vec2
 from tatuy.scenes import Intent, Scene, SceneRegistry, SceneTickContext
 
 
-class DemoWorld(World): ...
+class DemoWorld(World):
+    """World used by the render-queue fundamental."""
 
 
 class DemoIntent(Intent):
+    """No-op intent for the rendering-only example."""
+
     def update_from(self, input_frame):
-        pass
+        """Ignore input because this example demonstrates rendering only."""
+        del input_frame
 
 
-class DemoContext(SceneTickContext[DemoWorld, DemoIntent]): ...
+class DemoContext(SceneTickContext[DemoWorld, DemoIntent]):
+    """Typed context for the render-queue fundamental."""
 
 
 class DrawSystem(GameSystem[DemoContext]):
+    """Submit one rectangle and one circle to the semantic render queue."""
+
     def on_presentation(self, ctx: DemoContext) -> None:
         ctx.render_queue.rect(
             center=Vec2(300, 300),
@@ -34,6 +43,8 @@ class DrawSystem(GameSystem[DemoContext]):
 
 @SceneRegistry.implementation("main")
 class DemoScene(Scene[DemoWorld, DemoIntent, DemoContext]):
+    """Scene that exposes the render-queue drawing system."""
+
     world_type = DemoWorld
     intent_type = DemoIntent
     tick_context_type = DemoContext
@@ -45,8 +56,14 @@ class DemoScene(Scene[DemoWorld, DemoIntent, DemoContext]):
         pass
 
 
+def create_app() -> TatuyApp:
+    """Create the reusable Tatuy application for desktop or hosted launchers."""
+    return TatuyApp()
+
+
 def main() -> None:
-    TatuyApp().run()
+    """Run the example with Tatuy's default desktop runtime host."""
+    create_app().run()
 
 
 if __name__ == "__main__":

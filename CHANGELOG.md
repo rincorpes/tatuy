@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Normalize collapsed polygon rasterization across upstream Pygame and pygame-ce.
 - Use `pygame.image.tobytes()` for non-deprecated frame extraction while deferring deprecated test-helper snapshots for later cleanup.
 - Refresh Poetry lock metadata so runtime, backend, capture, CLI, MCP, and tooling dependencies remain optional according to their extras.
+- Adopt `create_app()` as the reusable construction seam for showcase targets, starting with the render-queue fundamental and getting-started guide.
 
 ### - 2026-10-23
 
