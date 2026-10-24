@@ -65,5 +65,5 @@ class PygameCapture(BackendComponent[PygameCaptureConfig]):
         w, h = self._window.screen.get_size()
         # CaptureWorker currently decodes raw bytes as BGRA for async video frames.
         # Export BGRA here so recorded PNG frames keep correct alpha/colors.
-        data = pygame.image.tostring(self._window.screen, "BGRA")
+        data = pygame.image.tobytes(self._window.screen, "BGRA")
         return int(w), int(h), data

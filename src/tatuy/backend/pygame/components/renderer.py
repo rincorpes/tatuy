@@ -284,6 +284,75 @@ class PygameShape:
             ),
         )
 
+    def _map_polygon_points(
+        self,
+        points: list[tuple[int, int]],
+    ) -> list[tuple[int, int]]:
+        """Map logical polygon vertices to integer screen coordinates."""
+        mapped: list[tuple[int, int]] = []
+        for x, y in points:
+            mapped_x, mapped_y = self._context.viewport_transform.map_xy(
+                int(x), int(y)
+            )
+            mapped.append((int(mapped_x), int(mapped_y)))
+        return mapped
+
+    @staticmethod
+    def _polygon_is_collapsed(points: list[tuple[int, int]]) -> bool:
+        """Return whether all polygon vertices lie on one raster line."""
+        if len(points) < 3:
+            return True
+
+        origin_x, origin_y = points[0]
+        direction_x = points[1][0] - origin_x
+        direction_y = points[1][1] - origin_y
+
+        for point_x, point_y in points[2:]:
+            offset_x = point_x - origin_x
+            offset_y = point_y - origin_y
+            if direction_x * offset_y != direction_y * offset_x:
+                return False
+
+        return True
+
+    @staticmethod
+    def _polygon_bounds(points: list[tuple[int, int]]) -> pygame.Rect:
+        """Return inclusive raster bounds for mapped polygon vertices."""
+        xs = [x for x, _ in points]
+        ys = [y for _, y in points]
+        min_x, max_x = min(xs), max(xs)
+        min_y, max_y = min(ys), max(ys)
+        return pygame.Rect(min_x, min_y, max_x - min_x + 1, max_y - min_y + 1)
+
+    @staticmethod
+    def _draw_collapsed_polygon(
+        surface: pygame.Surface,
+        color: tuple[int, ...],
+        points: list[tuple[int, int]],
+    ) -> None:
+        """Rasterize a zero-area polygon with inclusive extreme endpoints."""
+        start = min(points)
+        end = max(points)
+        pygame.draw.line(surface, color, start, end, width=1)
+
+    @classmethod
+    def _draw_polygon_raster(
+        cls,
+        surface: pygame.Surface,
+        color: tuple[int, ...],
+        points: list[tuple[int, int]],
+        *,
+        width: int,
+        collapsed: bool,
+        offset: tuple[int, int] = (0, 0),
+    ) -> None:
+        """Rasterize mapped polygon points using Tatuy's stable semantics."""
+        local_points = [(x + offset[0], y + offset[1]) for x, y in points]
+        if collapsed:
+            cls._draw_collapsed_polygon(surface, color, local_points)
+            return
+        pygame.draw.polygon(surface, color, local_points, width=width)
+
     def polygon(
         self,
         points: list[tuple[int, int]],
@@ -313,38 +382,32 @@ class PygameShape:
         if len(points) < 3:
             return
 
-        mapped_points = [
-            self._context.viewport_transform.map_xy(int(x), int(y))
-            for (x, y) in points
-        ]
+        mapped_points = self._map_polygon_points(points)
+        collapsed = self._polygon_is_collapsed(mapped_points)
 
         width = 0 if filled else 1
         if a >= 255:
-            pygame.draw.polygon(
+            self._draw_polygon_raster(
                 self._context.window.screen,
                 (r, g, b),
                 mapped_points,
                 width=width,
+                collapsed=collapsed,
             )
             return
 
-        min_x = min(int(x) for x, _ in mapped_points)
-        min_y = min(int(y) for _, y in mapped_points)
-        max_x = max(int(x) for x, _ in mapped_points)
-        max_y = max(int(y) for _, y in mapped_points)
         # Polygon rasterization includes pixels at both extreme vertices.
-        rect = pygame.Rect(min_x, min_y, max_x - min_x + 1, max_y - min_y + 1)
+        rect = self._polygon_bounds(mapped_points)
         self._blit_alpha_shape(
             bounds=rect,
             color=(r, g, b, a),
-            draw_fn=lambda surface, offset, rgba_color: pygame.draw.polygon(
+            draw_fn=lambda surface, offset, rgba_color: self._draw_polygon_raster(
                 surface,
                 rgba_color,
-                [
-                    (int(px) + offset[0], int(py) + offset[1])
-                    for (px, py) in mapped_points
-                ],
+                mapped_points,
                 width=width,
+                collapsed=collapsed,
+                offset=offset,
             ),
         )
 

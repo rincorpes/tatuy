@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+### - 2026-10-24
+
+#### Added
+
+- Add the first Pygbag browser spike with pygame-ce, bundled pure-Python runtime dependencies, and cache-safe content-addressed staging.
+- Add staging regression tests and documented manual browser workflow for custom ports, Pygbag package loading, and cache-busting URLs.
+
+#### Changed
+
+- Normalize collapsed polygon rasterization across upstream Pygame and pygame-ce.
+- Use `pygame.image.tobytes()` for non-deprecated frame extraction while deferring deprecated test-helper snapshots for later cleanup.
+- Refresh Poetry lock metadata so runtime, backend, capture, CLI, MCP, and tooling dependencies remain optional according to their extras.
+
 ### - 2026-10-23
 
 #### Added

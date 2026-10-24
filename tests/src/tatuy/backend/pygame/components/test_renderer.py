@@ -30,6 +30,7 @@ def test_translucent_rect_blends_without_filling_bounds(render_target):
 
 
 def test_polygon_with_too_few_points_is_noop(render_target):
+    # TODO(web): Replace deprecated tostring snapshots with pygame.image.tobytes.
     before = pygame.image.tostring(render_target.screen, "RGBA")
     render_target.renderer.shape.polygon([(1, 1), (2, 2)], (255, 0, 0))
     assert pygame.image.tostring(render_target.screen, "RGBA") == before
@@ -179,6 +180,43 @@ def test_collapsed_alpha_polygon_includes_endpoint(render_target, points):
 
 
 @pytest.mark.parametrize(
+    "points,expected_points",
+    [
+        (
+            [(4, 2), (4, 5), (4, 8)],
+            {(4, y) for y in range(2, 9)},
+        ),
+        (
+            [(2, 4), (5, 4), (8, 4)],
+            {(x, 4) for x in range(2, 9)},
+        ),
+        ([(4, 4), (4, 4), (4, 4)], {(4, 4)}),
+    ],
+)
+@pytest.mark.parametrize(
+    "color,expected_red",
+    [((255, 0, 0), 255), ((255, 0, 0, 128), 128)],
+)
+def test_collapsed_polygon_uses_inclusive_line_coverage(
+    render_target,
+    points,
+    expected_points,
+    color,
+    expected_red,
+):
+    render_target.renderer.shape.polygon(points, color)
+    actual_points = {
+        (x, y)
+        for y in range(render_target.screen.get_height())
+        for x in range(render_target.screen.get_width())
+        if render_target.screen.get_at((x, y)).r
+    }
+    assert actual_points == expected_points
+    for point in expected_points:
+        assert render_target.screen.get_at(point).r == expected_red
+
+
+@pytest.mark.parametrize(
     "scale,source_rows,tile_rows",
     [
         (0.5, [0, 0, 1, 1], [0, 1]),
@@ -231,6 +269,7 @@ def test_tiled_texture_stretches_width_without_horizontal_repetition(
 
 @pytest.mark.parametrize("destroyed", [False, True])
 def test_tiled_missing_handle_is_noop(render_target, textures, destroyed):
+    # TODO(web): Replace deprecated tostring snapshots with pygame.image.tobytes.
     handle = 999
     if destroyed:
         handle = textures.create(1, 1, bytes((255, 0, 0, 255)))
@@ -255,6 +294,7 @@ def test_tiled_missing_handle_is_noop(render_target, textures, destroyed):
 def test_tiled_empty_mapped_size_or_tile_is_noop(
     monkeypatch, render_target, textures, width, height, scale
 ):
+    # TODO(web): Replace deprecated tostring snapshots with pygame.image.tobytes.
     handle = textures.create(1, 1, bytes((255, 0, 0, 255)))
     render_target.transform.set(0, 0, scale)
     scaling = Mock(side_effect=AssertionError("must not allocate a tile"))
@@ -364,6 +404,7 @@ def test_invalid_texture_geometry_fails_before_conversion(
 @pytest.mark.parametrize("shape", ["line", "circle"])
 @pytest.mark.parametrize("size", [0, -1])
 def test_invalid_shape_sizes(render_target, shape, size):
+    # TODO(web): Replace deprecated tostring snapshots with pygame.image.tobytes.
     before = pygame.image.tostring(render_target.screen, "RGBA")
 
     def draw():
@@ -391,6 +432,7 @@ def test_line_thickness_scales_with_viewport(monkeypatch, render_target):
 
 
 def test_tiny_shapes_rounding_to_zero_are_noops(render_target):
+    # TODO(web): Replace deprecated tostring snapshots with pygame.image.tobytes.
     render_target.transform.set(0, 0, 0.1)
     before = pygame.image.tostring(render_target.screen, "RGBA")
     render_target.renderer.shape.line(Vec2(1, 1), Vec2(8, 8), thickness=1)
