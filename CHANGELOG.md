@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Add a dedicated `web` dependency extra for browser packaging with Pygbag, PyYAML, and the canonical `pygame-ce` backend distribution.
 - Add a MkDocs documentation-site configuration with explicit public navigation, GitHub Pages subpath output, and AI/MCP internal-doc exclusions.
 - Add a dedicated `docs` dependency extra for static documentation builds.
+- Add a framework-free static showcase shell with a Tatuy landing page and iframe-based Render Queue play page.
 
 #### Changed
 
