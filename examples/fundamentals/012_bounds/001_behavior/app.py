@@ -1,4 +1,4 @@
-from tatuy import TatuyApp
+from tatuy import TatuyApp, TatuyConfigDict
 from tatuy.ecs import World
 from tatuy.features.bounds import (
     BoundsBehavior,
@@ -88,8 +88,13 @@ class DemoScene(Scene[DemoWorld, DemoIntent, DemoContext]):
         )
 
 
+def create_app(config: TatuyConfigDict | None = None) -> TatuyApp:
+    """Create the reusable bounds-behavior example application."""
+    return TatuyApp(config)
+
+
 def main() -> None:
-    TatuyApp().run()
+    create_app().run()
 
 
 if __name__ == "__main__":

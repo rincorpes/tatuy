@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import cast
 
-from tatuy import TatuyApp
+from tatuy import TatuyApp, TatuyConfigDict
 from tatuy.commands import ChangeScene
+from tatuy.configuration import merge_config
 from tatuy.ecs import (
     BaseSystem,
     EntityBlueprint,
@@ -157,9 +159,14 @@ class InitialScene(
         )
 
 
-def main():
-    my_game = TatuyApp({"engine": {"start_scene": "initial"}})
-    my_game.run()
+def create_app(config: TatuyConfigDict | None = None) -> TatuyApp:
+    defaults: TatuyConfigDict = {"engine": {"start_scene": "initial"}}
+    merged = merge_config(defaults, config or {})
+    return TatuyApp(cast(TatuyConfigDict, merged))
+
+
+def main() -> None:
+    create_app().run()
 
 
 if __name__ == "__main__":

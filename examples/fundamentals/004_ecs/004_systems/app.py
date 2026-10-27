@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from tatuy import TatuyApp
+from tatuy import TatuyApp, TatuyConfigDict
 from tatuy.ecs import (
     BaseSystem,
     EntityBlueprint,
@@ -104,9 +104,12 @@ class MyGameScene(Scene[MyGameWorld, MyGameIntent, MyGameSceneTickContext]):
         self.systems = (MyGameSimSystem(), MyGamePresentationSystem())
 
 
-def main():
-    my_game = TatuyApp()
-    my_game.run()
+def create_app(config: TatuyConfigDict | None = None) -> TatuyApp:
+    return TatuyApp(config)
+
+
+def main() -> None:
+    create_app().run()
 
 
 if __name__ == "__main__":

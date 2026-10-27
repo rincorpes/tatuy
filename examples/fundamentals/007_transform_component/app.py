@@ -1,4 +1,4 @@
-from tatuy import TatuyApp
+from tatuy import TatuyApp, TatuyConfigDict
 from tatuy.ecs import World
 from tatuy.features.spatial import Transform
 from tatuy.features.visual import Rect
@@ -30,9 +30,13 @@ class DemoScene(Scene[DemoWorld, DemoIntent, DemoContext]):
         self.world.add_component(entity, Rect(Size(80, 80), (100, 180, 240)))
 
 
+def create_app(config: TatuyConfigDict | None = None) -> TatuyApp:
+    return TatuyApp(config)
+
+
 def main() -> None:
     # Transform owns the entity's world-space position.
-    TatuyApp().run()
+    create_app().run()
 
 
 if __name__ == "__main__":

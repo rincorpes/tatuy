@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from tatuy.app import TatuyApp
+from tatuy import TatuyApp, TatuyConfigDict
 from tatuy.ecs.world import World
 from tatuy.math.vec2 import Vec2
 from tatuy.scenes.context import Intent, SceneTickContext
@@ -49,9 +49,12 @@ class MyGameScene(Scene[MyGameWorld, MyGameIntent, MyGameSceneTickContext]):
         ctx.canvas.text(**kwargs)
 
 
-def main():
-    my_game = TatuyApp()
-    my_game.run()
+def create_app(config: TatuyConfigDict | None = None) -> TatuyApp:
+    return TatuyApp(config)
+
+
+def main() -> None:
+    create_app().run()
 
 
 if __name__ == "__main__":

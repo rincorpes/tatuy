@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Remove the temporary duplicated `examples/web` browser target now that the canonical render-queue fundamental is packaged directly.
 - Make the repository root explicit in pytest import paths so local development scripts resolve deterministically during test collection.
 - Refresh Poetry lock metadata for the optional `config` extra and development PyYAML dependency.
+- Migrate every Tatuy application target under `examples/fundamentals` to the reusable `create_app(config)` seam while preserving desktop entrypoints and example-specific default configuration.
 
 ### - 2026-10-24
 

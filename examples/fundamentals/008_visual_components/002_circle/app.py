@@ -1,4 +1,4 @@
-from tatuy import TatuyApp
+from tatuy import TatuyApp, TatuyConfigDict
 from tatuy.ecs import World
 from tatuy.features.spatial import Transform
 from tatuy.features.visual import Circle
@@ -29,8 +29,12 @@ class DemoScene(Scene[DemoWorld, DemoIntent, DemoContext]):
         self.world.add_component(entity, Circle(60, (240, 150, 90)))
 
 
+def create_app(config: TatuyConfigDict | None = None) -> TatuyApp:
+    return TatuyApp(config)
+
+
 def main() -> None:
-    TatuyApp().run()
+    create_app().run()
 
 
 if __name__ == "__main__":

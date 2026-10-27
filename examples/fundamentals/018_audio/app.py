@@ -1,6 +1,8 @@
 from pathlib import Path
+from typing import cast
 
-from tatuy import TatuyApp
+from tatuy import TatuyApp, TatuyConfigDict
+from tatuy.configuration import merge_config
 from tatuy.ecs import World
 from tatuy.scenes import Intent, Scene, SceneRegistry, SceneTickContext
 
@@ -26,7 +28,7 @@ class DemoScene(Scene[DemoWorld, DemoIntent, DemoContext]):
         ctx.audio.play("demo.sound")
 
 
-def main() -> None:
+def create_app(config: TatuyConfigDict | None = None) -> TatuyApp:
     sound = (
         Path(__file__).resolve().parent.parent
         / "001_backend"
@@ -34,16 +36,20 @@ def main() -> None:
         / "assets"
         / "test.wav"
     )
-    TatuyApp(
-        {
-            "backend": {
-                "audio": {
-                    "enabled": True,
-                    "sounds": [{"name": "demo.sound", "path": str(sound)}],
-                }
+    defaults: TatuyConfigDict = {
+        "backend": {
+            "audio": {
+                "enabled": True,
+                "sounds": [{"name": "demo.sound", "path": str(sound)}],
             }
         }
-    ).run()
+    }
+    merged = merge_config(defaults, config or {})
+    return TatuyApp(cast(TatuyConfigDict, merged))
+
+
+def main() -> None:
+    create_app().run()
 
 
 if __name__ == "__main__":

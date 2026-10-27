@@ -1,4 +1,4 @@
-from tatuy import TatuyApp
+from tatuy import TatuyApp, TatuyConfigDict
 from tatuy.ecs import EntityBlueprint, EntityFactory, GameSystem, World
 from tatuy.features.lifecycle import LifecycleQueue, SpawnDefinition
 from tatuy.features.spatial import Transform
@@ -61,9 +61,14 @@ class DemoScene(Scene[DemoWorld, DemoIntent, DemoContext]):
         pass
 
 
+def create_app(config: TatuyConfigDict | None = None) -> TatuyApp:
+    """Create the reusable runtime-spawn example application."""
+    return TatuyApp(config)
+
+
 def main() -> None:
     # LifecycleQueue lets gameplay request definition-based spawns at runtime.
-    TatuyApp().run()
+    create_app().run()
 
 
 if __name__ == "__main__":

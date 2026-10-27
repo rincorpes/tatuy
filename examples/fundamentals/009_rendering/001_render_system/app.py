@@ -1,4 +1,4 @@
-from tatuy import TatuyApp
+from tatuy import TatuyApp, TatuyConfigDict
 from tatuy.ecs import World
 from tatuy.features.spatial import Transform
 from tatuy.features.visual import Rect
@@ -30,9 +30,13 @@ class DemoScene(Scene[DemoWorld, DemoIntent, DemoContext]):
         self.world.add_component(entity, Rect(Size(160, 90), (100, 180, 255)))
 
 
+def create_app(config: TatuyConfigDict | None = None) -> TatuyApp:
+    return TatuyApp(config)
+
+
 def main() -> None:
     # The default runtime activates RenderSystem when visual components exist.
-    TatuyApp().run()
+    create_app().run()
 
 
 if __name__ == "__main__":

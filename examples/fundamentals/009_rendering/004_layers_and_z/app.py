@@ -1,4 +1,4 @@
-from tatuy import TatuyApp
+from tatuy import TatuyApp, TatuyConfigDict
 from tatuy.ecs import GameSystem, World
 from tatuy.geometry.size import Size
 from tatuy.math.vec2 import Vec2
@@ -55,8 +55,12 @@ class DemoScene(Scene[DemoWorld, DemoIntent, DemoContext]):
         pass
 
 
+def create_app(config: TatuyConfigDict | None = None) -> TatuyApp:
+    return TatuyApp(config)
+
+
 def main() -> None:
-    TatuyApp().run()
+    create_app().run()
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from tatuy.app import TatuyApp
+from tatuy import TatuyApp, TatuyConfigDict
 from tatuy.ecs.world import World
 from tatuy.scenes.context import Intent
 from tatuy.scenes.registry import SceneRegistry
@@ -27,9 +27,12 @@ class MyGameScene(Scene[MyGameWorld, MyGameIntent, Any]):
         print("Main scene started")
 
 
-def main():
-    my_game = TatuyApp()
-    my_game.run()
+def create_app(config: TatuyConfigDict | None = None) -> TatuyApp:
+    return TatuyApp(config)
+
+
+def main() -> None:
+    create_app().run()
 
 
 if __name__ == "__main__":

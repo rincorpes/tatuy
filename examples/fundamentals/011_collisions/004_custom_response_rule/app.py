@@ -1,4 +1,4 @@
-from tatuy import TatuyApp
+from tatuy import TatuyApp, TatuyConfigDict
 from tatuy.ecs import World
 from tatuy.engine import SystemRegistration
 from tatuy.features.collision import (
@@ -73,8 +73,13 @@ class DemoScene(Scene[DemoWorld, DemoIntent, DemoContext]):
             self.world.add_component(entity, Rect(Size(60, 60), color))
 
 
+def create_app(config: TatuyConfigDict | None = None) -> TatuyApp:
+    """Create the reusable custom-collision-response example application."""
+    return TatuyApp(config)
+
+
 def main() -> None:
-    TatuyApp().run()
+    create_app().run()
 
 
 if __name__ == "__main__":

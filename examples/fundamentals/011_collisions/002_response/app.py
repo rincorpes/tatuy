@@ -1,4 +1,4 @@
-from tatuy import TatuyApp
+from tatuy import TatuyApp, TatuyConfigDict
 from tatuy.ecs import World
 from tatuy.features.collision import BoxCollider, CollisionBody, CollisionFrame
 from tatuy.features.movement import Velocity
@@ -44,8 +44,13 @@ class DemoScene(Scene[DemoWorld, DemoIntent, DemoContext]):
         self.world.add_component(wall, Rect(Size(80, 220), (220, 220, 220)))
 
 
+def create_app(config: TatuyConfigDict | None = None) -> TatuyApp:
+    """Create the reusable collision-response example application."""
+    return TatuyApp(config)
+
+
 def main() -> None:
-    TatuyApp().run()
+    create_app().run()
 
 
 if __name__ == "__main__":

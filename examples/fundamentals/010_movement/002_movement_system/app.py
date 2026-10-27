@@ -1,4 +1,4 @@
-from tatuy import TatuyApp
+from tatuy import TatuyApp, TatuyConfigDict
 from tatuy.ecs import World
 from tatuy.features.movement import DesiredMovement, Movement, Velocity
 from tatuy.features.spatial import Transform
@@ -34,9 +34,14 @@ class DemoScene(Scene[DemoWorld, DemoIntent, DemoContext]):
         self.world.add_component(entity, Rect(Size(48, 48), (120, 220, 150)))
 
 
+def create_app(config: TatuyConfigDict | None = None) -> TatuyApp:
+    """Create the reusable movement-system fundamental application."""
+    return TatuyApp(config)
+
+
 def main() -> None:
     # Movement calculates Velocity; velocity integration moves Transform.
-    TatuyApp().run()
+    create_app().run()
 
 
 if __name__ == "__main__":

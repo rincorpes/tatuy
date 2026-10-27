@@ -1,11 +1,14 @@
 from __future__ import annotations
 
-from tatuy.app import TatuyApp
+from tatuy import TatuyApp, TatuyConfigDict
 
 
-def main():
-    my_game = TatuyApp()
-    my_game.run()
+def create_app(config: TatuyConfigDict | None = None) -> TatuyApp:
+    return TatuyApp(config)
+
+
+def main() -> None:
+    create_app().run()
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-from tatuy import TatuyApp
+from tatuy import TatuyApp, TatuyConfigDict
 from tatuy.ecs import EntityBlueprint, EntityFactory, World
 from tatuy.features.lifecycle import SpawnDefinition
 from tatuy.features.spatial import Transform
@@ -55,9 +55,14 @@ class DemoScene(Scene[DemoWorld, DemoIntent, DemoContext]):
         pass
 
 
+def create_app(config: TatuyConfigDict | None = None) -> TatuyApp:
+    """Create the reusable lifetime example application."""
+    return TatuyApp(config)
+
+
 def main() -> None:
     # The entity is spawned during scene setup and despawns after two seconds.
-    TatuyApp().run()
+    create_app().run()
 
 
 if __name__ == "__main__":
