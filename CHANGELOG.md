@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Add an independent replay runtime capability with enabled and null services so deterministic replay no longer depends on screenshot/video capture.
 - Add a read-only `AssetProvider` boundary with a filesystem-backed implementation exposed to scenes through `ctx.assets`.
 - Add logical `StorageProvider` abstractions with filesystem-backed desktop persistence and ephemeral in-memory storage exposed through `ctx.storage`.
+- Add reusable web-target packaging models and a `WebTargetBuilder`/`PygbagPackager` tooling boundary for browser builds and showcase metadata.
 
 #### Changed
 
@@ -32,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Make browser-v0 staging explicitly disable audio auto-initialization plus capture/replay write capabilities so web startup does not depend on autoplay permission or host filesystem writes.
 - Package target-local `assets/` content into web staging, include asset changes in deterministic build identities, and migrate the audio fundamental to logical asset resolution.
 - Select ephemeral logical storage for browser-v0 builds while preserving filesystem-backed storage as the desktop default.
+- Replace the one-off web staging implementation with reusable target resolution, generated browser launchers, Pygbag invocation, normalized `build/web/play/<slug>/` output, and deterministic showcase manifest generation.
 
 ### - 2026-10-24
 

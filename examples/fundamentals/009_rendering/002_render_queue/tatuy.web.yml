@@ -1,3 +1,7 @@
+showcase:
+  slug: render-queue
+  title: Render Queue
+  description: Inspect Tatuy's queued rendering path in the browser.
 app:
   loop: asyncio
 capabilities:
