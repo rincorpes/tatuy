@@ -116,5 +116,6 @@ nav:
           - Implementing a Backend: internals/backend/implementing-a-backend.md
   - Examples:
       - Examples: examples/index.md
+      - Web Compatibility: examples/web-compatibility.md
       - Games: examples/games.md
       - Experiments: examples/experiments.md

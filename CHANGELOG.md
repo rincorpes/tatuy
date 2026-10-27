@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Add a dedicated `docs` dependency extra for static documentation builds.
 - Add a framework-free static showcase shell with a Tatuy landing page and iframe-based Render Queue play page.
 - Add deterministic showcase catalog discovery and validation for declared target metadata, source/docs references, and browser bundles.
+- Add a tracked browser-compatibility matrix for every runnable fundamental with regression coverage that keeps the audit complete as examples change.
 
 #### Changed
 

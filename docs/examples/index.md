@@ -11,6 +11,7 @@ examples/
 
 Topic indexes:
 
+- [Web compatibility](web-compatibility.md)
 - [Experiments](experiments.md)
 - [Games](games.md)
 
