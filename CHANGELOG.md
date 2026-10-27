@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Keep `TatuyApp.run()` as the desktop convenience path while moving cooperative async execution to the runtime host boundary.
 - Update the browser spike tooling to package the canonical render-queue fundamental through `create_app()` and a generated web launcher instead of relying on duplicated web-specific game code.
 - Add optional PyYAML configuration support without making YAML parsing part of the browser runtime.
+- Remove the temporary duplicated `examples/web` browser target now that the canonical render-queue fundamental is packaged directly.
+- Make the repository root explicit in pytest import paths so local development scripts resolve deterministically during test collection.
+- Refresh Poetry lock metadata for the optional `config` extra and development PyYAML dependency.
 
 ### - 2026-10-24
 

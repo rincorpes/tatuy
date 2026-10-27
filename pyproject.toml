@@ -101,7 +101,7 @@ ignore_missing_imports = true
 strict = false
 
 [tool.pytest.ini_options]
-pythonpath = ["src"]
+pythonpath = [".", "src"]
 
 [tool.pylint.messages_control]
 disable = [
