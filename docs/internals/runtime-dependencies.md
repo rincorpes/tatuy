@@ -60,6 +60,16 @@ Installs the browser packaging/build stack without pulling in capture, CLI, or M
 
 For repository development, the W6 builder can use the active environment directly once this extra is installed; `--pygbag-python` remains available for explicit interpreter selection.
 
+### `docs`
+
+```bash
+pip install "tatuy[docs]"
+```
+
+Installs MkDocs for the static documentation site. Documentation builds are contributor/site tooling and are not required by Tatuy games or exported browser targets.
+
+The repository configuration writes the documentation site to `build/web/docs/` and targets the GitHub Pages project subpath `/tatuy/docs/`.
+
 ### `cli`
 
 ```bash
@@ -90,7 +100,7 @@ Installs the optional capture, CLI, and MCP third-party dependencies together. I
 pip install "tatuy[dev]"
 ```
 
-Installs the full contributor environment: the `pygame-ce` reference backend, browser packaging (`pygbag` + PyYAML), capture, CLI/MCP dependencies, tests, formatting, type checking, and linting.
+Installs the full contributor environment: the `pygame-ce` reference backend, browser packaging (`pygbag` + PyYAML), MkDocs documentation tooling, capture, CLI/MCP dependencies, tests, formatting, type checking, and linting.
 
 For the repository's Poetry workflow, use:
 
@@ -106,6 +116,7 @@ poetry install -E dev
 | `pygame-ce` | `pygame` / `web` / `dev` | canonical Pygame distribution for desktop and verified browser packaging |
 | `pygbag` | `web` / `dev` | browser packaging tool used by the W6 adapter |
 | `pyyaml` | `config` / `web` / `dev` | layered YAML configuration and web profile loading |
+| `mkdocs` | `docs` / `dev` | static documentation-site generation |
 | `pillow` | `capture` / `tooling` | screenshot and frame image encoding |
 | `rincorpes-limen` | `cli` / `tooling` | `tatuy_cli` command framework |
 | `mcp[cli]` | `mcp` / `tooling` | Tatuy Development MCP server |

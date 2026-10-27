@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Add logical `StorageProvider` abstractions with filesystem-backed desktop persistence and ephemeral in-memory storage exposed through `ctx.storage`.
 - Add reusable web-target packaging models and a `WebTargetBuilder`/`PygbagPackager` tooling boundary for browser builds and showcase metadata.
 - Add a dedicated `web` dependency extra for browser packaging with Pygbag, PyYAML, and the canonical `pygame-ce` backend distribution.
+- Add a MkDocs documentation-site configuration with explicit public navigation, GitHub Pages subpath output, and AI/MCP internal-doc exclusions.
+- Add a dedicated `docs` dependency extra for static documentation builds.
 
 #### Changed
 
@@ -37,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Replace the one-off web staging implementation with reusable target resolution, generated browser launchers, Pygbag invocation, normalized `build/web/play/<slug>/` output, and deterministic showcase manifest generation.
 - Standardize the `pygame` and contributor extras on `pygame-ce` so desktop and browser development use one verified Pygame distribution.
 - Refresh Poetry lock metadata for the `web` extra with `pygame-ce 2.5.8`, Pygbag 0.9.3, and PyYAML.
+- Refresh Poetry lock metadata for the MkDocs `docs` extra and contributor environment after validating a real documentation-site build.
 
 ### - 2026-10-24
 

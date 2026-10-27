@@ -1,0 +1,120 @@
+site_name: Tatuy Documentation
+site_description: Documentation for the Tatuy Python-first 2D game engine.
+site_url: https://rincorpes.github.io/tatuy/docs/
+repo_url: https://github.com/rincorpes/tatuy
+repo_name: rincorpes/tatuy
+docs_dir: docs
+site_dir: build/web/docs
+use_directory_urls: true
+
+exclude_docs: |
+  ai/
+  internals/mcp/
+
+theme:
+  name: mkdocs
+  navigation_depth: 4
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Overview:
+      - Overview: overview/index.md
+      - Why Tatuy: overview/why-tatuy.md
+      - Architecture at a Glance: overview/architecture-at-a-glance.md
+      - Features: overview/features.md
+      - Roadmap: overview/roadmap.md
+  - Getting Started:
+      - Getting Started: getting-started/index.md
+      - Installation: getting-started/installation.md
+      - First Game: getting-started/first-game.md
+      - Project Structure: getting-started/project-structure.md
+  - Learn:
+      - Learn Tatuy: learn/index.md
+      - Runtime: learn/runtime.md
+      - Scenes: learn/scenes.md
+      - ECS: learn/ecs.md
+      - Entities and Components: learn/entities-and-components.md
+      - Resources: learn/resources.md
+      - Systems: learn/systems.md
+      - System Pipeline: learn/system-pipeline.md
+      - Input and Intent: learn/input-and-intent.md
+      - Movement: learn/movement.md
+      - Collisions: learn/collisions.md
+      - Bounds: learn/bounds.md
+      - Spawning and Lifecycle: learn/spawning-and-lifecycle.md
+      - Rendering: learn/rendering.md
+      - UI: learn/ui.md
+      - Effects: learn/effects.md
+      - Audio: learn/audio.md
+      - Capture and Replay: learn/capture-and-replay.md
+      - Profiling: learn/profiling.md
+  - Guides:
+      - Guides: guides/index.md
+      - Configure a Game: guides/configure-a-game.md
+      - Create a Scene: guides/create-a-scene.md
+      - Create an Entity: guides/create-an-entity.md
+      - Create a Blueprint: guides/create-a-blueprint.md
+      - Create a Game System: guides/create-a-game-system.md
+      - Create a Spawn Definition: guides/create-a-spawn-definition.md
+      - Use Resources: guides/use-resources.md
+      - Use Render Queue: guides/use-render-queue.md
+      - Use Visual Components: guides/use-visual-components.md
+      - Layers and Z-Order: guides/layers-and-z-order.md
+      - Use Collisions: guides/use-collisions.md
+      - Add World Bounds: guides/add-world-bounds.md
+      - Add Particles: guides/add-particles.md
+      - Use Trails: guides/use-trails.md
+      - Use Camera Effects: guides/use-camera-effects.md
+      - Use Screen Effects: guides/use-screen-effects.md
+      - Use Audio: guides/use-audio.md
+      - Use UI Buttons and Layout: guides/use-ui-buttons-and-layout.md
+      - Record a Replay: guides/record-a-replay.md
+      - Profile a Game: guides/profile-a-game.md
+      - Debug System Order: guides/debug-system-order.md
+  - Architecture:
+      - Architecture: architecture/index.md
+      - Game Authoring Contract: architecture/game-authoring-contract.md
+      - Configuration: architecture/configuration.md
+      - Frame Lifecycle: architecture/frame-lifecycle.md
+      - Scene Stack: architecture/scene-stack.md
+      - ECS: architecture/ecs.md
+      - System Pipeline: architecture/system-pipeline.md
+      - Structural Commits: architecture/structural-commits.md
+      - Feature Composition: architecture/feature-composition.md
+      - Kernels: architecture/kernels.md
+      - Render Pipeline: architecture/render-pipeline.md
+      - Services: architecture/services.md
+      - Backend Boundary: architecture/backend-boundary.md
+      - Package Ownership: architecture/package-ownership.md
+  - Internals:
+      - Internals: internals/index.md
+      - Runtime Dependencies: internals/runtime-dependencies.md
+      - Dependency Constraints: internals/dependency-constraints.md
+      - Engine:
+          - Engine Internals: internals/engine/index.md
+          - Engine: internals/engine/engine.md
+          - Runtime Services: internals/engine/runtime-services.md
+          - Runtime Feature Composition: internals/engine/runtime-feature-composition.md
+          - System Pipeline: internals/engine/system-pipeline.md
+          - Built-ins: internals/engine/builtins.md
+          - Scene Service: internals/engine/scene-service.md
+          - Commands: internals/engine/commands.md
+          - Render Pipeline: internals/engine/render-pipeline.md
+          - Kernel Conventions: internals/engine/kernel-conventions.md
+      - Backend:
+          - Backend Internals: internals/backend/index.md
+          - Architecture: internals/backend/architecture.md
+          - Configuration: internals/backend/configuration.md
+          - Discovery and Construction: internals/backend/discovery-and-construction.md
+          - Lifecycle: internals/backend/lifecycle.md
+          - Implementing a Backend: internals/backend/implementing-a-backend.md
+  - Examples:
+      - Examples: examples/index.md
+      - Games: examples/games.md
+      - Experiments: examples/experiments.md

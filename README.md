@@ -101,7 +101,16 @@ For browser packaging/build tooling:
 pip install "tatuy[web]"
 ```
 
-The minimal `tatuy` install intentionally excludes the Pygame backend, browser packaging, capture, CLI, and MCP dependencies. See [`docs/internals/runtime-dependencies.md`](docs/internals/runtime-dependencies.md) for the extras model.
+For the documentation site:
+
+```bash
+pip install "tatuy[docs]"
+mkdocs serve
+```
+
+The static documentation build is written to `build/web/docs/` and is configured for the GitHub Pages project subpath `/tatuy/docs/`.
+
+The minimal `tatuy` install intentionally excludes the Pygame backend, browser packaging, documentation-site tooling, capture, CLI, and MCP dependencies. See [`docs/internals/runtime-dependencies.md`](docs/internals/runtime-dependencies.md) for the extras model.
 
 A desktop environment is required for interactive Pygame examples.
 
