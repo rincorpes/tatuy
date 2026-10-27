@@ -5,6 +5,7 @@ from unittest.mock import Mock
 from tatuy.capture.null import NullCaptureService
 from tatuy.engine.runtime import services as module
 from tatuy.replay.null import NullReplayService
+from tatuy.storage.ephemeral import EphemeralStorageProvider
 
 
 def test_defaults_keep_capture_enabled(monkeypatch):
@@ -74,3 +75,18 @@ def test_defaults_preserve_explicit_asset_provider():
     )
 
     assert services.assets is assets
+
+
+def test_defaults_preserve_explicit_storage_provider():
+    backend = Mock()
+    storage = EphemeralStorageProvider()
+
+    services = module.RuntimeServices.defaults(
+        backend,
+        capture_enabled=False,
+        replay_enabled=False,
+        storage=storage,
+    )
+
+    assert services.storage is storage
+    assert services.storage.persistent is False

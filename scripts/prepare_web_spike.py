@@ -24,6 +24,7 @@ PURE_PYTHON_PACKAGES = ("onomasticon",)
 WEB_RUNTIME_OVERRIDES: dict[str, Any] = {
     "backend": {"audio": {"enabled": False, "auto_init": False}},
     "capabilities": {"capture": False, "replay": False},
+    "storage": {"provider": "ephemeral"},
 }
 
 

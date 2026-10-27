@@ -65,6 +65,7 @@ def test_prepare_bundles_canonical_target_tatuy_and_dependencies(
     assert "'capture': False" in launcher
     assert "'replay': False" in launcher
     assert "'audio': {'enabled': False, 'auto_init': False}" in launcher
+    assert "'storage': {'provider': 'ephemeral'}" in launcher
     assert (result / "app.py").exists()
     assert (result / "assets" / "sound.wav").read_bytes() == b"audio-bytes"
     assert (result / "assets" / "sprite.png").read_bytes() == b"image-bytes"

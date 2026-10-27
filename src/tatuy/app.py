@@ -33,6 +33,8 @@ from tatuy.replay.contracts import ReplayCapability
 from tatuy.replay.factory import create_replay_capability
 from tatuy.resources import ResourceStore
 from tatuy.settings import SettingsRegistry
+from tatuy.storage.contracts import StorageProvider
+from tatuy.storage.factory import create_storage_provider
 from tatuy.tooling.profiler import profiler
 from tatuy.tooling.profiler.profiler import ProfilerConfig
 from tatuy.window.service import WindowService
@@ -50,9 +52,17 @@ class RuntimeCapabilitiesConfigDict(TypedDict, total=False):
     replay: bool
 
 
+class StorageConfigDict(TypedDict, total=False):
+    """Host storage provider selection and filesystem root."""
+
+    provider: str
+    root: str
+
+
 class TatuyConfigDict(TypedDict, total=False):
     app: ApplicationConfigDict
     capabilities: RuntimeCapabilitiesConfigDict
+    storage: StorageConfigDict
     backend: dict[str, Any]
     engine: dict[str, Any]
     settings: dict[str, dict[str, Any]]
@@ -102,6 +112,18 @@ class RuntimeCapabilitiesConfig:
         return cls(**config)
 
 
+@dataclass(frozen=True, slots=True)
+class StorageConfig:
+    """Select the runtime storage provider used by game-facing code."""
+
+    provider: str = "filesystem"
+    root: str = ".tatuy/storage"
+
+    @classmethod
+    def from_dict(cls, config: StorageConfigDict) -> StorageConfig:
+        return cls(**config)
+
+
 class TatuyApp:
 
     _loop_types = {
@@ -114,12 +136,22 @@ class TatuyApp:
         config: TatuyConfigDict | None = None,
         *,
         assets: AssetProvider | None = None,
+        storage: StorageProvider | None = None,
     ):
         self.config: TatuyConfigDict = config if config is not None else {}
         self.assets = assets or FilesystemAssetProvider()
         self.app_config = self._get_app_config(self.config or {})
         self.capabilities_config = self._get_capabilities_config(
             self.config or {}
+        )
+        self.storage_config = self._get_storage_config(self.config or {})
+        self.storage = (
+            storage
+            if storage is not None
+            else create_storage_provider(
+                self.storage_config.provider,
+                root=self.storage_config.root,
+            )
         )
         self.resources = ResourceStore()
 
@@ -178,6 +210,12 @@ class TatuyApp:
             return RuntimeCapabilitiesConfig()
         return RuntimeCapabilitiesConfig.from_dict(capabilities_config_dict)
 
+    def _get_storage_config(self, config: TatuyConfigDict) -> StorageConfig:
+        storage_config_dict = config.get("storage")
+        if storage_config_dict is None:
+            return StorageConfig()
+        return StorageConfig.from_dict(storage_config_dict)
+
     def create_backend(self) -> Backend:
         return BackendFactory.create(
             self.app_config.backend, self.config.get("backend", {})
@@ -225,6 +263,7 @@ class TatuyApp:
                 replay=replay_service,
                 audio=audio_service,
                 assets=self.assets,
+                storage=self.storage,
             ),
         )
 

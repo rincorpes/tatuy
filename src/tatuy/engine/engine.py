@@ -110,6 +110,7 @@ class Engine:
                 viewport=self.services.viewport.state,
                 audio=self.services.audio,
                 assets=self.services.assets,
+                storage=self.services.storage,
                 commands=self.commands,
                 resources=self._resources,
             )

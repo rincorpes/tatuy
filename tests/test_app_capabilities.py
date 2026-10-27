@@ -8,6 +8,8 @@ from tatuy.engine.runtime.loop.asyncio_loop import AsyncioLoop
 from tatuy.replay.null import NullReplayService
 from tatuy.engine.runtime.loop.python_loop import PythonLoop
 from tatuy.engine.runtime.runtime import Runtime
+from tatuy.storage.ephemeral import EphemeralStorageProvider
+from tatuy.storage.filesystem import FilesystemStorageProvider
 
 
 def test_capture_capability_is_enabled_by_default(monkeypatch):
@@ -79,6 +81,30 @@ def test_replay_capability_can_be_disabled_independently(monkeypatch):
         enabled=False,
         settings=app.resources.get(app_module.ReplaySettings),
     )
+
+
+def test_filesystem_storage_is_the_desktop_default():
+    app = app_module.TatuyApp()
+
+    assert app.storage_config.provider == "filesystem"
+    assert app.storage_config.root == ".tatuy/storage"
+    assert isinstance(app.storage, FilesystemStorageProvider)
+    assert app.storage.persistent is True
+
+
+def test_ephemeral_storage_can_be_selected_for_nonpersistent_hosts():
+    app = app_module.TatuyApp({"storage": {"provider": "ephemeral"}})
+
+    assert app.storage_config.provider == "ephemeral"
+    assert isinstance(app.storage, EphemeralStorageProvider)
+    assert app.storage.persistent is False
+
+
+def test_storage_provider_can_be_injected_by_host():
+    storage = EphemeralStorageProvider()
+    app = app_module.TatuyApp(storage=storage)
+
+    assert app.storage is storage
 
 
 def test_python_loop_remains_the_default_loop():

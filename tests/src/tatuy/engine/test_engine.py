@@ -19,12 +19,13 @@ def runtime(monkeypatch):
     return engine, backend, services, bus
 
 
-def test_start_exposes_runtime_assets_to_scene_context(runtime):
+def test_start_exposes_runtime_assets_and_storage_to_scene_context(runtime):
     engine, _, services, _ = runtime
 
     engine.start()
 
     assert engine.scene_context.assets is services.assets
+    assert engine.scene_context.storage is services.storage
     engine.stop()
 
 

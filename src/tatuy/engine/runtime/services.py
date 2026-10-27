@@ -18,6 +18,8 @@ from tatuy.graphics.viewport.service import ViewportService
 from tatuy.input.service import InputService
 from tatuy.replay.contracts import ReplayCapability
 from tatuy.replay.factory import create_replay_capability
+from tatuy.storage.contracts import StorageProvider
+from tatuy.storage.filesystem import FilesystemStorageProvider
 from tatuy.window.service import WindowService
 
 
@@ -39,6 +41,7 @@ class RuntimeServices:
     replay: ReplayCapability = field(kw_only=True)
     audio: AudioService = field(kw_only=True)
     assets: AssetProvider = field(kw_only=True)
+    storage: StorageProvider = field(kw_only=True)
 
     @classmethod
     def defaults(
@@ -48,6 +51,7 @@ class RuntimeServices:
         capture_enabled: bool = True,
         replay_enabled: bool = True,
         assets: AssetProvider | None = None,
+        storage: StorageProvider | None = None,
     ) -> RuntimeServices:
         capture = create_capture_capability(
             backend,
@@ -63,4 +67,5 @@ class RuntimeServices:
             replay=replay,
             audio=AudioService(backend),
             assets=assets or FilesystemAssetProvider(),
+            storage=storage or FilesystemStorageProvider(),
         )

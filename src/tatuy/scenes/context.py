@@ -13,6 +13,7 @@ from tatuy.graphics.render.queue import RenderQueue
 from tatuy.graphics.viewport.state import ViewportState
 from tatuy.input.frame import InputFrame
 from tatuy.resources import ResourceStore
+from tatuy.storage.contracts import StorageProvider
 
 TIntent = TypeVar("TIntent", bound="Intent")
 TContext = TypeVar("TContext", bound="SceneTickContext")
@@ -40,6 +41,7 @@ class SceneContext:
     viewport: ViewportState
     audio: AudioService = field(kw_only=True)
     assets: AssetProvider = field(kw_only=True)
+    storage: StorageProvider = field(kw_only=True)
     commands: EngineCommandQueue = field(default_factory=EngineCommandQueue)
     resources: ResourceStore = field(default_factory=ResourceStore)
     replay_header: ReplayHeader | None = None
