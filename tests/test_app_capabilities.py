@@ -6,7 +6,7 @@ from tatuy import app as app_module
 from tatuy.capture.null import NullCaptureService
 from tatuy.engine.runtime.loop.asyncio_loop import AsyncioLoop
 from tatuy.engine.runtime.loop.python_loop import PythonLoop
-from tatuy.engine.runtime.runtime import AsyncRuntime
+from tatuy.engine.runtime.runtime import Runtime
 
 
 def test_capture_capability_is_enabled_by_default(monkeypatch):
@@ -45,26 +45,35 @@ def test_capture_capability_can_be_disabled(monkeypatch):
     )
 
 
-def test_sync_loop_remains_default_and_async_loop_is_separate():
+def test_python_loop_remains_the_default_loop():
     app = app_module.TatuyApp()
 
     assert app.app_config.loop == "python"
-    assert app.app_config.async_loop == "asyncio"
     assert isinstance(app.get_loop(), PythonLoop)
-    assert isinstance(app.get_async_loop(), AsyncioLoop)
 
 
-def test_build_async_uses_explicit_async_runtime(monkeypatch):
-    app = app_module.TatuyApp({"capabilities": {"capture": False}})
+def test_asyncio_loop_uses_the_same_loop_setting():
+    app = app_module.TatuyApp({"app": {"loop": "asyncio"}})
+
+    assert app.app_config.loop == "asyncio"
+    assert isinstance(app.get_loop(), AsyncioLoop)
+
+
+def test_build_returns_one_runtime_with_configured_execution_mode(monkeypatch):
+    app = app_module.TatuyApp(
+        {
+            "app": {"loop": "asyncio"},
+            "capabilities": {"capture": False},
+        }
+    )
     backend = object()
-    engine = object()
-    loop = object()
+    engine = Mock(config=app_module.EngineConfig())
     monkeypatch.setattr(app, "create_backend", Mock(return_value=backend))
     monkeypatch.setattr(app, "create_engine", Mock(return_value=engine))
-    monkeypatch.setattr(app, "get_async_loop", Mock(return_value=loop))
 
-    runtime = app.build_async()
+    runtime = app.build()
 
-    assert isinstance(runtime, AsyncRuntime)
+    assert isinstance(runtime, Runtime)
     assert runtime.engine is engine
-    assert runtime.loop is loop
+    assert isinstance(runtime.loop, AsyncioLoop)
+    assert runtime.mode == "async"

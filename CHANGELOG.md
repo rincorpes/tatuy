@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+### - 2026-10-27
+
+#### Added
+
+- Add explicit synchronous and asynchronous runtime hosts so application composition is independent from host execution semantics.
+- Add layered YAML configuration loading with deterministic recursive mapping merges and profile overlays.
+- Add a `web` configuration profile for the canonical render-queue fundamental and tests for layered configuration precedence.
+
+#### Changed
+
+- Unify Tatuy application loop selection around one `app.loop` setting, one loop registry, one `get_loop()`, and one `build()` path.
+- Keep `TatuyApp.run()` as the desktop convenience path while moving cooperative async execution to the runtime host boundary.
+- Update the browser spike tooling to package the canonical render-queue fundamental through `create_app()` and a generated web launcher instead of relying on duplicated web-specific game code.
+- Add optional PyYAML configuration support without making YAML parsing part of the browser runtime.
+
 ### - 2026-10-24
 
 #### Added

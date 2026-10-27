@@ -1,25 +1,25 @@
-import asyncio
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import Mock
 
-from tatuy.engine.runtime.runtime import AsyncRuntime, Runtime
+from tatuy.engine.runtime.runtime import Runtime
 
 
-def test_run_delegates_engine_to_configured_loop():
+def test_runtime_records_synchronous_execution_mode():
     engine = Mock()
     loop = Mock()
-    runtime = Runtime(engine=engine, loop=loop)
 
-    runtime.run()
+    runtime = Runtime(engine=engine, loop=loop, mode="sync")
 
-    loop.run.assert_called_once_with(engine)
+    assert runtime.engine is engine
+    assert runtime.loop is loop
+    assert runtime.mode == "sync"
 
 
-def test_async_run_delegates_engine_to_configured_loop():
+def test_runtime_records_asynchronous_execution_mode():
     engine = Mock()
     loop = Mock()
-    loop.run = AsyncMock()
-    runtime = AsyncRuntime(engine=engine, loop=loop)
 
-    asyncio.run(runtime.run())
+    runtime = Runtime(engine=engine, loop=loop, mode="async")
 
-    loop.run.assert_awaited_once_with(engine)
+    assert runtime.engine is engine
+    assert runtime.loop is loop
+    assert runtime.mode == "async"

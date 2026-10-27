@@ -6,9 +6,18 @@ import hashlib
 import importlib.util
 import shutil
 from pathlib import Path
+from typing import Any
+
+from tatuy.configuration import ConfigurationLoader
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
-SOURCE_TARGET = REPOSITORY_ROOT / "examples" / "web" / "001_render_queue"
+SOURCE_TARGET = (
+    REPOSITORY_ROOT
+    / "examples"
+    / "fundamentals"
+    / "009_rendering"
+    / "002_render_queue"
+)
 TATUY_SOURCE = REPOSITORY_ROOT / "src" / "tatuy"
 STAGING_BASE = REPOSITORY_ROOT / ".tatuy" / "web-spike"
 PURE_PYTHON_PACKAGES = ("onomasticon",)
@@ -67,6 +76,33 @@ def _copy_package(package_name: str, staging_root: Path) -> None:
     )
 
 
+def _browser_launcher(config: dict[str, Any]) -> str:
+    """Return a generated cooperative launcher for the canonical target."""
+    return f'''"""Generated Pygbag launcher for a canonical Tatuy target."""
+
+from __future__ import annotations
+
+import asyncio
+
+# Pygbag discovers WASM packages from top-level imports in main.py.
+import pygame
+
+from app import create_app
+from tatuy.engine.runtime.host import AsyncRuntimeHost
+
+PYGAME_PRELOAD = pygame
+WEB_CONFIG = {config!r}
+
+
+async def main() -> None:
+    app = create_app(WEB_CONFIG)
+    await AsyncRuntimeHost().run(app.build())
+
+
+asyncio.run(main())
+'''
+
+
 def prepare() -> Path:
     """Create a cache-safe Pygbag project containing Tatuy and dependencies."""
     STAGING_BASE.mkdir(parents=True, exist_ok=True)
@@ -81,7 +117,15 @@ def prepare() -> Path:
         STAGING_BASE / f"{SOURCE_TARGET.name}-{_content_fingerprint()}"
     )
     staging_root.mkdir()
-    shutil.copy2(SOURCE_TARGET / "main.py", staging_root / "main.py")
+
+    config = ConfigurationLoader.load_profile(
+        SOURCE_TARGET / "tatuy.yml", "web"
+    )
+    (staging_root / "main.py").write_text(
+        _browser_launcher(config),
+        encoding="utf-8",
+    )
+    shutil.copy2(SOURCE_TARGET / "app.py", staging_root / "app.py")
     shutil.copytree(
         TATUY_SOURCE,
         staging_root / "tatuy",

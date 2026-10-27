@@ -30,6 +30,9 @@ dependencies = [
 pygame = [
     "pygame (>=2.6.1,<3.0.0)",
 ]
+config = [
+    "pyyaml (>=6.0.2,<7.0.0)",
+]
 capture = [
     "pillow (>=12.3.0,<13.0.0)",
 ]
@@ -48,6 +51,7 @@ tooling = [
 ]
 dev = [
     "pygame (>=2.6.1,<3.0.0)",
+    "pyyaml (>=6.0.2,<7.0.0)",
     "pillow (>=12.3.0,<13.0.0)",
     "rincorpes-limen (>=0.1.1,<0.2.0)",
     "mcp[cli] (>=2.3.0,<3.0.0)",

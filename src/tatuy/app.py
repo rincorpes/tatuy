@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import gc
 from dataclasses import dataclass
-from typing import Any, TypedDict
+from typing import Any, Callable, TypedDict
 
 from tatuy.audio.service import AudioService
 from tatuy.backend.backend import Backend
@@ -17,9 +16,10 @@ from tatuy.engine.engine import Engine, EngineConfig, EnginePipelines
 from tatuy.engine.runtime.bootstrap import (
     create_default_system_pipeline_factory,
 )
+from tatuy.engine.runtime.host import SyncRuntimeHost
 from tatuy.engine.runtime.loop.asyncio_loop import AsyncioLoop
 from tatuy.engine.runtime.loop.python_loop import PythonLoop
-from tatuy.engine.runtime.runtime import AsyncRuntime, Runtime
+from tatuy.engine.runtime.runtime import Runtime, RuntimeLoopType, RuntimeMode
 from tatuy.engine.runtime.scene_composition import DefaultSceneInitializer
 from tatuy.engine.runtime.services import RuntimeServices
 from tatuy.engine.scene import SceneService
@@ -29,7 +29,6 @@ from tatuy.input.service import InputService
 from tatuy.resources import ResourceStore
 from tatuy.settings import SettingsRegistry
 from tatuy.tooling.profiler import profiler
-from tatuy.tooling.profiler.export import export_profile
 from tatuy.tooling.profiler.profiler import ProfilerConfig
 from tatuy.window.service import WindowService
 
@@ -37,7 +36,6 @@ from tatuy.window.service import WindowService
 class ApplicationConfigDict(TypedDict, total=False):
     backend: str
     loop: str
-    async_loop: str
 
 
 class RuntimeCapabilitiesConfigDict(TypedDict, total=False):
@@ -59,11 +57,27 @@ class TatuyConfigDict(TypedDict, total=False):
 class ApplicationConfig:
     backend: str = "pygame"
     loop: str = "python"
-    async_loop: str = "asyncio"
 
     @classmethod
     def from_dict(cls, config: ApplicationConfigDict) -> ApplicationConfig:
         return cls(**config)
+
+
+@dataclass(frozen=True, slots=True)
+class LoopDefinition:
+    """Describe how one configured loop is created and hosted."""
+
+    mode: RuntimeMode
+    factory: Callable[[EngineConfig], RuntimeLoopType]
+
+
+def _create_python_loop(config: EngineConfig) -> PythonLoop:
+    return PythonLoop(target_fps=config.fps)
+
+
+def _create_asyncio_loop(config: EngineConfig) -> AsyncioLoop:
+    del config
+    return AsyncioLoop()
 
 
 @dataclass(frozen=True, slots=True)
@@ -83,8 +97,10 @@ class RuntimeCapabilitiesConfig:
 
 class TatuyApp:
 
-    _loop_types = {"python": PythonLoop}
-    _async_loop_types = {"asyncio": AsyncioLoop}
+    _loop_types = {
+        "python": LoopDefinition("sync", _create_python_loop),
+        "asyncio": LoopDefinition("async", _create_asyncio_loop),
+    }
 
     def __init__(
         self,
@@ -191,85 +207,31 @@ class TatuyApp:
             ),
         )
 
-    def get_loop(self) -> PythonLoop:
-        """Build the configured synchronous runtime loop."""
-        loop_type = self._loop_types.get(self.app_config.loop)
-
-        if loop_type is None:
+    def _get_loop_definition(self) -> LoopDefinition:
+        definition = self._loop_types.get(self.app_config.loop)
+        if definition is None:
             raise ValueError(f"Unknown loop: {self.app_config.loop}")
+        return definition
 
+    def get_loop(self) -> RuntimeLoopType:
+        """Build the configured runtime loop."""
+        definition = self._get_loop_definition()
         engine_config = EngineConfig.from_dict(self.config.get("engine", {}))
-
-        return loop_type(target_fps=engine_config.fps)
-
-    def get_async_loop(self) -> AsyncioLoop:
-        """Build the configured asynchronous runtime loop."""
-        loop_type = self._async_loop_types.get(self.app_config.async_loop)
-
-        if loop_type is None:
-            raise ValueError(
-                f"Unknown async loop: {self.app_config.async_loop}"
-            )
-
-        return loop_type()
+        return definition.factory(engine_config)
 
     def build(self) -> Runtime:
-        """Build the default synchronous runtime without changing behavior."""
+        """Build one runtime session from the configured backend and loop."""
         backend = self.create_backend()
         engine = self.create_engine(backend)
-        loop = self.get_loop()
+        definition = self._get_loop_definition()
 
         return Runtime(
             engine=engine,
-            loop=loop,
-        )
-
-    def build_async(self) -> AsyncRuntime:
-        """Build an opt-in asynchronous runtime for cooperative hosts."""
-        backend = self.create_backend()
-        engine = self.create_engine(backend)
-        loop = self.get_async_loop()
-
-        return AsyncRuntime(
-            engine=engine,
-            loop=loop,
+            loop=definition.factory(engine.config),
+            mode=definition.mode,
         )
 
     def run(self) -> None:
-        """Run Tatuy through the unchanged synchronous desktop path."""
+        """Run a synchronously configured Tatuy application."""
         runtime = self.build()
-
-        gc.disable()
-
-        try:
-            runtime.run()
-        finally:
-            self._finalize_run()
-
-    async def run_async(self) -> None:
-        """Run Tatuy through the explicitly selected asynchronous host path."""
-        runtime = self.build_async()
-
-        gc.disable()
-
-        try:
-            await runtime.run()
-        finally:
-            self._finalize_run()
-
-    def _finalize_run(self) -> None:
-        """Restore GC state and emit profiler output after either host path."""
-        gc.collect()
-        gc.enable()
-
-        if profiler.enabled:
-            snapshot = profiler.snapshot()
-
-            export_profile(
-                snapshot,
-                ".tatuy/profiles/latest.json",
-            )
-            print(profiler.report())
-            print("\nSlowest frames")
-            print(profiler.format_slowest("frame", limit=3))
-            print("Profile written to profiles/latest.json")
+        SyncRuntimeHost().run(runtime)
