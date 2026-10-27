@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -18,7 +19,26 @@ def _prepared_output(tmp_path: Path) -> Path:
     (docs / "index.html").write_text("docs", encoding="utf-8")
     (play / "index.html").write_text("runtime", encoding="utf-8")
     (output / "manifest.json").write_text(
-        '{"targets": []}\n', encoding="utf-8"
+        """{
+  "targets": [
+    {
+      "id": "fundamentals/rendering/render-queue",
+      "slug": "render-queue",
+      "title": "Render Queue",
+      "description": "Inspect Tatuy's queued rendering path in the browser.",
+      "category": "fundamental",
+      "tags": ["rendering", "browser-playable"],
+      "source": "examples/fundamentals/009_rendering/002_render_queue",
+      "docs": "docs/learn/rendering.md",
+      "web": true,
+      "playable": true,
+      "url": "showcase/render-queue/",
+      "entrypoint": "play/render-queue/index.html"
+    }
+  ]
+}
+""",
+        encoding="utf-8",
     )
     return output
 
@@ -82,6 +102,39 @@ def test_play_page_embeds_raw_runtime_and_exposes_controls(
     assert "Audio disabled in browser-v0" in play_page
 
 
+def test_home_catalog_expands_from_manifest_without_new_site_code(
+    tmp_path: Path,
+) -> None:
+    output = _prepared_output(tmp_path)
+    manifest = output / "manifest.json"
+    payload = json.loads(manifest.read_text(encoding="utf-8"))
+    payload["targets"].append(
+        {
+            "id": "fundamentals/ecs/entities",
+            "slug": "entities",
+            "title": "Entities",
+            "description": "Inspect ECS entities.",
+            "category": "fundamental",
+            "tags": ["ecs"],
+            "source": "examples/fundamentals/004_ecs/002_entities",
+            "docs": "docs/learn/entities-and-components.md",
+            "web": False,
+            "playable": False,
+            "url": "showcase/entities/",
+            "entrypoint": "play/entities/index.html",
+        }
+    )
+    manifest.write_text(json.dumps(payload), encoding="utf-8")
+
+    ShowcaseSiteBuilder(tmp_path, output_root=output).build()
+
+    home = (output / "index.html").read_text(encoding="utf-8")
+    assert "Entities" in home
+    assert "Inspect ECS entities." in home
+    assert "004_ecs/002_entities" in home
+    assert not (output / "showcase" / "entities" / "index.html").exists()
+
+
 def test_build_requires_docs_output(tmp_path: Path) -> None:
     output = tmp_path / "build" / "web"
     playable = output / "play" / "render-queue"
@@ -95,10 +148,8 @@ def test_build_requires_docs_output(tmp_path: Path) -> None:
 
 
 def test_build_requires_featured_playable(tmp_path: Path) -> None:
-    output = tmp_path / "build" / "web"
-    docs = output / "docs"
-    docs.mkdir(parents=True)
-    (docs / "index.html").write_text("docs", encoding="utf-8")
+    output = _prepared_output(tmp_path)
+    (output / "play" / "render-queue" / "index.html").unlink()
 
     with pytest.raises(FileNotFoundError, match="Playable build not found"):
         ShowcaseSiteBuilder(tmp_path, output_root=output).build()

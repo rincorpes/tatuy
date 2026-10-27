@@ -1,7 +1,15 @@
 showcase:
+  id: fundamentals/rendering/render-queue
   slug: render-queue
   title: Render Queue
   description: Inspect Tatuy's queued rendering path in the browser.
+  category: fundamental
+  tags:
+    - rendering
+    - browser-playable
+  source: examples/fundamentals/009_rendering/002_render_queue
+  docs: docs/learn/rendering.md
+  web: true
 app:
   loop: asyncio
 capabilities:

@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import html
+import json
 import shutil
 from pathlib import Path
+from typing import Any
 
 
 class ShowcaseSiteBuilder:
@@ -23,25 +26,35 @@ class ShowcaseSiteBuilder:
         ).resolve()
 
     def build(self, *, featured_slug: str = "render-queue") -> Path:
-        """Generate the showcase shell without replacing docs or runtime bundles.
+        """Generate the showcase shell from the validated catalog manifest.
 
         Args:
-            featured_slug: Existing playable slug embedded by the featured page.
+            featured_slug: Catalog slug promoted in the home-page hero.
 
         Returns:
             Path to the composed web output root.
 
         Raises:
-            FileNotFoundError: Required docs or featured playable output is missing.
+            FileNotFoundError: Required docs, manifest, or playable output is missing.
+            ValueError: The manifest has no valid targets or the featured slug is unknown.
         """
         docs_root = self.output_root / "docs"
-        play_root = self.output_root / "play" / featured_slug
         if not (docs_root / "index.html").is_file():
             raise FileNotFoundError(
                 f"Documentation build not found: {docs_root}"
             )
-        if not (play_root / "index.html").is_file():
-            raise FileNotFoundError(f"Playable build not found: {play_root}")
+
+        entries = self._load_catalog()
+        featured = next(
+            (entry for entry in entries if entry.get("slug") == featured_slug),
+            None,
+        )
+        if featured is None:
+            raise ValueError(f"Featured showcase target not found: {featured_slug}")
+
+        for entry in entries:
+            if entry.get("playable") is True:
+                self._validate_playable(entry)
 
         assets_root = self.output_root / "assets"
         assets_root.mkdir(parents=True, exist_ok=True)
@@ -50,21 +63,68 @@ class ShowcaseSiteBuilder:
         )
         (assets_root / "site.js").write_text(self._site_js(), encoding="utf-8")
         (self.output_root / "index.html").write_text(
-            self._home_html(featured_slug), encoding="utf-8"
+            self._home_html(entries, featured), encoding="utf-8"
         )
 
-        showcase_root = self.output_root / "showcase" / featured_slug
+        showcase_root = self.output_root / "showcase"
         if showcase_root.exists():
             shutil.rmtree(showcase_root)
-        showcase_root.mkdir(parents=True)
-        (showcase_root / "index.html").write_text(
-            self._play_html(featured_slug), encoding="utf-8"
-        )
+        for entry in entries:
+            if entry.get("playable") is not True:
+                continue
+            slug = str(entry["slug"])
+            target_root = showcase_root / slug
+            target_root.mkdir(parents=True, exist_ok=True)
+            (target_root / "index.html").write_text(
+                self._play_html(entry), encoding="utf-8"
+            )
         (self.output_root / ".nojekyll").touch()
         return self.output_root
 
-    @staticmethod
-    def _home_html(featured_slug: str) -> str:
+    def _load_catalog(self) -> list[dict[str, Any]]:
+        """Load the generated showcase manifest used as the site source of truth.
+
+        Returns:
+            Non-empty list of catalog entry mappings.
+
+        Raises:
+            FileNotFoundError: The catalog manifest has not been generated.
+            ValueError: The manifest does not contain a non-empty target list.
+        """
+        manifest = self.output_root / "manifest.json"
+        if not manifest.is_file():
+            raise FileNotFoundError(f"Showcase manifest not found: {manifest}")
+        payload = json.loads(manifest.read_text(encoding="utf-8"))
+        targets = payload.get("targets")
+        if not isinstance(targets, list) or not targets:
+            raise ValueError("Showcase manifest must contain at least one target")
+        entries = [entry for entry in targets if isinstance(entry, dict)]
+        if len(entries) != len(targets):
+            raise ValueError("Showcase manifest targets must be mappings")
+        return entries
+
+    def _validate_playable(self, entry: dict[str, Any]) -> None:
+        """Validate one catalog entrypoint before generating its wrapper page."""
+        entrypoint = entry.get("entrypoint")
+        if not isinstance(entrypoint, str) or not entrypoint:
+            raise ValueError("Playable showcase entry is missing its entrypoint")
+        resolved = (self.output_root / entrypoint).resolve()
+        try:
+            resolved.relative_to(self.output_root)
+        except ValueError as exc:
+            raise ValueError("Playable entrypoint escapes web output") from exc
+        if not resolved.is_file():
+            raise FileNotFoundError(f"Playable build not found: {resolved}")
+
+    @classmethod
+    def _home_html(
+        cls,
+        entries: list[dict[str, Any]],
+        featured: dict[str, Any],
+    ) -> str:
+        featured_slug = html.escape(str(featured["slug"]), quote=True)
+        featured_title = html.escape(str(featured["title"]))
+        cards = "\n".join(cls._card_html(entry) for entry in entries)
         return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -84,23 +144,15 @@ class ShowcaseSiteBuilder:
     <p class="eyebrow">Python-first · 2D · explicit architecture</p>
     <h1>Build games in Python without hiding how the engine works.</h1>
     <p class="lede">Scenes, ECS, explicit system phases, reusable gameplay features, and replaceable runtime boundaries.</p>
-    <div class="actions"><a class="button primary" href="./showcase/{featured_slug}/">Play Render Queue</a><a class="button" href="./docs/">Read the docs</a></div>
+    <div class="actions"><a class="button primary" href="./showcase/{featured_slug}/">Play {featured_title}</a><a class="button" href="./docs/">Read the docs</a></div>
   </section>
   <section class="architecture">
     <div><p class="eyebrow">Architecture</p><h2>Game code stays separate from the host.</h2></div>
     <pre>Game\n  ↓\nScenes + Game Systems\n  ↓\nECS + Engine Features\n  ↓\nSystem / Render Pipelines\n  ↓\nBackend + Runtime Host</pre>
   </section>
   <section id="showcase" class="showcase">
-    <div class="section-heading"><div><p class="eyebrow">Browser showcase</p><h2>Featured playable</h2></div><span class="status">Early web preview</span></div>
-    <article class="card featured-card">
-      <div class="card-preview"><span>Render Queue</span></div>
-      <div class="card-body">
-        <div class="tags"><span>Fundamental</span><span>Rendering</span><span>Browser playable</span></div>
-        <h3>Render Queue</h3>
-        <p>Inspect Tatuy's queued rendering path through the same canonical target used on desktop.</p>
-        <div class="actions"><a class="button primary" href="./showcase/{featured_slug}/">Play</a><a class="button" href="https://github.com/rincorpes/tatuy/tree/main/examples/fundamentals/009_rendering/002_render_queue">Source</a><a class="button" href="./docs/learn/rendering/">Rendering docs</a></div>
-      </div>
-    </article>
+    <div class="section-heading"><div><p class="eyebrow">Browser showcase</p><h2>Catalog</h2></div><span class="status">Generated from target metadata</span></div>
+    <div class="catalog-grid">{cards}</div>
   </section>
   <section class="project-status"><p class="eyebrow">Project status</p><h2>Experimental by design.</h2><p>Tatuy is alpha software. The Python foundation, browser host, examples, documentation, and future native runtime are evolving together.</p></section>
 </main>
@@ -109,28 +161,85 @@ class ShowcaseSiteBuilder:
 </html>
 """
 
-    @staticmethod
-    def _play_html(featured_slug: str) -> str:
+    @classmethod
+    def _card_html(cls, entry: dict[str, Any]) -> str:
+        title = html.escape(str(entry["title"]))
+        description = html.escape(str(entry.get("description", "")))
+        category = html.escape(str(entry.get("category", "target")).title())
+        slug = html.escape(str(entry["slug"]), quote=True)
+        tags_value = entry.get("tags", [])
+        tags = tags_value if isinstance(tags_value, list) else []
+        tags_html = "".join(
+            f"<span>{html.escape(str(tag))}</span>" for tag in tags
+        )
+        actions: list[str] = []
+        if entry.get("playable") is True:
+            actions.append(
+                f'<a class="button primary" href="./showcase/{slug}/">Play</a>'
+            )
+        source = html.escape(str(entry["source"]), quote=True)
+        actions.append(
+            '<a class="button" href="https://github.com/rincorpes/tatuy/tree/main/'
+            f'{source}">Source</a>'
+        )
+        docs = entry.get("docs")
+        if isinstance(docs, str) and docs:
+            actions.append(
+                f'<a class="button" href="{cls._docs_href(docs, prefix="./")}">Docs</a>'
+            )
+        return f"""<article class="card">
+  <div class="card-preview"><span>{title}</span></div>
+  <div class="card-body">
+    <div class="tags"><span>{category}</span>{tags_html}</div>
+    <h3>{title}</h3>
+    <p>{description}</p>
+    <div class="actions">{"".join(actions)}</div>
+  </div>
+</article>"""
+
+    @classmethod
+    def _play_html(cls, entry: dict[str, Any]) -> str:
+        title = html.escape(str(entry["title"]))
+        description = html.escape(str(entry.get("description", "")))
+        category = html.escape(str(entry.get("category", "target")).title())
+        source = html.escape(str(entry["source"]), quote=True)
+        entrypoint = html.escape(str(entry["entrypoint"]), quote=True)
+        docs = entry.get("docs")
+        docs_link = ""
+        if isinstance(docs, str) and docs:
+            docs_link = (
+                f'<a class="button" href="{cls._docs_href(docs, prefix="../../")}">Docs</a>'
+            )
         return f"""<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Render Queue - Tatuy</title>
+  <title>{title} - Tatuy</title>
   <link rel="stylesheet" href="../../assets/site.css">
 </head>
 <body class="play-page">
 <header class="site-header"><a class="brand" href="../../">Tatuy</a><nav><a href="../../docs/">Docs</a><a href="https://github.com/rincorpes/tatuy">GitHub</a></nav></header>
 <main class="play-main">
-  <section class="play-heading"><p class="eyebrow">Rendering fundamental</p><h1>Render Queue</h1><p>Inspect Tatuy's queued rendering path in the browser. Browser-v0 runs without audio, capture, or persistent storage.</p></section>
-  <div class="runtime-frame"><iframe id="tatuy-runtime" title="Tatuy Render Queue runtime" src="../../play/{featured_slug}/index.html" allow="fullscreen"></iframe></div>
+  <section class="play-heading"><p class="eyebrow">{category}</p><h1>{title}</h1><p>{description} Browser-v0 runs without audio, capture, or persistent storage.</p></section>
+  <div class="runtime-frame"><iframe id="tatuy-runtime" title="Tatuy {title} runtime" src="../../{entrypoint}" allow="fullscreen"></iframe></div>
   <div class="play-controls"><button type="button" data-action="restart">Restart</button><button type="button" data-action="fullscreen">Fullscreen</button><span class="status">Audio disabled in browser-v0</span></div>
-  <div class="actions"><a class="button" href="../../docs/learn/rendering/">Rendering docs</a><a class="button" href="https://github.com/rincorpes/tatuy/tree/main/examples/fundamentals/009_rendering/002_render_queue">Source</a></div>
+  <div class="actions">{docs_link}<a class="button" href="https://github.com/rincorpes/tatuy/tree/main/{source}">Source</a></div>
 </main>
 <script src="../../assets/site.js"></script>
 </body>
 </html>
 """
+
+    @staticmethod
+    def _docs_href(docs: str, *, prefix: str) -> str:
+        relative = docs.removeprefix("docs/")
+        if relative.endswith(".md"):
+            relative = relative[:-3]
+        if relative.endswith("/index"):
+            relative = relative[:-5]
+        relative = relative.strip("/")
+        return f"{prefix}docs/{relative}/" if relative else f"{prefix}docs/"
 
     @staticmethod
     def _site_js() -> str:
@@ -171,7 +280,8 @@ pre { margin: 0; padding: 28px; border-radius: 14px; background: #111827; color:
 .showcase, .project-status { padding: 88px 0 24px; }
 .section-heading { display: flex; align-items: end; justify-content: space-between; gap: 24px; }
 .status { color: #8b9bb0; font-size: .9rem; }
-.featured-card { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); margin-top: 30px; border: 1px solid #273244; border-radius: 18px; overflow: hidden; background: rgba(17,24,39,.82); }
+.catalog-grid { display: grid; gap: 24px; margin-top: 30px; }
+.card { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); border: 1px solid #273244; border-radius: 18px; overflow: hidden; background: rgba(17,24,39,.82); }
 .card-preview { min-height: 320px; display: grid; place-items: center; background: repeating-linear-gradient(135deg, #111827 0 20px, #172033 20px 40px); font-size: 2rem; font-weight: 800; }
 .card-body { padding: 40px; }
 .card-body p { color: #aeb9c8; line-height: 1.65; }
@@ -184,5 +294,5 @@ footer { border-top: 1px solid #273244; color: #8b9bb0; }
 .runtime-frame iframe { width: 100%; height: 100%; border: 0; display: block; }
 .play-controls { display: flex; align-items: center; gap: 12px; margin-top: 16px; }
 .play-controls .status { margin-left: auto; }
-@media (max-width: 760px) { .architecture, .featured-card { grid-template-columns: 1fr; } .site-header { align-items: flex-start; } .site-header nav { gap: 12px; flex-wrap: wrap; justify-content: end; } main { padding-inline: 20px; } h1 { font-size: 3.4rem; } .play-controls { align-items: flex-start; flex-wrap: wrap; } .play-controls .status { width: 100%; margin-left: 0; } }
+@media (max-width: 760px) { .architecture, .card { grid-template-columns: 1fr; } .site-header { align-items: flex-start; } .site-header nav { gap: 12px; flex-wrap: wrap; justify-content: end; } main { padding-inline: 20px; } h1 { font-size: 3.4rem; } .play-controls { align-items: flex-start; flex-wrap: wrap; } .play-controls .status { width: 100%; margin-left: 0; } }
 """

@@ -110,7 +110,7 @@ mkdocs serve
 
 The static documentation build is written to `build/web/docs/` and is configured for the GitHub Pages project subpath `/tatuy/docs/`.
 
-To compose the first browser showcase locally, build the docs and featured playable first, then generate the shell:
+To compose the browser showcase locally, build the docs and browser targets first, then generate the catalog-driven shell:
 
 ```bash
 poetry run mkdocs build
@@ -118,7 +118,7 @@ poetry run python scripts/build_web_target.py
 poetry run python scripts/build_showcase_site.py
 ```
 
-The composed static site lives under `build/web/`, with docs in `docs/`, raw browser runtimes in `play/`, and human-facing iframe wrappers in `showcase/`.
+`build_showcase_site.py` regenerates the validated showcase catalog before rendering the shell. The composed static site lives under `build/web/`, with docs in `docs/`, raw browser runtimes in `play/`, generated catalog metadata in `manifest.json`, and human-facing iframe wrappers in `showcase/`.
 
 The minimal `tatuy` install intentionally excludes the Pygame backend, browser packaging, documentation-site tooling, capture, CLI, and MCP dependencies. See [`docs/internals/runtime-dependencies.md`](docs/internals/runtime-dependencies.md) for the extras model.
 

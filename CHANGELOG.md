@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Add a MkDocs documentation-site configuration with explicit public navigation, GitHub Pages subpath output, and AI/MCP internal-doc exclusions.
 - Add a dedicated `docs` dependency extra for static documentation builds.
 - Add a framework-free static showcase shell with a Tatuy landing page and iframe-based Render Queue play page.
+- Add deterministic showcase catalog discovery and validation for declared target metadata, source/docs references, and browser bundles.
 
 #### Changed
 
@@ -41,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Standardize the `pygame` and contributor extras on `pygame-ce` so desktop and browser development use one verified Pygame distribution.
 - Refresh Poetry lock metadata for the `web` extra with `pygame-ce 2.5.8`, Pygbag 0.9.3, and PyYAML.
 - Refresh Poetry lock metadata for the MkDocs `docs` extra and contributor environment after validating a real documentation-site build.
+- Generate showcase cards and playable wrapper pages from the validated catalog manifest instead of hard-coded target data.
 
 ### - 2026-10-24
 
