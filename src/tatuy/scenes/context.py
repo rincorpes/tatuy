@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Generic, TypeVar
 
+from tatuy.assets.contracts import AssetProvider
 from tatuy.audio.service import AudioService
 from tatuy.capture.replay_header import ReplayHeader
 from tatuy.commands import EngineCommandQueue
@@ -38,6 +39,7 @@ class Intent:
 class SceneContext:
     viewport: ViewportState
     audio: AudioService = field(kw_only=True)
+    assets: AssetProvider = field(kw_only=True)
     commands: EngineCommandQueue = field(default_factory=EngineCommandQueue)
     resources: ResourceStore = field(default_factory=ResourceStore)
     replay_header: ReplayHeader | None = None

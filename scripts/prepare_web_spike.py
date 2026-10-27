@@ -87,6 +87,8 @@ def _browser_launcher(config: dict[str, Any]) -> str:
 from __future__ import annotations
 
 import asyncio
+import os
+from pathlib import Path
 
 # Pygbag discovers WASM packages from top-level imports in main.py.
 import pygame
@@ -99,6 +101,7 @@ WEB_CONFIG = {config!r}
 
 
 async def main() -> None:
+    os.chdir(Path(__file__).resolve().parent)
     app = create_app(WEB_CONFIG)
     await AsyncRuntimeHost().run(app.build())
 
@@ -131,6 +134,9 @@ def prepare() -> Path:
         encoding="utf-8",
     )
     shutil.copy2(SOURCE_TARGET / "app.py", staging_root / "app.py")
+    target_assets = SOURCE_TARGET / "assets"
+    if target_assets.is_dir():
+        shutil.copytree(target_assets, staging_root / "assets")
     shutil.copytree(
         TATUY_SOURCE,
         staging_root / "tatuy",

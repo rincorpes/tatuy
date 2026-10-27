@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable, TypedDict
 
+from tatuy.assets.contracts import AssetProvider
+from tatuy.assets.filesystem import FilesystemAssetProvider
 from tatuy.audio.service import AudioService
 from tatuy.backend.backend import Backend
 from tatuy.backend.factory import BackendFactory
@@ -110,8 +112,11 @@ class TatuyApp:
     def __init__(
         self,
         config: TatuyConfigDict | None = None,
+        *,
+        assets: AssetProvider | None = None,
     ):
         self.config: TatuyConfigDict = config if config is not None else {}
+        self.assets = assets or FilesystemAssetProvider()
         self.app_config = self._get_app_config(self.config or {})
         self.capabilities_config = self._get_capabilities_config(
             self.config or {}
@@ -219,6 +224,7 @@ class TatuyApp:
                 capture=capture_service,
                 replay=replay_service,
                 audio=audio_service,
+                assets=self.assets,
             ),
         )
 

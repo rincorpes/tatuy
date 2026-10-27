@@ -109,6 +109,7 @@ class Engine:
             self.scene_context = SceneContext(
                 viewport=self.services.viewport.state,
                 audio=self.services.audio,
+                assets=self.services.assets,
                 commands=self.commands,
                 resources=self._resources,
             )

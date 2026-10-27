@@ -13,7 +13,15 @@ def _configure_target(tmp_path: Path, monkeypatch):
     staging_base = tmp_path / "staging"
     source_target.mkdir()
     tatuy_source.mkdir()
-    (source_target / "app.py").write_text("def create_app(config): ...\n", encoding="utf-8")
+    assets = source_target / "assets"
+    assets.mkdir()
+    (assets / "sound.wav").write_bytes(b"audio-bytes")
+    (assets / "sprite.png").write_bytes(b"image-bytes")
+    (assets / "ui.ttf").write_bytes(b"font-bytes")
+    (assets / "level.json").write_text('{"level": 1}', encoding="utf-8")
+    (source_target / "app.py").write_text(
+        "def create_app(config): ...\n", encoding="utf-8"
+    )
     (source_target / "tatuy.yml").write_text("# defaults\n", encoding="utf-8")
     (source_target / "tatuy.web.yml").write_text(
         "app:\n  loop: asyncio\ncapabilities:\n  capture: false\n",
@@ -58,6 +66,12 @@ def test_prepare_bundles_canonical_target_tatuy_and_dependencies(
     assert "'replay': False" in launcher
     assert "'audio': {'enabled': False, 'auto_init': False}" in launcher
     assert (result / "app.py").exists()
+    assert (result / "assets" / "sound.wav").read_bytes() == b"audio-bytes"
+    assert (result / "assets" / "sprite.png").read_bytes() == b"image-bytes"
+    assert (result / "assets" / "ui.ttf").read_bytes() == b"font-bytes"
+    assert (result / "assets" / "level.json").read_text(
+        encoding="utf-8"
+    ) == '{"level": 1}'
     assert (result / "tatuy" / "__init__.py").exists()
     assert (result / "onomasticon" / "__init__.py").exists()
     assert not legacy_root.exists()
@@ -73,7 +87,26 @@ def test_prepare_changes_archive_identity_when_target_source_changes(
 
     first = prepare_web_spike.prepare()
     first_name = first.name
-    app_file.write_text("def create_app(config): return config\n", encoding="utf-8")
+    app_file.write_text(
+        "def create_app(config): return config\n", encoding="utf-8"
+    )
+    second = prepare_web_spike.prepare()
+
+    assert second.name != first_name
+    assert not first.exists()
+
+
+def test_prepare_changes_archive_identity_when_target_asset_changes(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    """Include packaged asset bytes in the deterministic build identity."""
+    source_target, _, _ = _configure_target(tmp_path, monkeypatch)
+    asset_file = source_target / "assets" / "sound.wav"
+
+    first = prepare_web_spike.prepare()
+    first_name = first.name
+    asset_file.write_bytes(b"updated-asset")
     second = prepare_web_spike.prepare()
 
     assert second.name != first_name
@@ -89,6 +122,7 @@ def test_browser_launcher_uses_generated_config_and_async_host() -> None:
     )
 
     assert "import pygame" in launcher
+    assert "os.chdir(Path(__file__).resolve().parent)" in launcher
     assert "create_app(WEB_CONFIG)" in launcher
     assert "await AsyncRuntimeHost().run(app.build())" in launcher
 

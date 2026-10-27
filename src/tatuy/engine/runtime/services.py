@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from tatuy.assets.contracts import AssetProvider
+from tatuy.assets.filesystem import FilesystemAssetProvider
 from tatuy.audio.service import AudioService
 from tatuy.backend.backend import Backend
 from tatuy.capture.contracts import CaptureCapability
@@ -36,6 +38,7 @@ class RuntimeServices:
     capture: CaptureCapability = field(kw_only=True)
     replay: ReplayCapability = field(kw_only=True)
     audio: AudioService = field(kw_only=True)
+    assets: AssetProvider = field(kw_only=True)
 
     @classmethod
     def defaults(
@@ -44,6 +47,7 @@ class RuntimeServices:
         *,
         capture_enabled: bool = True,
         replay_enabled: bool = True,
+        assets: AssetProvider | None = None,
     ) -> RuntimeServices:
         capture = create_capture_capability(
             backend,
@@ -58,4 +62,5 @@ class RuntimeServices:
             capture=capture,
             replay=replay,
             audio=AudioService(backend),
+            assets=assets or FilesystemAssetProvider(),
         )

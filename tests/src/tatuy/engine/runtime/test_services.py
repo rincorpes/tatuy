@@ -60,3 +60,17 @@ def test_defaults_can_disable_replay_independently(monkeypatch):
     assert services.replay is replay
     assert services.replay.enabled is False
     factory.assert_called_once_with(enabled=False)
+
+
+def test_defaults_preserve_explicit_asset_provider():
+    backend = Mock()
+    assets = object()
+
+    services = module.RuntimeServices.defaults(
+        backend,
+        capture_enabled=False,
+        replay_enabled=False,
+        assets=assets,
+    )
+
+    assert services.assets is assets

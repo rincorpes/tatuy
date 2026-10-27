@@ -19,6 +19,15 @@ def runtime(monkeypatch):
     return engine, backend, services, bus
 
 
+def test_start_exposes_runtime_assets_to_scene_context(runtime):
+    engine, _, services, _ = runtime
+
+    engine.start()
+
+    assert engine.scene_context.assets is services.assets
+    engine.stop()
+
+
 def test_stop_before_start_does_not_close_resources(runtime):
     engine, backend, services, bus = runtime
     engine.stop()
