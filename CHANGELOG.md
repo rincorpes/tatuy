@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Add a read-only `AssetProvider` boundary with a filesystem-backed implementation exposed to scenes through `ctx.assets`.
 - Add logical `StorageProvider` abstractions with filesystem-backed desktop persistence and ephemeral in-memory storage exposed through `ctx.storage`.
 - Add reusable web-target packaging models and a `WebTargetBuilder`/`PygbagPackager` tooling boundary for browser builds and showcase metadata.
+- Add a dedicated `web` dependency extra for browser packaging with Pygbag, PyYAML, and the canonical `pygame-ce` backend distribution.
 
 #### Changed
 
@@ -34,6 +35,8 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Package target-local `assets/` content into web staging, include asset changes in deterministic build identities, and migrate the audio fundamental to logical asset resolution.
 - Select ephemeral logical storage for browser-v0 builds while preserving filesystem-backed storage as the desktop default.
 - Replace the one-off web staging implementation with reusable target resolution, generated browser launchers, Pygbag invocation, normalized `build/web/play/<slug>/` output, and deterministic showcase manifest generation.
+- Standardize the `pygame` and contributor extras on `pygame-ce` so desktop and browser development use one verified Pygame distribution.
+- Refresh Poetry lock metadata for the `web` extra with `pygame-ce 2.5.8`, Pygbag 0.9.3, and PyYAML.
 
 ### - 2026-10-24
 

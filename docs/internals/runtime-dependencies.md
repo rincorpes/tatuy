@@ -24,7 +24,7 @@ It does **not** imply that the default desktop backend can run. `TatuyApp` curre
 pip install "tatuy[pygame]"
 ```
 
-Installs the reference Pygame backend. Pygame is a backend implementation dependency, not a requirement of ECS, scenes, semantic rendering, or future SDL/native/browser hosts.
+Installs the reference Pygame backend using the `pygame-ce` distribution. Tatuy still imports the standard `pygame` module API; `pygame-ce` is the canonical distribution because it is shared by the verified desktop/browser toolchain. Pygame remains a backend implementation dependency, not a requirement of ECS, scenes, semantic rendering, or future SDL/native hosts.
 
 ### `capture`
 
@@ -46,9 +46,19 @@ TatuyApp({
 })
 ```
 
-When disabled, Tatuy composes `NullCaptureService` instead of `CaptureService`. The concrete capture/worker/video stack is imported lazily only when capture is enabled, no capture worker is started, capture/replay hotkeys are not reserved, and engine/render lifecycle code continues through the same `CaptureCapability` contract. Direct capture API calls against the null service report that capture is disabled; normal engine capture commands safely no-op.
+When disabled, Tatuy composes `NullCaptureService` instead of `CaptureService`. The concrete capture/worker/video stack is imported lazily only when capture is enabled, no capture worker is started, media-capture hotkeys are not reserved, and engine/render lifecycle code continues through the same `CaptureCapability` contract. Replay is a separate capability and can remain enabled or disabled independently.
 
 `RuntimeServices.defaults(backend, capture_enabled=False)` exposes the same lower-level composition switch for hosts that construct the engine without `TatuyApp`.
+
+### `web`
+
+```bash
+pip install "tatuy[web]"
+```
+
+Installs the browser packaging/build stack without pulling in capture, CLI, or MCP tooling. The current web extra includes `pygame-ce`, Pygbag, and PyYAML. Pygbag remains build-time tooling: exported games do not need to import it at runtime, and gameplay modules remain unaware of the browser packager.
+
+For repository development, the W6 builder can use the active environment directly once this extra is installed; `--pygbag-python` remains available for explicit interpreter selection.
 
 ### `cli`
 
@@ -72,7 +82,7 @@ Installs the MCP SDK and dotenv support used by `tatuy_mcp`. The engine runtime 
 pip install "tatuy[tooling]"
 ```
 
-Installs the optional capture, CLI, and MCP third-party dependencies together. It intentionally does not install Pygame because platform backend selection is independent from tooling selection.
+Installs the optional capture, CLI, and MCP third-party dependencies together. It intentionally does not install the Pygame backend or browser packaging stack because platform/backend selection and web-build tooling remain separate concerns.
 
 ### `dev`
 
@@ -80,7 +90,7 @@ Installs the optional capture, CLI, and MCP third-party dependencies together. I
 pip install "tatuy[dev]"
 ```
 
-Installs the full contributor environment: Pygame, capture, CLI/MCP dependencies, tests, formatting, type checking, and linting.
+Installs the full contributor environment: the `pygame-ce` reference backend, browser packaging (`pygbag` + PyYAML), capture, CLI/MCP dependencies, tests, formatting, type checking, and linting.
 
 For the repository's Poetry workflow, use:
 
@@ -93,7 +103,9 @@ poetry install -E dev
 | Dependency | Classification | Reason |
 | --- | --- | --- |
 | `onomasticon` | core | implementation registries used by engine-facing code |
-| `pygame` | `pygame` extra | reference desktop backend |
+| `pygame-ce` | `pygame` / `web` / `dev` | canonical Pygame distribution for desktop and verified browser packaging |
+| `pygbag` | `web` / `dev` | browser packaging tool used by the W6 adapter |
+| `pyyaml` | `config` / `web` / `dev` | layered YAML configuration and web profile loading |
 | `pillow` | `capture` / `tooling` | screenshot and frame image encoding |
 | `rincorpes-limen` | `cli` / `tooling` | `tatuy_cli` command framework |
 | `mcp[cli]` | `mcp` / `tooling` | Tatuy Development MCP server |
@@ -126,7 +138,10 @@ tatuy
     Python authoring/runtime core
 
 tatuy[pygame]
-    reference Pygame backend
+    reference Pygame backend via pygame-ce
+
+tatuy[web]
+    browser packaging/build requirements
 
 tatuy[tooling]
     optional development/capture tooling

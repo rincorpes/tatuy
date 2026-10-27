@@ -95,7 +95,13 @@ For a packaged desktop game install:
 pip install "tatuy[pygame]"
 ```
 
-The minimal `tatuy` install intentionally excludes Pygame, capture, CLI, and MCP dependencies. See [`docs/internals/runtime-dependencies.md`](docs/internals/runtime-dependencies.md) for the extras model.
+For browser packaging/build tooling:
+
+```bash
+pip install "tatuy[web]"
+```
+
+The minimal `tatuy` install intentionally excludes the Pygame backend, browser packaging, capture, CLI, and MCP dependencies. See [`docs/internals/runtime-dependencies.md`](docs/internals/runtime-dependencies.md) for the extras model.
 
 A desktop environment is required for interactive Pygame examples.
 
