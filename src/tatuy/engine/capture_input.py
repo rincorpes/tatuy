@@ -6,6 +6,7 @@ from dataclasses import replace
 
 from tatuy.capture.contracts import CaptureCapability
 from tatuy.capture.settings import ReplaySettings
+from tatuy.replay.contracts import ReplayCapability
 from tatuy.commands import (
     EngineCommand,
     EngineCommandQueue,
@@ -28,11 +29,13 @@ class CaptureInputProcessor:
     def __init__(
         self,
         capture: CaptureCapability,
+        replay: ReplayCapability,
         replay_settings: ReplaySettings,
         commands: EngineCommandQueue,
         command_processor: EngineCommandProcessor,
     ) -> None:
         self._capture = capture
+        self._replay = replay
         self._replay_settings = replay_settings
         self._commands = commands
         self._command_processor = command_processor
@@ -58,28 +61,22 @@ class CaptureInputProcessor:
                 self._commands.push(StartVideoRecording())
                 queued = True
 
-        if self._capture.enabled and self._replay_settings.enabled:
+        if self._replay.enabled and self._replay_settings.enabled:
             reserved.update({Key.F3, Key.F4, Key.F5, Key.F6})
 
             filename = self._replay_settings.filename
             command: EngineCommand | None = None
 
-            if live_input.is_pressed(Key.F6) and self._capture.replay_playing:
+            if live_input.is_pressed(Key.F6) and self._replay.playing:
                 command = StopReplay()
-            elif (
-                live_input.is_pressed(Key.F4)
-                and self._capture.replay_recording
-            ):
+            elif live_input.is_pressed(Key.F4) and self._replay.recording:
                 command = StopRecording()
-            elif (
-                live_input.is_pressed(Key.F5)
-                and not self._capture.replay_playing
-            ):
+            elif live_input.is_pressed(Key.F5) and not self._replay.playing:
                 command = StartReplay(filename)
             elif (
                 live_input.is_pressed(Key.F3)
-                and not self._capture.replay_recording
-                and not self._capture.replay_playing
+                and not self._replay.recording
+                and not self._replay.playing
             ):
                 command = StartRecording(filename)
 

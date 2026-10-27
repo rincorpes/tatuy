@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Add explicit synchronous and asynchronous runtime hosts so application composition is independent from host execution semantics.
 - Add layered YAML configuration loading with deterministic recursive mapping merges and profile overlays.
 - Add a `web` configuration profile for the canonical render-queue fundamental and tests for layered configuration precedence.
+- Add an independent replay runtime capability with enabled and null services so deterministic replay no longer depends on screenshot/video capture.
 
 #### Changed
 
@@ -25,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Make the repository root explicit in pytest import paths so local development scripts resolve deterministically during test collection.
 - Refresh Poetry lock metadata for the optional `config` extra and development PyYAML dependency.
 - Migrate every Tatuy application target under `examples/fundamentals` to the reusable `create_app(config)` seam while preserving desktop entrypoints and example-specific default configuration.
+- Split replay recording/playback from media capture throughout runtime composition, commands, input processing, frame execution, and cleanup.
+- Make browser-v0 staging explicitly disable audio auto-initialization plus capture/replay write capabilities so web startup does not depend on autoplay permission or host filesystem writes.
 
 ### - 2026-10-24
 

@@ -8,7 +8,7 @@ import shutil
 from pathlib import Path
 from typing import Any
 
-from tatuy.configuration import ConfigurationLoader
+from tatuy.configuration import ConfigurationLoader, merge_config
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 SOURCE_TARGET = (
@@ -21,6 +21,10 @@ SOURCE_TARGET = (
 TATUY_SOURCE = REPOSITORY_ROOT / "src" / "tatuy"
 STAGING_BASE = REPOSITORY_ROOT / ".tatuy" / "web-spike"
 PURE_PYTHON_PACKAGES = ("onomasticon",)
+WEB_RUNTIME_OVERRIDES: dict[str, Any] = {
+    "backend": {"audio": {"enabled": False, "auto_init": False}},
+    "capabilities": {"capture": False, "replay": False},
+}
 
 
 def _package_source(package_name: str) -> Path:
@@ -121,6 +125,7 @@ def prepare() -> Path:
     config = ConfigurationLoader.load_profile(
         SOURCE_TARGET / "tatuy.yml", "web"
     )
+    config = merge_config(config, WEB_RUNTIME_OVERRIDES)
     (staging_root / "main.py").write_text(
         _browser_launcher(config),
         encoding="utf-8",

@@ -12,18 +12,10 @@ from tatuy.capture.models import (
     WorkerConfig,
 )
 from tatuy.capture.paths import CaptureDirectories, CapturePathBuilder
-from tatuy.capture.replay import (
-    ReplayPlayer,
-    ReplayRecorder,
-    ReplayRecorderConfig,
-)
-from tatuy.capture.replay_frame import ReplayFrame
-from tatuy.capture.replay_header import ReplayHeader
 from tatuy.capture.settings import CaptureSettings
 from tatuy.capture.video import VideoRecorder
 from tatuy.capture.worker import CaptureWorker
 from tatuy.events.bus import event_bus
-from tatuy.input.frame import InputFrame
 
 
 class CaptureService:
@@ -62,11 +54,6 @@ class CaptureService:
             recordings_dir=self.directories.recordings,
         )
 
-        self.replay_recorder = ReplayRecorder()
-        self.replay_player = ReplayPlayer()
-        self.replay_header: ReplayHeader | None = None
-        self._replay_finished = False
-
     def request_screenshot(self, label: str | None = None) -> str:
         label = label or "shot"
         path = self.screenshot_paths.build(label)
@@ -80,86 +67,6 @@ class CaptureService:
         )
 
         return str(path)
-
-    @property
-    def replay_recording(self) -> bool:
-        return self.replay_recorder.active
-
-    @property
-    def replay_playing(self) -> bool:
-        # A completed replay remains visible until explicitly stopped.
-        return self.replay_player.active or self._replay_finished
-
-    def start_replay_record(
-        self,
-        *,
-        filename: str,
-        header: ReplayHeader,
-    ) -> None:
-        if self.replay_recording or self.replay_playing:
-            raise RuntimeError("A replay session is already active")
-
-        path = self.directories.replays / filename
-
-        self.replay_recorder.start(
-            ReplayRecorderConfig(path=path, header=header)
-        )
-
-        self.replay_header = header
-
-        event_bus.emit(events.REPLAY_RECORD_STARTED, path=str(path))
-
-    def stop_replay_record(self) -> None:
-        if not self.replay_recording:
-            return
-
-        path = self.replay_recorder.path
-        self.replay_recorder.stop()
-        self.replay_header = None
-
-        event_bus.emit(
-            events.REPLAY_RECORD_STOPPED,
-            path=str(path) if path is not None else None,
-        )
-
-    def record_input(self, frame: InputFrame, dt: float) -> None:
-        self.replay_recorder.record(frame, dt)
-
-    def start_replay_play(self, filename: str) -> ReplayHeader:
-        if self.replay_recording or self.replay_playing:
-            raise RuntimeError("A replay session is already active")
-
-        path = self.directories.replays / filename
-        header = self.replay_player.start(path)
-
-        self.replay_header = header
-        self._replay_finished = False
-
-        event_bus.emit(events.REPLAY_PLAY_STARTED, path=str(path))
-
-        return header
-
-    def next_replay_frame(self) -> ReplayFrame | None:
-        if self._replay_finished:
-            return None
-
-        frame = self.replay_player.next()
-
-        if frame is None:
-            self._replay_finished = True
-            event_bus.emit(events.REPLAY_PLAY_FINISHED)
-
-        return frame
-
-    def stop_replay_play(self) -> None:
-        was_playing = self.replay_playing
-
-        self.replay_player.stop()
-        self._replay_finished = False
-
-        if was_playing:
-            self.replay_header = None
-            event_bus.emit(events.REPLAY_PLAY_STOPPED)
 
     def after_render(self) -> None:
         requests = self._screenshot_requests
@@ -275,8 +182,6 @@ class CaptureService:
             )
 
     def close(self) -> None:
-        self.stop_replay_record()
-        self.stop_replay_play()
         self.stop_video_record()
 
         # Finish video encoding while the image worker is still available.

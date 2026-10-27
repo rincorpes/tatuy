@@ -55,6 +55,8 @@ def test_prepare_bundles_canonical_target_tatuy_and_dependencies(
     assert "from tatuy.engine.runtime.host import AsyncRuntimeHost" in launcher
     assert "'loop': 'asyncio'" in launcher
     assert "'capture': False" in launcher
+    assert "'replay': False" in launcher
+    assert "'audio': {'enabled': False, 'auto_init': False}" in launcher
     assert (result / "app.py").exists()
     assert (result / "tatuy" / "__init__.py").exists()
     assert (result / "onomasticon" / "__init__.py").exists()

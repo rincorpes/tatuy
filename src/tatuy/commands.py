@@ -102,13 +102,13 @@ class StartRecording(EngineCommand):
 
     def execute(self, ctx: EngineCommandContext) -> None:
         engine = ctx.engine
-        capture = engine.services.capture
+        replay = engine.services.replay
         settings = engine.replay_settings
 
-        if not capture.enabled:
+        if not replay.enabled:
             return
 
-        if capture.replay_recording or capture.replay_playing:
+        if replay.recording or replay.playing:
             return
 
         entry = engine.services.scene.input_entry()
@@ -142,7 +142,7 @@ class StartRecording(EngineCommand):
                 engine.scene_context,
             )
 
-            capture.start_replay_record(
+            replay.start_record(
                 filename=self.filename,
                 header=header,
             )
@@ -157,10 +157,10 @@ class StartRecording(EngineCommand):
 @dataclass(frozen=True)
 class StopRecording(EngineCommand):
     def execute(self, ctx: EngineCommandContext) -> None:
-        if not ctx.engine.services.capture.replay_recording:
+        if not ctx.engine.services.replay.recording:
             return
 
-        ctx.engine.services.capture.stop_replay_record()
+        ctx.engine.services.replay.stop_record()
         ctx.engine.scene_context.replay_header = None
 
 
@@ -170,20 +170,20 @@ class StartReplay(EngineCommand):
 
     def execute(self, ctx: EngineCommandContext) -> None:
         engine = ctx.engine
-        capture = engine.services.capture
+        replay = engine.services.replay
 
-        if not capture.enabled:
+        if not replay.enabled:
             return
 
-        if capture.replay_playing:
+        if replay.playing:
             return
 
         # Flush and close an active recording before reading its file.
-        capture.stop_replay_record()
+        replay.stop_record()
         engine.scene_context.replay_header = None
 
         try:
-            header = capture.start_replay_play(self.filename)
+            header = replay.start_play(self.filename)
         except FileNotFoundError as exc:
             print(
                 f"Replay file not found: {exc.filename}. "
@@ -218,7 +218,7 @@ class StartReplay(EngineCommand):
                 engine.scene_context,
             )
         except Exception:
-            capture.stop_replay_play()
+            replay.stop_play()
             engine.scene_context.replay_header = None
             raise
 
@@ -231,10 +231,10 @@ class StopReplay(EngineCommand):
     def execute(self, ctx: EngineCommandContext) -> None:
         engine = ctx.engine
 
-        if not engine.services.capture.replay_playing:
+        if not engine.services.replay.playing:
             return
 
-        engine.services.capture.stop_replay_play()
+        engine.services.replay.stop_play()
         engine.scene_context.replay_header = None
 
         engine.services.scene.change(

@@ -13,6 +13,8 @@ class ReplaySettings:
     game_id: str = "tatuy"
     initial_scene: str = ""
     seed: int = 0
+    root_dir: str = ".tatuy"
+    replays_dir: str = "replays"
 
 
 @SettingsRegistry.implementation("replay")
@@ -37,7 +39,6 @@ class CaptureSettings:
 
     screenshots_dir: str = "screenshots"
     screenshot_format: str = "png"
-    replays_dir: str = "replays"
     recordings_dir: str = "recordings"
 
     ffmpeg_path: str = "ffmpeg"

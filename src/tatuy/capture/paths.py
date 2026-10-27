@@ -34,7 +34,6 @@ class CaptureDirectories:
         self.root = Path(settings.root_dir).expanduser().resolve()
 
         self.screenshots = self._resolve(settings.screenshots_dir)
-        self.replays = self._resolve(settings.replays_dir)
         self.recordings = self._resolve(settings.recordings_dir)
 
     def _resolve(self, directory: str) -> Path:

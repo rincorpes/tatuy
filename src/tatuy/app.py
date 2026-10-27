@@ -10,6 +10,7 @@ from tatuy.capture.contracts import CaptureCapability
 from tatuy.capture.factory import create_capture_capability
 from tatuy.capture.settings import (  # pylint: disable=unused-import
     CaptureSettings,
+    ReplaySettings,
     ReplaySettingsBuilder,
 )
 from tatuy.engine.engine import Engine, EngineConfig, EnginePipelines
@@ -26,6 +27,8 @@ from tatuy.engine.scene import SceneService
 from tatuy.events.service import EventsService
 from tatuy.graphics.viewport.service import ViewportService
 from tatuy.input.service import InputService
+from tatuy.replay.contracts import ReplayCapability
+from tatuy.replay.factory import create_replay_capability
 from tatuy.resources import ResourceStore
 from tatuy.settings import SettingsRegistry
 from tatuy.tooling.profiler import profiler
@@ -42,6 +45,7 @@ class RuntimeCapabilitiesConfigDict(TypedDict, total=False):
     """Optional runtime capabilities selected by application composition."""
 
     capture: bool
+    replay: bool
 
 
 class TatuyConfigDict(TypedDict, total=False):
@@ -85,6 +89,7 @@ class RuntimeCapabilitiesConfig:
     """Select optional runtime capabilities while preserving desktop defaults."""
 
     capture: bool = True
+    replay: bool = True
 
     @classmethod
     def from_dict(
@@ -127,6 +132,7 @@ class TatuyApp:
             raise TypeError("The settings configuration must be a dictionary")
         sections = {
             "capture": {},
+            "replay": {},
             **sections,
         }
         for name, values in sections.items():
@@ -180,12 +186,20 @@ class TatuyApp:
             settings=self.resources.get(CaptureSettings),
         )
 
+    def create_replay(self) -> ReplayCapability:
+        """Create replay independently from screenshot/video capture."""
+        return create_replay_capability(
+            enabled=self.capabilities_config.replay,
+            settings=self.resources.get(ReplaySettings),
+        )
+
     def create_engine(self, backend: Backend) -> Engine:
 
         events_service = EventsService(backend)
         window_service = WindowService(backend)
         input_service = InputService(backend)
         capture_service = self.create_capture(backend)
+        replay_service = self.create_replay()
         audio_service = AudioService(backend)
 
         return Engine(
@@ -203,6 +217,7 @@ class TatuyApp:
                 window=window_service,
                 input=input_service,
                 capture=capture_service,
+                replay=replay_service,
                 audio=audio_service,
             ),
         )

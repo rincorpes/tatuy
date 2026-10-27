@@ -14,6 +14,8 @@ from tatuy.engine.scene import SceneService
 from tatuy.events.service import EventsService
 from tatuy.graphics.viewport.service import ViewportService
 from tatuy.input.service import InputService
+from tatuy.replay.contracts import ReplayCapability
+from tatuy.replay.factory import create_replay_capability
 from tatuy.window.service import WindowService
 
 
@@ -32,6 +34,7 @@ class RuntimeServices:
     window: WindowService = field(kw_only=True)
     input: InputService = field(kw_only=True)
     capture: CaptureCapability = field(kw_only=True)
+    replay: ReplayCapability = field(kw_only=True)
     audio: AudioService = field(kw_only=True)
 
     @classmethod
@@ -40,16 +43,19 @@ class RuntimeServices:
         backend: Backend,
         *,
         capture_enabled: bool = True,
+        replay_enabled: bool = True,
     ) -> RuntimeServices:
         capture = create_capture_capability(
             backend,
             enabled=capture_enabled,
         )
+        replay = create_replay_capability(enabled=replay_enabled)
 
         return cls(
             events=EventsService(backend),
             window=WindowService(backend),
             input=InputService(backend),
             capture=capture,
+            replay=replay,
             audio=AudioService(backend),
         )

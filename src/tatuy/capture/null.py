@@ -2,10 +2,7 @@
 
 from __future__ import annotations
 
-from tatuy.capture.replay_frame import ReplayFrame
-from tatuy.capture.replay_header import ReplayHeader
 from tatuy.capture.settings import CaptureSettings
-from tatuy.input.frame import InputFrame
 
 
 class NullCaptureService:
@@ -25,21 +22,6 @@ class NullCaptureService:
         return self._settings
 
     @property
-    def replay_recording(self) -> bool:
-        """Report that replay recording is inactive."""
-        return False
-
-    @property
-    def replay_playing(self) -> bool:
-        """Report that replay playback is inactive."""
-        return False
-
-    @property
-    def replay_header(self) -> ReplayHeader | None:
-        """Return no replay header because playback is unavailable."""
-        return None
-
-    @property
     def video_recording(self) -> bool:
         """Report that video recording is inactive."""
         return False
@@ -53,35 +35,6 @@ class NullCaptureService:
         """Reject direct screenshot requests while capture is disabled."""
         del label
         raise RuntimeError("Capture is disabled")
-
-    def start_replay_record(
-        self,
-        *,
-        filename: str,
-        header: ReplayHeader,
-    ) -> None:
-        """Reject direct replay-record requests while capture is disabled."""
-        del filename, header
-        raise RuntimeError("Capture is disabled")
-
-    def stop_replay_record(self) -> None:
-        """Ignore replay-record stop requests."""
-
-    def record_input(self, frame: InputFrame, dt: float) -> None:
-        """Ignore input frames because replay recording is disabled."""
-        del frame, dt
-
-    def start_replay_play(self, filename: str) -> ReplayHeader:
-        """Reject direct replay-play requests while capture is disabled."""
-        del filename
-        raise RuntimeError("Capture is disabled")
-
-    def next_replay_frame(self) -> ReplayFrame | None:
-        """Return no replay frame because playback is disabled."""
-        return None
-
-    def stop_replay_play(self) -> None:
-        """Ignore replay-play stop requests."""
 
     def after_render(self) -> None:
         """Perform no post-render capture work."""

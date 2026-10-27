@@ -59,6 +59,7 @@ class Engine:
         )
 
         self.running = False
+        self._replay_cleanup_pending = False
         self._capture_cleanup_pending = False
         self._backend_cleanup_pending = False
         self.scene_context: SceneContext
@@ -71,6 +72,7 @@ class Engine:
         )
         self.capture_input_processor = CaptureInputProcessor(
             self.services.capture,
+            self.services.replay,
             self.replay_settings,
             self.commands,
             self.command_processor,
@@ -79,10 +81,13 @@ class Engine:
     def start(self) -> None:
         """Initialize backend services and enter the configured start scene."""
         if not self.running and (
-            self._capture_cleanup_pending or self._backend_cleanup_pending
+            self._replay_cleanup_pending
+            or self._capture_cleanup_pending
+            or self._backend_cleanup_pending
         ):
             raise RuntimeError("Call stop() to finish cleanup before starting")
 
+        self._replay_cleanup_pending = True
         self._capture_cleanup_pending = True
         self._backend_cleanup_pending = True
         self.running = True
@@ -146,8 +151,8 @@ class Engine:
             if not self.running:
                 return
 
-            capture = self.services.capture
-            header = capture.replay_header
+            replay = self.services.replay
+            header = replay.header
 
             if header is not None:
                 viewport = self.scene_context.viewport
@@ -163,8 +168,8 @@ class Engine:
             input_frame = live_input
             should_update = True
 
-            if capture.replay_playing:
-                recorded = capture.next_replay_frame()
+            if replay.playing:
+                recorded = replay.next_frame()
 
                 if recorded is None:
                     simulation_dt = 0.0
@@ -174,7 +179,7 @@ class Engine:
                     simulation_dt = recorded.dt
 
             if should_update:
-                capture.record_input(input_frame, simulation_dt)
+                replay.record_input(input_frame, simulation_dt)
 
                 with profiler.span("scene.update", "scene"):
                     self.scene_updater.update(
@@ -207,12 +212,15 @@ class Engine:
     def stop(self) -> None:
         """Stop execution and retry any unfinished resource cleanup.
 
-        Capture closes before the backend is stopped. Successful stages are
-        not repeated; failed stages remain pending even though running is
-        false. Event subscriptions are cleared on every cleanup attempt.
+        Replay and capture close before the backend is stopped. Successful
+        stages are not repeated; failed stages remain pending even though
+        running is false. Event subscriptions are cleared on every cleanup
+        attempt.
         """
         if not (
-            self._capture_cleanup_pending or self._backend_cleanup_pending
+            self._replay_cleanup_pending
+            or self._capture_cleanup_pending
+            or self._backend_cleanup_pending
         ):
             return
 
@@ -221,9 +229,14 @@ class Engine:
 
             try:
                 try:
-                    if self._capture_cleanup_pending:
-                        self.services.capture.close()
-                        self._capture_cleanup_pending = False
+                    try:
+                        if self._replay_cleanup_pending:
+                            self.services.replay.close()
+                            self._replay_cleanup_pending = False
+                    finally:
+                        if self._capture_cleanup_pending:
+                            self.services.capture.close()
+                            self._capture_cleanup_pending = False
                 finally:
                     if self._backend_cleanup_pending:
                         self._backend.stop()

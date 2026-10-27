@@ -5,6 +5,7 @@ from unittest.mock import Mock
 from tatuy import app as app_module
 from tatuy.capture.null import NullCaptureService
 from tatuy.engine.runtime.loop.asyncio_loop import AsyncioLoop
+from tatuy.replay.null import NullReplayService
 from tatuy.engine.runtime.loop.python_loop import PythonLoop
 from tatuy.engine.runtime.runtime import Runtime
 
@@ -42,6 +43,41 @@ def test_capture_capability_can_be_disabled(monkeypatch):
         backend,
         enabled=False,
         settings=app.resources.get(app_module.CaptureSettings),
+    )
+
+
+def test_replay_capability_is_enabled_by_default(monkeypatch):
+    created = object()
+    factory = Mock(return_value=created)
+    monkeypatch.setattr(app_module, "create_replay_capability", factory)
+
+    app = app_module.TatuyApp()
+
+    assert app.capabilities_config.replay is True
+    assert app.create_replay() is created
+    factory.assert_called_once_with(
+        enabled=True,
+        settings=app.resources.get(app_module.ReplaySettings),
+    )
+
+
+def test_replay_capability_can_be_disabled_independently(monkeypatch):
+    created = NullReplayService()
+    factory = Mock(return_value=created)
+    monkeypatch.setattr(app_module, "create_replay_capability", factory)
+
+    app = app_module.TatuyApp(
+        {"capabilities": {"capture": True, "replay": False}}
+    )
+    replay = app.create_replay()
+
+    assert app.capabilities_config.capture is True
+    assert app.capabilities_config.replay is False
+    assert replay is created
+    assert replay.enabled is False
+    factory.assert_called_once_with(
+        enabled=False,
+        settings=app.resources.get(app_module.ReplaySettings),
     )
 
 

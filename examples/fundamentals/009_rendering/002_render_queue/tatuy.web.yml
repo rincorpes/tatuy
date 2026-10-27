@@ -2,3 +2,4 @@ app:
   loop: asyncio
 capabilities:
   capture: false
+  replay: false

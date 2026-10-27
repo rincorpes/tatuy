@@ -26,6 +26,7 @@ def test_startup_failure_cleans_engine_resources(monkeypatch, stage):
         PythonLoop(target_fps=0).run(engine)
     assert caught.value is failure
     assert engine.running is False
+    services.replay.close.assert_called_once_with()
     services.capture.close.assert_called_once_with()
     backend.stop.assert_called_once_with()
     bus.clear.assert_called_once_with()

@@ -1,4 +1,4 @@
-"""Capture commands are safe when the capture capability is disabled."""
+"""Optional runtime commands are safe when capabilities are disabled."""
 
 from unittest.mock import Mock
 
@@ -12,20 +12,27 @@ from tatuy.commands import (
     StartReplay,
     StartVideoRecording,
 )
+from tatuy.replay.null import NullReplayService
+
+
+@pytest.mark.parametrize("command", [Screenshot(), StartVideoRecording()])
+def test_capture_start_commands_noop_when_capture_is_disabled(command):
+    engine = Mock()
+    engine.services.capture = NullCaptureService()
+    context = EngineCommandContext(engine=engine, window=Mock())
+
+    command.execute(context)
+
+    assert context.end_batch is False
 
 
 @pytest.mark.parametrize(
     "command",
-    [
-        Screenshot(),
-        StartRecording("session.jsonl"),
-        StartReplay("session.jsonl"),
-        StartVideoRecording(),
-    ],
+    [StartRecording("session.jsonl"), StartReplay("session.jsonl")],
 )
-def test_capture_start_commands_noop_when_capture_is_disabled(command):
+def test_replay_start_commands_noop_when_replay_is_disabled(command):
     engine = Mock()
-    engine.services.capture = NullCaptureService()
+    engine.services.replay = NullReplayService()
     context = EngineCommandContext(engine=engine, window=Mock())
 
     command.execute(context)
