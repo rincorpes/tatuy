@@ -8,9 +8,9 @@ The current showcase scope is **fundamentals only**. Experiments and games are i
 
 | Status | Meaning |
 | --- | --- |
-| `Playable` | Already declared, packaged, and used by the browser showcase. |
+| `Playable` | Declared, packaged, manually browser-verified, and eligible for the public showcase. |
 | `Candidate` | Uses the reusable Tatuy application/runtime path and has no known browser-specific blocker. It still needs a browser smoke test before public promotion. |
-| `W12 input` | Expected to work structurally, but meaningful keyboard/mouse/focus behavior must be verified during the browser-input phase. |
+| `W12 input` | Expected to work structurally; representative browser input/focus behavior is now verified, but this specific target has not been promoted yet. |
 | `W13 audio` | Requires the browser-audio/user-gesture work planned for W13. |
 | `Host/API only` | Demonstrates backend, engine, loop, or host construction directly rather than a normal game target. Keep as documentation/source unless deliberately adapted. |
 | `Unsupported v0` | Demonstrates a capability intentionally disabled in browser-v0. |
@@ -46,14 +46,14 @@ The current showcase scope is **fundamentals only**. Experiments and games are i
 | `003_scenes/003_context` | scenes | W12 input | Mouse-inside/focus semantics | none | mouse-inside | no | Requires browser canvas focus/pointer validation. |
 | `003_scenes/004_on_tick` | scenes | Candidate | Browser smoke test | none | no meaningful input | no | No known browser-specific dependency. |
 | `003_scenes/005_build_intent` | scenes | W12 input | Mouse-inside/focus semantics | none | mouse-inside | no | Requires browser canvas focus/pointer validation. |
-| `003_scenes/006_on_present` | scenes | W12 input | Mouse-inside/focus semantics | none | mouse-inside | no | Visualizes whether the pointer is inside the canvas. |
+| `003_scenes/006_on_present` | scenes | Playable | None for current v0 | none | mouse-inside + focus | no | Browser-verified pointer-inside and focus-state visualization. |
 | `004_ecs/001_resources` | ECS | W12 input | Mouse-inside/focus semantics | none | mouse-inside | no | Uses pointer state to mutate a resource. |
 | `004_ecs/002_entities` | ECS | W12 input | Mouse-inside/focus semantics | none | mouse-inside | no | Uses pointer state to drive entity count. |
 | `004_ecs/002_entities/001_factory` | ECS | W12 input | Mouse-inside/focus semantics | none | mouse-inside | no | Factory variant of the entity example. |
 | `004_ecs/003_components` | ECS | W12 input | Mouse-inside/focus semantics | none | mouse-inside | no | Uses pointer state while demonstrating components. |
 | `004_ecs/003_components/001_query` | ECS | W12 input | Mouse-inside/focus semantics | none | mouse-inside | no | Query variant of the components example. |
 | `004_ecs/004_systems` | ECS | W12 input | Mouse-inside/focus semantics | none | mouse-inside | no | Uses pointer state while demonstrating systems. |
-| `005_multiple_scenes` | scenes | W12 input | Enter key + mouse-inside/focus | none | Enter + mouse-inside | no | Scene transition behavior needs browser keyboard/focus validation. |
+| `005_multiple_scenes` | scenes | Playable | None for current v0 | none | Enter + mouse-inside | no | Browser-verified discrete Enter presses and scene transitions. |
 | `006_shared_scene_settings` | scenes | W12 input | Enter key + mouse-inside/focus | none | Enter + mouse-inside | no | Shared settings are host-safe; controls need W12. |
 | `007_transform_component` | spatial | Candidate | Browser smoke test | none | no meaningful input | no | No known browser-specific dependency. |
 | `008_visual_components/001_rect` | visual | Candidate | Browser smoke test | none | no meaningful input | no | Pure visual component example. |
@@ -66,7 +66,7 @@ The current showcase scope is **fundamentals only**. Experiments and games are i
 | `009_rendering/004_layers_and_z` | rendering | Candidate | Browser smoke test | none | no meaningful input | no | Layer/z-order candidate. |
 | `010_movement/001_velocity_integration` | movement | Candidate | Browser smoke test | none | no meaningful input | no | Autonomous movement. |
 | `010_movement/002_movement_system` | movement | Candidate | Browser smoke test | none | no meaningful input | no | Autonomous movement system. |
-| `010_movement/003_controlled_movement` | movement | W12 input | WASD + focus/scroll conflicts | none | WASD | no | Primary keyboard-input smoke-test candidate. |
+| `010_movement/003_controlled_movement` | movement | Playable | None for current v0 | none | WASD | no | Browser-verified held WASD input, focus loss recovery, and scroll suppression. |
 | `011_collisions/001_detection` | collision | Candidate | Browser smoke test | none | no meaningful input | no | No known browser-specific dependency. |
 | `011_collisions/002_response` | collision | Candidate | Browser smoke test | none | no meaningful input | no | No known browser-specific dependency. |
 | `011_collisions/003_sensors` | collision | Candidate | Browser smoke test | none | no meaningful input | no | No known browser-specific dependency. |
@@ -82,15 +82,30 @@ The current showcase scope is **fundamentals only**. Experiments and games are i
 | `018_audio` | audio | W13 audio | Browser audio unlock/user gesture | `assets/test.wav` | no meaningful input | yes | Uses the logical `ctx.assets` boundary; structurally ready once audio policy is implemented. |
 | `020_ui/001_panel_layout` | UI | Candidate | Browser smoke test | none | no meaningful input | no | Layout-only UI example. |
 | `020_ui/002_text` | UI | Candidate | Browser smoke test | none | no meaningful input | no | Text-only UI example. |
-| `020_ui/003_button` | UI | W12 input | Pointer/focus/click semantics | none | pointer/button | no | Primary UI pointer-input smoke-test candidate. |
+| `020_ui/003_button` | UI | Playable | None for current v0 | none | pointer/button | no | Browser-verified pointer hover, press, release, and click interaction. |
 
 ## Legacy/non-runnable directories
 
 `008_graphic_components` contains empty historical directories and `009_render_system` is empty. They have no runnable `app.py`, are not resolved as CLI targets, and should remain outside the public catalog unless deliberately restored.
 
+## W12 browser input smoke test
+
+W12 browser verification passed on October 28, 2026 for the four representative input targets:
+
+```powershell
+poetry run python scripts/build_web_target.py examples/fundamentals/003_scenes/006_on_present
+poetry run python scripts/build_web_target.py examples/fundamentals/005_multiple_scenes
+poetry run python scripts/build_web_target.py examples/fundamentals/010_movement/003_controlled_movement
+poetry run python scripts/build_web_target.py examples/fundamentals/020_ui/003_button
+```
+
+The manual pass confirmed pointer/focus state, discrete Enter presses, held WASD movement, UI pointer interaction, focus-loss recovery without stuck input, and browser-scroll suppression while gameplay is focused. Those four targets are now promoted to `showcase.web: true` and `Playable`.
+
+Resize/high-DPI scaling remains W14 scope, and browser audio remains W13 scope.
+
 ## Promotion rules
 
-A `Candidate` is not automatically public. Before adding `showcase` metadata with `web: true`, the target should:
+A `Candidate` target is not automatically public. Before adding `showcase` metadata with `web: true`, the target should:
 
 1. pass the relevant W12/W13 gate when it consumes input or audio;
 2. build successfully through `WebTargetBuilder`;

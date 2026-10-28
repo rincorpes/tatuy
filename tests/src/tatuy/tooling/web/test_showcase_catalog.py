@@ -10,6 +10,9 @@ import pytest
 from tatuy.tooling.web.catalog import ShowcaseCatalogBuilder
 
 
+PROJECT_ROOT = Path(__file__).resolve().parents[5]
+
+
 def _write_target(
     repository: Path,
     relative: str,
@@ -147,3 +150,34 @@ def test_non_web_catalog_entry_does_not_require_bundle(tmp_path: Path) -> None:
 
     assert entry.web is False
     assert entry.playable is False
+
+
+def test_repository_browser_candidate_profiles_are_valid(tmp_path: Path) -> None:
+    slugs = {
+        "render-queue",
+        "scene-on-present",
+        "multiple-scenes",
+        "controlled-movement",
+        "ui-button",
+    }
+    for slug in slugs:
+        bundle = tmp_path / "play" / slug
+        bundle.mkdir(parents=True)
+        (bundle / "index.html").write_text("runtime", encoding="utf-8")
+
+    entries = ShowcaseCatalogBuilder(
+        PROJECT_ROOT,
+        targets_root=PROJECT_ROOT / "examples" / "fundamentals",
+        output_root=tmp_path,
+    ).discover()
+    by_id = {entry.id: entry for entry in entries}
+
+    assert set(by_id) == {
+        "fundamentals/rendering/render-queue",
+        "fundamentals/scenes/on-present",
+        "fundamentals/scenes/multiple-scenes",
+        "fundamentals/movement/controlled-movement",
+        "fundamentals/ui/button",
+    }
+    assert all(entry.web is True for entry in by_id.values())
+    assert all(entry.playable is True for entry in by_id.values())

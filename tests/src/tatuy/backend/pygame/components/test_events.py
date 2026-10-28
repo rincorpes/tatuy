@@ -62,6 +62,8 @@ from tatuy.input.keys import Key
             EventType.WINDOWRESIZED,
             {"x": 640, "y": 480},
         ),
+        (pygame.WINDOWFOCUSGAINED, {}, EventType.WINDOWFOCUSGAINED, {}),
+        (pygame.WINDOWFOCUSLOST, {}, EventType.WINDOWFOCUSLOST, {}),
         (pygame.QUIT, {}, EventType.QUIT, {}),
     ],
 )
@@ -80,6 +82,8 @@ def test_poll_translates_event(
         if native
         in (
             pygame.WINDOWRESIZED,
+            pygame.WINDOWFOCUSGAINED,
+            pygame.WINDOWFOCUSLOST,
             pygame.QUIT,
         )
         else EventCategory.INPUT

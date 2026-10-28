@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+### - 2026-10-28
+
+#### Changed
+
+- Promote the four representative W12 browser-input fundamentals to public browser playables after successful Chromium smoke verification of focus, keyboard, pointer, scene-transition, and scroll-suppression behavior.
+
 ### - 2026-10-27
 
 #### Added
@@ -24,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Add a framework-free static showcase shell with a Tatuy landing page and iframe-based Render Queue play page.
 - Add deterministic showcase catalog discovery and validation for declared target metadata, source/docs references, and browser bundles.
 - Add a tracked browser-compatibility matrix for every runnable fundamental with regression coverage that keeps the audit complete as examples change.
+- Add portable window-focus events and `InputFrame.focused` so hosted runtimes can expose focus state without browser-specific game code.
 
 #### Changed
 
@@ -44,6 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Refresh Poetry lock metadata for the `web` extra with `pygame-ce 2.5.8`, Pygbag 0.9.3, and PyYAML.
 - Refresh Poetry lock metadata for the MkDocs `docs` extra and contributor environment after validating a real documentation-site build.
 - Generate showcase cards and playable wrapper pages from the validated catalog manifest instead of hard-coded target data.
+- Clear held keyboard/mouse state on focus loss, expose visible showcase focus state, suppress gameplay-key scrolling inside focused browser runtimes, and add async browser candidate profiles for representative input fundamentals.
 
 ### - 2026-10-24
 

@@ -8,6 +8,7 @@ import pytest
 
 from tatuy.backend.config import InputConfig
 from tatuy.events import Event, EventCategory, EventType
+from tatuy.input.frame import ButtonState, InputFrame
 from tatuy.input.keys import Key
 from tatuy.input.pointer import PointerState
 from tatuy.input.service import InputService
@@ -45,6 +46,47 @@ def test_flags_filter_snapshot_and_polling(keyboard, mouse):
     assert bool(frame.buttons) is mouse
     assert bool(frame.axes) is mouse
     assert port.get_pointer_state.call_count == int(mouse)
+
+
+def test_input_frame_focus_is_backward_compatible_with_old_replays():
+    assert InputFrame.from_dict({}).focused is True
+    assert InputFrame(focused=False).to_dict()["focused"] is False
+
+
+def test_focus_loss_releases_held_keyboard_and_mouse_state():
+    port = Mock()
+    port.get_pointer_state.return_value = PointerState((3, 4), True)
+    backend = SimpleNamespace(
+        initialized=True,
+        input=port,
+        config=SimpleNamespace(input=InputConfig()),
+    )
+    service = InputService(backend)
+    service.sync_events(
+        [
+            event(EventType.KEYDOWN, {"key": Key.W}),
+            event(EventType.MOUSEBUTTONDOWN, {"button": 1, "pos": (3, 4)}),
+        ]
+    )
+
+    service.sync_events([], focused=False)
+    frame = service.get_input_frame()
+
+    assert not frame.focused
+    assert not frame.keys_down
+    assert frame.keys_released == frozenset({Key.W})
+    assert frame.buttons["mouse_1"] == ButtonState(
+        down=False,
+        pressed=False,
+        released=True,
+    )
+    assert not frame.mouse_inside
+
+    service.sync_events([], focused=True)
+    frame = service.get_input_frame()
+    assert frame.focused
+    assert not frame.keys_down and not frame.keys_released
+    assert not frame.buttons
 
 
 def test_disabling_devices_clears_held_state():

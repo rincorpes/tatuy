@@ -8,6 +8,37 @@ from tatuy.geometry.size import Size
 from tatuy.window import service as module
 
 
+def test_focus_events_update_window_state(monkeypatch):
+    window = Mock(size=Size(320, 240))
+    bus = Mock()
+    monkeypatch.setattr(module, "event_bus", bus)
+    service = module.WindowService(
+        SimpleNamespace(initialized=True, window=window)
+    )
+    service.open()
+
+    lost = Event(
+        EventCategory.WINDOW,
+        EventType.WINDOWFOCUSLOST,
+        "windowfocuslost",
+        {},
+    )
+    gained = Event(
+        EventCategory.WINDOW,
+        EventType.WINDOWFOCUSGAINED,
+        "windowfocusgained",
+        {},
+    )
+
+    service.sync_events([lost])
+    assert service.focused is False
+    assert bus.emit.call_args.kwargs["data"] == {"focused": False}
+
+    service.sync_events([gained])
+    assert service.focused is True
+    assert bus.emit.call_args.kwargs["data"] == {"focused": True}
+
+
 def test_native_resize_retains_previous_size(monkeypatch):
     window = Mock(size=Size(320, 240))
     bus = Mock()

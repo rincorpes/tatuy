@@ -1,0 +1,16 @@
+showcase:
+  id: fundamentals/scenes/on-present
+  slug: scene-on-present
+  title: Scene Presentation Input
+  description: Inspect pointer-inside and focus state during scene presentation.
+  category: fundamental
+  tags:
+    - scenes
+    - input
+    - pointer
+    - browser-playable
+  source: examples/fundamentals/003_scenes/006_on_present
+  docs: docs/learn/scenes.md
+  web: true
+app:
+  loop: asyncio

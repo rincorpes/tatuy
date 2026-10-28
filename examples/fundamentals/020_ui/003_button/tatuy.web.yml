@@ -1,0 +1,16 @@
+showcase:
+  id: fundamentals/ui/button
+  slug: ui-button
+  title: UI Button
+  description: Exercise pointer focus, hover, and button interaction in the browser host.
+  category: fundamental
+  tags:
+    - ui
+    - input
+    - pointer
+    - browser-playable
+  source: examples/fundamentals/020_ui/003_button
+  docs: docs/learn/ui.md
+  web: true
+app:
+  loop: asyncio

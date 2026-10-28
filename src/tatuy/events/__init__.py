@@ -51,6 +51,8 @@ class EventType(Enum):
     WINDOWMINIMIZED = auto()
     WINDOWMAXIMIZED = auto()
     WINDOWRESTORED = auto()
+    WINDOWFOCUSGAINED = auto()
+    WINDOWFOCUSLOST = auto()
     WINDOWCLOSE = auto()
 
 

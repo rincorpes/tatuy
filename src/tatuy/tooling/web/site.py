@@ -50,7 +50,9 @@ class ShowcaseSiteBuilder:
             None,
         )
         if featured is None:
-            raise ValueError(f"Featured showcase target not found: {featured_slug}")
+            raise ValueError(
+                f"Featured showcase target not found: {featured_slug}"
+            )
 
         for entry in entries:
             if entry.get("playable") is True:
@@ -97,7 +99,9 @@ class ShowcaseSiteBuilder:
         payload = json.loads(manifest.read_text(encoding="utf-8"))
         targets = payload.get("targets")
         if not isinstance(targets, list) or not targets:
-            raise ValueError("Showcase manifest must contain at least one target")
+            raise ValueError(
+                "Showcase manifest must contain at least one target"
+            )
         entries = [entry for entry in targets if isinstance(entry, dict)]
         if len(entries) != len(targets):
             raise ValueError("Showcase manifest targets must be mappings")
@@ -107,7 +111,9 @@ class ShowcaseSiteBuilder:
         """Validate one catalog entrypoint before generating its wrapper page."""
         entrypoint = entry.get("entrypoint")
         if not isinstance(entrypoint, str) or not entrypoint:
-            raise ValueError("Playable showcase entry is missing its entrypoint")
+            raise ValueError(
+                "Playable showcase entry is missing its entrypoint"
+            )
         resolved = (self.output_root / entrypoint).resolve()
         try:
             resolved.relative_to(self.output_root)
@@ -207,9 +213,7 @@ class ShowcaseSiteBuilder:
         docs = entry.get("docs")
         docs_link = ""
         if isinstance(docs, str) and docs:
-            docs_link = (
-                f'<a class="button" href="{cls._docs_href(docs, prefix="../../")}">Docs</a>'
-            )
+            docs_link = f'<a class="button" href="{cls._docs_href(docs, prefix="../../")}">Docs</a>'
         return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -223,6 +227,7 @@ class ShowcaseSiteBuilder:
 <main class="play-main">
   <section class="play-heading"><p class="eyebrow">{category}</p><h1>{title}</h1><p>{description} Browser-v0 runs without audio, capture, or persistent storage.</p></section>
   <div class="runtime-frame"><iframe id="tatuy-runtime" title="Tatuy {title} runtime" src="../../{entrypoint}" allow="fullscreen"></iframe></div>
+  <div class="runtime-focus" data-focus-status data-focused="false">Click the game to focus controls</div>
   <div class="play-controls"><button type="button" data-action="restart">Restart</button><button type="button" data-action="fullscreen">Fullscreen</button><span class="status">Audio disabled in browser-v0</span></div>
   <div class="actions">{docs_link}<a class="button" href="https://github.com/rincorpes/tatuy/tree/main/{source}">Source</a></div>
 </main>
@@ -247,10 +252,62 @@ class ShowcaseSiteBuilder:
   const frame = document.querySelector("#tatuy-runtime");
   const restart = document.querySelector('[data-action="restart"]');
   const fullscreen = document.querySelector('[data-action="fullscreen"]');
+  const focusStatus = document.querySelector('[data-focus-status]');
+  const scrollKeys = new Set(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " ", "PageUp", "PageDown", "Home", "End"]);
+
+  const setFocused = (focused) => {
+    if (!focusStatus) return;
+    focusStatus.dataset.focused = focused ? "true" : "false";
+    focusStatus.textContent = focused
+      ? "Game focused — controls captured"
+      : "Click the game to focus controls";
+  };
+
+  const focusRuntime = () => {
+    frame?.focus();
+    frame?.contentWindow?.focus();
+    setFocused(true);
+  };
+
+  const installRuntimeGuards = () => {
+    try {
+      const runtimeWindow = frame?.contentWindow;
+      const runtimeDocument = runtimeWindow?.document;
+      if (!runtimeWindow || !runtimeDocument) return;
+      runtimeDocument.addEventListener("keydown", (event) => {
+        if (scrollKeys.has(event.key)) event.preventDefault();
+        setFocused(true);
+      }, { capture: true });
+      runtimeDocument.addEventListener("pointerdown", () => setFocused(true), { capture: true });
+      runtimeWindow.addEventListener("blur", () => setFocused(false));
+      runtimeDocument.addEventListener("visibilitychange", () => {
+        if (runtimeDocument.hidden) setFocused(false);
+      });
+    } catch (_error) {
+      // The runtime is expected to be same-origin on GitHub Pages. If a host
+      // changes that policy, focus UX still works without same-origin guards.
+    }
+  };
+
+  frame?.addEventListener("load", installRuntimeGuards);
+  window.addEventListener("blur", () => {
+    queueMicrotask(() => setFocused(document.activeElement === frame));
+  });
+  document.addEventListener("focusin", () => {
+    if (document.activeElement !== frame) setFocused(false);
+  });
+
   restart?.addEventListener("click", () => {
     if (frame) frame.src = frame.src;
+    setFocused(false);
   });
-  fullscreen?.addEventListener("click", () => frame?.requestFullscreen?.());
+  fullscreen?.addEventListener("click", async () => {
+    await frame?.parentElement?.requestFullscreen?.();
+    focusRuntime();
+  });
+  document.addEventListener("fullscreenchange", () => {
+    if (document.fullscreenElement) focusRuntime();
+  });
 })();
 """
 
@@ -292,6 +349,8 @@ footer { border-top: 1px solid #273244; color: #8b9bb0; }
 .play-heading h1 { font-size: clamp(3rem, 7vw, 5rem); }
 .runtime-frame { margin-top: 36px; border: 1px solid #334155; border-radius: 16px; overflow: hidden; background: #000; aspect-ratio: 4 / 3; }
 .runtime-frame iframe { width: 100%; height: 100%; border: 0; display: block; }
+.runtime-focus { margin-top: 12px; color: #fbbf24; font-size: .9rem; font-weight: 700; }
+.runtime-focus[data-focused="true"] { color: #86efac; }
 .play-controls { display: flex; align-items: center; gap: 12px; margin-top: 16px; }
 .play-controls .status { margin-left: auto; }
 @media (max-width: 760px) { .architecture, .card { grid-template-columns: 1fr; } .site-header { align-items: flex-start; } .site-header nav { gap: 12px; flex-wrap: wrap; justify-content: end; } main { padding-inline: 20px; } h1 { font-size: 3.4rem; } .play-controls { align-items: flex-start; flex-wrap: wrap; } .play-controls .status { width: 100%; margin-left: 0; } }

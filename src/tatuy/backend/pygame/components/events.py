@@ -107,6 +107,14 @@ _EVENT_MAP = {
         EventCategory.WINDOW,
         EventType.WINDOWRESTORED,
     ),
+    pygame.WINDOWFOCUSGAINED: (
+        EventCategory.WINDOW,
+        EventType.WINDOWFOCUSGAINED,
+    ),
+    pygame.WINDOWFOCUSLOST: (
+        EventCategory.WINDOW,
+        EventType.WINDOWFOCUSLOST,
+    ),
     pygame.WINDOWCLOSE: (
         EventCategory.WINDOW,
         EventType.WINDOWCLOSE,

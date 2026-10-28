@@ -29,7 +29,9 @@ class InputService:
         self._mouse_inside = False
         self._frame = InputFrame()
 
-    def sync_events(self, events: list[Event]) -> None:
+    def sync_events(
+        self, events: list[Event], *, focused: bool = True
+    ) -> None:
         """Advance input state once, including frames with no events."""
         if not self._backend.initialized:
             return
@@ -51,6 +53,28 @@ class InputService:
 
         mouse_dx = 0
         mouse_dy = 0
+
+        if not focused:
+            keys_released.update(self._keys_down)
+            mouse_released.update(self._mouse_down)
+            self._keys_down.clear()
+            self._mouse_down.clear()
+            self._mouse_inside = False
+            self._frame = InputFrame(
+                keys_released=frozenset(keys_released),
+                buttons={
+                    f"mouse_{button}": ButtonState(
+                        down=False,
+                        pressed=False,
+                        released=True,
+                    )
+                    for button in mouse_released
+                },
+                mouse_pos=self._mouse_pos,
+                mouse_inside=False,
+                focused=False,
+            )
+            return
 
         for event in events:
             keyboard = event.type in (

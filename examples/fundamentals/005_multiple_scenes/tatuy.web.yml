@@ -1,0 +1,16 @@
+showcase:
+  id: fundamentals/scenes/multiple-scenes
+  slug: multiple-scenes
+  title: Multiple Scenes
+  description: Exercise scene transitions with discrete keyboard input in the browser host.
+  category: fundamental
+  tags:
+    - scenes
+    - input
+    - keyboard
+    - browser-playable
+  source: examples/fundamentals/005_multiple_scenes
+  docs: docs/learn/scenes.md
+  web: true
+app:
+  loop: asyncio

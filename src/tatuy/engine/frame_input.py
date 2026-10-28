@@ -23,6 +23,9 @@ class FrameInputCollector:
             self._services.window.sync_events(events.get(EventCategory.WINDOW))
 
         with profiler.span("input.sync", "events"):
-            self._services.input.sync_events(events.get(EventCategory.INPUT))
+            self._services.input.sync_events(
+                events.get(EventCategory.INPUT),
+                focused=self._services.window.focused,
+            )
 
         return self._services.input.get_input_frame()

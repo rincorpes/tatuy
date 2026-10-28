@@ -12,6 +12,7 @@ class WindowService:
     def __init__(self, backend: Backend):
         self._backend = backend
         self._last_size = Size(0, 0)
+        self.focused = True
 
     @property
     def _window(self) -> Window:
@@ -26,6 +27,7 @@ class WindowService:
     def open(self) -> None:
         self._window.open()
         self._last_size = self._window.size
+        self.focused = True
 
     def sync_events(self, events: list[Event]):
         if not self._backend.initialized:
@@ -95,6 +97,14 @@ class WindowService:
                             "maximized": self._window.maximized,
                         },
                     )
+
+                case EventType.WINDOWFOCUSGAINED:
+                    self.focused = True
+                    event_bus.emit(event.type_name, data={"focused": True})
+
+                case EventType.WINDOWFOCUSLOST:
+                    self.focused = False
+                    event_bus.emit(event.type_name, data={"focused": False})
 
                 case EventType.WINDOWCLOSE:
                     self._window.close_requested = True

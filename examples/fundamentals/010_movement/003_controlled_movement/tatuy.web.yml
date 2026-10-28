@@ -1,0 +1,16 @@
+showcase:
+  id: fundamentals/movement/controlled-movement
+  slug: controlled-movement
+  title: Controlled Movement
+  description: Exercise held WASD movement and focus-safe keyboard input in the browser host.
+  category: fundamental
+  tags:
+    - movement
+    - input
+    - keyboard
+    - browser-playable
+  source: examples/fundamentals/010_movement/003_controlled_movement
+  docs: docs/learn/movement.md
+  web: true
+app:
+  loop: asyncio

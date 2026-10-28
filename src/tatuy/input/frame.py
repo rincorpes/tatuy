@@ -62,6 +62,7 @@ class InputFrame:
     mouse_pos: Tuple[int, int] = (0, 0)
     mouse_delta: Tuple[int, int] = (0, 0)
     mouse_inside: bool = False
+    focused: bool = True
 
     text_input: str = ""
 
@@ -109,5 +110,6 @@ class InputFrame:
             mouse_pos=tuple(data.get("mouse_pos", (0, 0))),
             mouse_delta=tuple(data.get("mouse_delta", (0, 0))),
             mouse_inside=bool(data.get("mouse_inside", False)),
+            focused=bool(data.get("focused", True)),
             text_input=data.get("text_input", ""),
         )
