@@ -14,7 +14,7 @@ from tatuy.tooling.web.models import WebBuildResult, WebShowcaseMetadata
 from tatuy.tooling.web.pygbag import BrowserPackager, PygbagPackager
 
 DEFAULT_RUNTIME_OVERRIDES: dict[str, Any] = {
-    "backend": {"audio": {"enabled": False, "auto_init": False}},
+    "backend": {"audio": {"auto_init": False}},
     "capabilities": {"capture": False, "replay": False},
     "storage": {"provider": "ephemeral"},
 }
@@ -101,8 +101,8 @@ class WebTargetBuilder:
             Tuple containing the content-addressed staging path and metadata.
         """
         resolved = self.resolve_target(target)
-        config, metadata = self._load_target_config(resolved)
-        build_id = self._content_fingerprint(resolved)
+        config, metadata, package_files = self._load_target_config(resolved)
+        build_id = self._content_fingerprint(resolved, package_files)
         self.staging_root.mkdir(parents=True, exist_ok=True)
         staging = self.staging_root / f"{metadata.slug}-{build_id}"
         for stale in self.staging_root.glob(f"{metadata.slug}-*"):
@@ -112,6 +112,7 @@ class WebTargetBuilder:
             shutil.rmtree(staging)
         staging.mkdir()
         self._copy_target(resolved, staging)
+        self._copy_web_package_files(package_files, staging)
         self._copy_tatuy(staging)
         for package_name in self.pure_python_packages:
             self._copy_package(package_name, staging)
@@ -151,7 +152,11 @@ class WebTargetBuilder:
 
     def _load_target_config(
         self, target: Path
-    ) -> tuple[dict[str, Any], WebShowcaseMetadata]:
+    ) -> tuple[
+        dict[str, Any],
+        WebShowcaseMetadata,
+        tuple[tuple[Path, Path], ...],
+    ]:
         config = ConfigurationLoader.load_profile(target / "tatuy.yml", "web")
         raw_showcase = config.pop("showcase", {})
         if not isinstance(raw_showcase, dict):
@@ -160,9 +165,61 @@ class WebTargetBuilder:
             raw_showcase,
             default_slug=target.name,
         )
-        return merge_config(config, self.runtime_overrides), metadata
+        raw_package = config.pop("web_package", {})
+        package_files = self._parse_web_package_files(raw_package)
+        return (
+            merge_config(config, self.runtime_overrides),
+            metadata,
+            package_files,
+        )
 
-    def _content_fingerprint(self, target: Path) -> str:
+    def _parse_web_package_files(
+        self, raw_package: Any
+    ) -> tuple[tuple[Path, Path], ...]:
+        if raw_package is None:
+            return ()
+        if not isinstance(raw_package, dict):
+            raise TypeError("web_package configuration must be a mapping")
+        files = raw_package.get("files", [])
+        if not isinstance(files, list):
+            raise TypeError("web_package.files must be a list")
+
+        resolved: list[tuple[Path, Path]] = []
+        for item in files:
+            if not isinstance(item, dict):
+                raise TypeError("web_package.files entries must be mappings")
+            source_value = item.get("source")
+            destination_value = item.get("destination")
+            if not isinstance(source_value, str) or not source_value.strip():
+                raise TypeError("web_package file source must be a non-empty string")
+            if not isinstance(destination_value, str) or not destination_value.strip():
+                raise TypeError(
+                    "web_package file destination must be a non-empty string"
+                )
+
+            source = (self.repository_root / source_value).resolve()
+            try:
+                source.relative_to(self.repository_root)
+            except ValueError as exc:
+                raise ValueError(
+                    "web_package file source must stay inside the repository"
+                ) from exc
+            if not source.is_file():
+                raise FileNotFoundError(source)
+
+            destination = Path(destination_value)
+            if destination.is_absolute() or ".." in destination.parts:
+                raise ValueError(
+                    "web_package file destination must be a relative staged path"
+                )
+            resolved.append((source, destination))
+        return tuple(resolved)
+
+    def _content_fingerprint(
+        self,
+        target: Path,
+        package_files: tuple[tuple[Path, Path], ...] = (),
+    ) -> str:
         digest = hashlib.sha256()
         roots = [("target", target), ("tatuy", self.tatuy_source)]
         roots.extend(
@@ -174,6 +231,14 @@ class WebTargetBuilder:
                 relative = path.relative_to(root).as_posix()
                 digest.update(f"{label}/{relative}\0".encode("utf-8"))
                 digest.update(path.read_bytes())
+        for source, destination in package_files:
+            relative_source = source.relative_to(self.repository_root).as_posix()
+            digest.update(
+                f"web-package/{relative_source}->{destination.as_posix()}\0".encode(
+                    "utf-8"
+                )
+            )
+            digest.update(source.read_bytes())
         return digest.hexdigest()[:8]
 
     @staticmethod
@@ -195,6 +260,15 @@ class WebTargetBuilder:
             if relative.name in {"tatuy.yml", "tatuy.web.yml"}:
                 continue
             destination = staging / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, destination)
+
+    @staticmethod
+    def _copy_web_package_files(
+        package_files: tuple[tuple[Path, Path], ...], staging: Path
+    ) -> None:
+        for source, relative_destination in package_files:
+            destination = staging / relative_destination
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source, destination)
 

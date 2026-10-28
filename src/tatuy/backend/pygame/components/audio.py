@@ -25,6 +25,11 @@ class PygameAudio(BackendComponent[PygameAudioConfig]):
         self._sounds: dict[str, pygame.mixer.Sound] = {}
         self._master_volume: float | None = None
 
+    @property
+    def ready(self) -> bool:
+        """Return whether enabled mixer audio is initialized and usable."""
+        return bool(self.config.enabled and pygame.mixer.get_init())
+
     def init(self):
         """Initialize enabled mixer audio, preload sounds, and apply configured volume.
 

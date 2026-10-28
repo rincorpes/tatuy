@@ -12,6 +12,8 @@ The current showcase scope is **fundamentals only**. Experiments and games are i
 | `Candidate` | Uses the reusable Tatuy application/runtime path and has no known browser-specific blocker. It still needs a browser smoke test before public promotion. |
 | `W12 input` | Expected to work structurally; representative browser input/focus behavior is now verified, but this specific target has not been promoted yet. |
 | `W13 audio` | Requires the browser-audio/user-gesture work planned for W13. |
+| `W13 asset` | Browser audio behavior is verified, but the target still needs a browser-safe audio asset before public promotion. |
+| `W13 verify` | Has gesture-gated audio, packaged assets, and mute/error handling; requires a real browser sound smoke test before `web: true` promotion. |
 | `Host/API only` | Demonstrates backend, engine, loop, or host construction directly rather than a normal game target. Keep as documentation/source unless deliberately adapted. |
 | `Unsupported v0` | Demonstrates a capability intentionally disabled in browser-v0. |
 
@@ -79,7 +81,7 @@ The current showcase scope is **fundamentals only**. Experiments and games are i
 | `015_trails` | FX | Candidate | Browser smoke test | none | no meaningful input | no | Trail rendering candidate. |
 | `016_camera_effects` | FX | Candidate | Browser smoke test | none | no meaningful input | no | Camera-effects candidate. |
 | `017_screen_effects` | FX | Candidate | Browser smoke test | none | no meaningful input | no | Screen-effects candidate. |
-| `018_audio` | audio | W13 audio | Browser audio unlock/user gesture | `assets/test.wav` | no meaningful input | yes | Uses the logical `ctx.assets` boundary; structurally ready once audio policy is implemented. |
+| `018_audio` | audio | W13 asset | Replace WAV with browser-safe OGG before public promotion | packaged `assets/test.wav` (local smoke only) | SPACE + M | yes | Chromium verified gesture unlock, playback, repeated playback, and mute/unmute; strict Pygbag builds still reject the WAV asset. |
 | `020_ui/001_panel_layout` | UI | Candidate | Browser smoke test | none | no meaningful input | no | Layout-only UI example. |
 | `020_ui/002_text` | UI | Candidate | Browser smoke test | none | no meaningful input | no | Text-only UI example. |
 | `020_ui/003_button` | UI | Playable | None for current v0 | none | pointer/button | no | Browser-verified pointer hover, press, release, and click interaction. |
@@ -101,7 +103,19 @@ poetry run python scripts/build_web_target.py examples/fundamentals/020_ui/003_b
 
 The manual pass confirmed pointer/focus state, discrete Enter presses, held WASD movement, UI pointer interaction, focus-loss recovery without stuck input, and browser-scroll suppression while gameplay is focused. Those four targets are now promoted to `showcase.web: true` and `Playable`.
 
-Resize/high-DPI scaling remains W14 scope, and browser audio remains W13 scope.
+Resize/high-DPI scaling remains W14 scope.
+
+## W13 browser audio smoke test
+
+Chromium verification passed on October 28, 2026 for the game-facing audio fundamental using the developer-only sound-format override:
+
+```powershell
+poetry run python scripts/build_web_target.py examples/fundamentals/018_audio --allow-unsupported-sound-format
+```
+
+The manual pass confirmed that the game starts before audio unlock, `SPACE` unlocks and plays sound, repeated playback works, and `M` mutes/unmutes while preserving the previous master volume.
+
+Strict Pygbag packaging correctly rejects the current WAV as a common unsupported browser format. The override above exists only for local W13 runtime smoke testing; normal builds remain strict. Before `018_audio` can change to `showcase.web: true`, replace the staged WAV with a browser-safe OGG, update the target to load the OGG logical asset, and repeat the strict build/browser smoke test without the override.
 
 ## Promotion rules
 

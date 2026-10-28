@@ -101,7 +101,7 @@ def test_play_page_embeds_raw_runtime_and_exposes_controls(
     assert 'data-action="fullscreen"' in play_page
     assert 'data-focus-status' in play_page
     assert "Click the game to focus controls" in play_page
-    assert "Audio disabled in browser-v0" in play_page
+    assert "Audio unlocks on first game interaction when enabled" in play_page
 
     site_js = (output / "assets" / "site.js").read_text(encoding="utf-8")
     assert "event.preventDefault()" in site_js

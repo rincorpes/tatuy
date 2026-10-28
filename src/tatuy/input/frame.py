@@ -72,6 +72,13 @@ class InputFrame:
     def is_pressed(self, key: Key) -> bool:
         return key in self.keys_pressed
 
+    def has_user_gesture(self) -> bool:
+        """Return whether this frame contains a key or pointer-button press."""
+        return bool(
+            self.keys_pressed
+            or any(state.pressed for state in self.buttons.values())
+        )
+
     def to_dict(self) -> Dict[str, object]:
         """
         Convert the InputFrame to a dictionary.

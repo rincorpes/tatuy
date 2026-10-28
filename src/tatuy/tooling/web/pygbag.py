@@ -29,6 +29,7 @@ class PygbagPackager:
     command: tuple[str, ...] = (sys.executable, "-m", "pygbag")
     python_build: str = "3.12"
     ume_block: int = 0
+    disable_sound_format_error: bool = False
 
     def build(self, staging: Path) -> None:
         """Build one staged Tatuy target into static Pygbag output.
@@ -42,18 +43,17 @@ class PygbagPackager:
         Raises:
             subprocess.CalledProcessError: Pygbag exits unsuccessfully.
         """
-        subprocess.run(
-            [
-                *self.command,
-                "--PYBUILD",
-                self.python_build,
-                "--ume_block",
-                str(self.ume_block),
-                "--build",
-                str(staging),
-            ],
-            check=True,
-        )
+        command = [
+            *self.command,
+            "--PYBUILD",
+            self.python_build,
+            "--ume_block",
+            str(self.ume_block),
+        ]
+        if self.disable_sound_format_error:
+            command.append("--disable-sound-format-error")
+        command.extend(["--build", str(staging)])
+        subprocess.run(command, check=True)
 
 
 def command_tuple(command: Sequence[str]) -> tuple[str, ...]:

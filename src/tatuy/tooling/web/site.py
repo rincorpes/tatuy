@@ -225,10 +225,10 @@ class ShowcaseSiteBuilder:
 <body class="play-page">
 <header class="site-header"><a class="brand" href="../../">Tatuy</a><nav><a href="../../docs/">Docs</a><a href="https://github.com/rincorpes/tatuy">GitHub</a></nav></header>
 <main class="play-main">
-  <section class="play-heading"><p class="eyebrow">{category}</p><h1>{title}</h1><p>{description} Browser-v0 runs without audio, capture, or persistent storage.</p></section>
+  <section class="play-heading"><p class="eyebrow">{category}</p><h1>{title}</h1><p>{description} Browser-v0 gates enabled audio until the first game interaction; capture remains disabled and storage is session-only.</p></section>
   <div class="runtime-frame"><iframe id="tatuy-runtime" title="Tatuy {title} runtime" src="../../{entrypoint}" allow="fullscreen"></iframe></div>
   <div class="runtime-focus" data-focus-status data-focused="false">Click the game to focus controls</div>
-  <div class="play-controls"><button type="button" data-action="restart">Restart</button><button type="button" data-action="fullscreen">Fullscreen</button><span class="status">Audio disabled in browser-v0</span></div>
+  <div class="play-controls"><button type="button" data-action="restart">Restart</button><button type="button" data-action="fullscreen">Fullscreen</button><span class="status">Audio unlocks on first game interaction when enabled</span></div>
   <div class="actions">{docs_link}<a class="button" href="https://github.com/rincorpes/tatuy/tree/main/{source}">Source</a></div>
 </main>
 <script src="../../assets/site.js"></script>

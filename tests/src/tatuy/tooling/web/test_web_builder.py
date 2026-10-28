@@ -83,8 +83,11 @@ def test_prepare_stages_target_source_assets_and_host_config(
     assert "'loop': 'asyncio'" in launcher
     assert "'capture': False" in launcher
     assert "'replay': False" in launcher
+    assert "'audio': {'auto_init': False}" in launcher
+    assert "'enabled': False" not in launcher
     assert "'storage': {'provider': 'ephemeral'}" in launcher
     assert "showcase" not in launcher
+    assert "web_package" not in launcher
     assert "await AsyncRuntimeHost().run(app.build())" in launcher
 
 
@@ -100,6 +103,34 @@ def test_prepare_changes_build_identity_when_target_changes(
 
     assert second.name != first_name
     assert not first.exists()
+
+
+def test_prepare_packages_declared_repository_file_and_fingerprints_it(
+    tmp_path: Path,
+) -> None:
+    builder, target, _ = _builder_fixture(tmp_path)
+    shared = builder.repository_root / "shared" / "audio" / "test.wav"
+    shared.parent.mkdir(parents=True)
+    shared.write_bytes(b"first")
+    profile = target / "tatuy.web.yml"
+    profile.write_text(
+        profile.read_text(encoding="utf-8")
+        + "web_package:\n"
+        + "  files:\n"
+        + "    - source: shared/audio/test.wav\n"
+        + "      destination: assets/external.wav\n",
+        encoding="utf-8",
+    )
+
+    first, _ = builder.prepare(target)
+    first_name = first.name
+    assert (first / "assets" / "external.wav").read_bytes() == b"first"
+
+    shared.write_bytes(b"second")
+    second, _ = builder.prepare(target)
+
+    assert second.name != first_name
+    assert (second / "assets" / "external.wav").read_bytes() == b"second"
 
 
 def test_build_invokes_packager_and_normalizes_output(tmp_path: Path) -> None:
@@ -192,3 +223,21 @@ def test_pygbag_packager_invokes_static_build(
         ],
         check=True,
     )
+
+
+def test_pygbag_packager_can_suppress_sound_format_validation_for_local_smoke(
+    monkeypatch, tmp_path: Path
+) -> None:
+    run = Mock()
+    monkeypatch.setattr("tatuy.tooling.web.pygbag.subprocess.run", run)
+    staging = tmp_path / "staging"
+    packager = PygbagPackager(
+        command=("python-web", "-m", "pygbag"),
+        disable_sound_format_error=True,
+    )
+
+    packager.build(staging)
+
+    command = run.call_args.args[0]
+    assert "--disable-sound-format-error" in command
+    assert command[-2:] == ["--build", str(staging)]

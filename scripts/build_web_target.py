@@ -21,9 +21,20 @@ def main() -> None:
         default=sys.executable,
         help="Python executable whose environment provides pygbag.",
     )
+    parser.add_argument(
+        "--allow-unsupported-sound-format",
+        action="store_true",
+        help=(
+            "Temporarily suppress Pygbag's sound-format validation for local "
+            "browser testing. Public showcase assets should use OGG instead."
+        ),
+    )
     args = parser.parse_args()
 
-    packager = PygbagPackager(command=(args.pygbag_python, "-m", "pygbag"))
+    packager = PygbagPackager(
+        command=(args.pygbag_python, "-m", "pygbag"),
+        disable_sound_format_error=args.allow_unsupported_sound_format,
+    )
     builder = WebTargetBuilder(REPOSITORY_ROOT, packager=packager)
     result = builder.build(args.target)
     print(f"Built target: {result.metadata.slug}")

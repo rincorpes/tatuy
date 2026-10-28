@@ -1,0 +1,19 @@
+showcase:
+  id: fundamentals/audio
+  slug: audio
+  title: Audio
+  description: Exercise gesture-unlocked sound playback and runtime mute state in the browser host.
+  category: fundamental
+  tags:
+    - audio
+    - input
+    - browser-candidate
+  source: examples/fundamentals/018_audio
+  docs: docs/learn/audio.md
+  web: false
+web_package:
+  files:
+    - source: examples/fundamentals/001_backend/008_audio/assets/test.wav
+      destination: assets/test.wav
+app:
+  loop: asyncio

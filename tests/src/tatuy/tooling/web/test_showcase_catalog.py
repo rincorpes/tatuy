@@ -173,11 +173,15 @@ def test_repository_browser_candidate_profiles_are_valid(tmp_path: Path) -> None
     by_id = {entry.id: entry for entry in entries}
 
     assert set(by_id) == {
+        "fundamentals/audio",
         "fundamentals/rendering/render-queue",
         "fundamentals/scenes/on-present",
         "fundamentals/scenes/multiple-scenes",
         "fundamentals/movement/controlled-movement",
         "fundamentals/ui/button",
     }
+    audio = by_id.pop("fundamentals/audio")
+    assert audio.web is False
+    assert audio.playable is False
     assert all(entry.web is True for entry in by_id.values())
     assert all(entry.playable is True for entry in by_id.values())

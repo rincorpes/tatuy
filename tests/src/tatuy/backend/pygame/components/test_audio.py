@@ -22,6 +22,14 @@ def mixer(monkeypatch):
     return fake
 
 
+def test_ready_reflects_enabled_initialized_mixer(mixer):
+    audio = module.PygameAudio(PygameAudioConfig(enabled=True))
+    assert audio.ready is True
+    mixer.get_init.return_value = None
+    assert audio.ready is False
+    assert module.PygameAudio(PygameAudioConfig(enabled=False)).ready is False
+
+
 def test_disabled_load_play_and_shutdown_are_noops(mixer):
     audio = module.PygameAudio(PygameAudioConfig(enabled=False))
     audio.init()

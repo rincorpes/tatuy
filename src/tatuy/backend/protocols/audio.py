@@ -22,6 +22,10 @@ class Audio(Protocol):
             AudioConfig: Read-only configuration reference for this capability.
         """
 
+    @property
+    def ready(self) -> bool:
+        """Return whether the concrete audio device is initialized and usable."""
+
     def init(self):
         """Initialize the configured audio device and preload configured sounds.
 
