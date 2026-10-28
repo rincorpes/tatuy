@@ -130,6 +130,8 @@ poetry run python scripts/build_showcase.py --serve
 
 The preview serves `build/web/` on `http://127.0.0.1:8000/` by default; use `--host` and `--port` to override the bind address or port.
 
+Before the first deployment, enable GitHub Pages once in the repository settings and choose **GitHub Actions** as the build source. Pull requests can still build and validate the site without Pages being enabled because the workflow only configures Pages in the deployment job.
+
 The minimal `tatuy` install intentionally excludes the Pygame backend, browser packaging, documentation-site tooling, capture, CLI, and MCP dependencies. See [`docs/internals/runtime-dependencies.md`](docs/internals/runtime-dependencies.md) for the extras model.
 
 A desktop environment is required for interactive Pygame examples.

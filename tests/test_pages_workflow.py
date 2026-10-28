@@ -13,6 +13,7 @@ def test_pages_workflow_builds_from_showcase_metadata_before_deploy() -> None:
     expected_steps = [
         "scripts/build_showcase.py",
         "actions/upload-pages-artifact@v4",
+        "actions/configure-pages@v5",
         "actions/deploy-pages@v4",
     ]
     positions = [text.index(step) for step in expected_steps]
