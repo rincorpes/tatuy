@@ -93,6 +93,17 @@ def test_public_docs_do_not_use_root_absolute_markdown_links() -> None:
         assert "](/" not in content, relative
 
 
+def test_public_docs_do_not_link_outside_docs_or_missing_reference_section() -> None:
+    for path in DOCS_ROOT.rglob("*.md"):
+        relative = path.relative_to(DOCS_ROOT).as_posix()
+        if relative.startswith("ai/") or relative.startswith("internals/mcp/"):
+            continue
+        content = path.read_text(encoding="utf-8")
+        assert "](../AGENTS.md)" not in content, relative
+        assert "](../../AGENTS.md)" not in content, relative
+        assert "reference/" not in content, relative
+
+
 def test_docs_extra_owns_mkdocs_and_dev_includes_it() -> None:
     with PYPROJECT.open("rb") as stream:
         project = tomllib.load(stream)["project"]

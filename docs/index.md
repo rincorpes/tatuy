@@ -28,7 +28,7 @@ Use [Guides](guides/index.md).
 
 ### Look up exact behavior
 
-Use [Reference](reference/index.md).
+Use the relevant [Learn](learn/index.md), [Guides](guides/index.md), and [Internals](internals/index.md) sections, then inspect the implementation when exact runtime behavior matters.
 
 ### Understand the architecture
 
@@ -42,7 +42,7 @@ Use [Internals](internals/index.md), then inspect the implementation and nearby 
 
 Read:
 
-1. [`AGENTS.md`](../AGENTS.md)
+1. [`AGENTS.md`](https://github.com/rincorpes/tatuy/blob/main/AGENTS.md)
 2. [AI development guide](ai/index.md)
 3. [Architecture map](ai/architecture-map.md)
 4. [Architectural invariants](ai/invariants.md)
@@ -55,7 +55,6 @@ Read:
 | `getting-started/` | Get something running |
 | `learn/` | Teach concepts |
 | `guides/` | Complete a task |
-| `reference/` | State current contracts |
 | `architecture/` | Explain design decisions |
 | `internals/` | Explain implementation |
 | `examples/` | Find executable demonstrations |

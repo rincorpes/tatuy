@@ -26,6 +26,6 @@ Important contributor contracts:
 - [Render fallback handling](engine/render-fallback.md)
 - [Kernel/reference implementation conventions](engine/kernel-conventions.md)
 
-Read [`AGENTS.md`](../../AGENTS.md) before changing engine internals.
+Read [`AGENTS.md`](https://github.com/rincorpes/tatuy/blob/main/AGENTS.md) before changing engine internals.
 
 ---
