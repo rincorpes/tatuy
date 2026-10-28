@@ -12,6 +12,9 @@ from tatuy.tooling.web.builder import WebTargetBuilder
 from tatuy.tooling.web.pygbag import PygbagPackager
 
 
+PROJECT_ROOT = Path(__file__).resolve().parents[5]
+
+
 class FakePackager:
     """Create deterministic static output without invoking Pygbag."""
 
@@ -91,6 +94,43 @@ def test_prepare_stages_target_source_assets_and_host_config(
     assert "await AsyncRuntimeHost().run(app.build())" in launcher
 
 
+@pytest.mark.parametrize(
+    ("relative", "slug", "extra_file"),
+    [
+        ("examples/games/003_snake", "snake", None),
+        ("examples/experiments/005_procedural_tree", "procedural-tree", None),
+        (
+            "examples/experiments/007_infection_arena",
+            "infection-arena",
+            "ecology.py",
+        ),
+    ],
+)
+def test_public_v0_targets_prepare_for_browser_staging(
+    tmp_path: Path,
+    relative: str,
+    slug: str,
+    extra_file: str | None,
+) -> None:
+    builder = WebTargetBuilder(
+        PROJECT_ROOT,
+        staging_root=tmp_path / "staging",
+        output_root=tmp_path / "web",
+        tatuy_source=PROJECT_ROOT / "src" / "tatuy",
+        pure_python_packages=(),
+    )
+
+    staging, metadata = builder.prepare(PROJECT_ROOT / relative)
+
+    assert metadata.slug == slug
+    assert (staging / "app.py").is_file()
+    if extra_file is not None:
+        assert (staging / extra_file).is_file()
+    launcher = (staging / "main.py").read_text(encoding="utf-8")
+    assert "from app import create_app" in launcher
+    assert "create_app(WEB_CONFIG)" in launcher
+
+
 def test_prepare_changes_build_identity_when_target_changes(
     tmp_path: Path,
 ) -> None:
@@ -103,6 +143,25 @@ def test_prepare_changes_build_identity_when_target_changes(
 
     assert second.name != first_name
     assert not first.exists()
+
+
+def test_prepare_excludes_private_local_state_from_staging(tmp_path: Path) -> None:
+    builder, target, _ = _builder_fixture(tmp_path)
+    (target / ".env").write_text("SECRET=1\n", encoding="utf-8")
+    (target / "tatuy.local.yml").write_text("local: true\n", encoding="utf-8")
+    (target / "screenshots").mkdir()
+    (target / "screenshots" / "debug.png").write_bytes(b"png")
+    (target / "replays").mkdir()
+    (target / "replays" / "run.jsonl").write_text("{}\n", encoding="utf-8")
+    (target / "private.pem").write_text("key", encoding="utf-8")
+
+    staging, _ = builder.prepare(target)
+
+    assert not (staging / ".env").exists()
+    assert not (staging / "tatuy.local.yml").exists()
+    assert not (staging / "screenshots").exists()
+    assert not (staging / "replays").exists()
+    assert not (staging / "private.pem").exists()
 
 
 def test_prepare_packages_declared_repository_file_and_fingerprints_it(
@@ -144,18 +203,29 @@ def test_build_invokes_packager_and_normalizes_output(tmp_path: Path) -> None:
     assert (result.output / "app.tar.gz").read_bytes() == b"archive"
     assert result.manifest == builder.output_root / "manifest.json"
     assert (builder.output_root / ".nojekyll").exists()
+    provenance = json.loads(
+        (result.output / "build.json").read_text(encoding="utf-8")
+    )
+    assert provenance["build_id"] == result.build_id
+    assert provenance["source"] == "examples/demo"
+    assert provenance["bridge"] == "pygbag"
+    assert provenance["commit_sha"]
+    assert provenance["tatuy_version"]
+    assert provenance["bridge_version"]
+    assert provenance["python_version"]
+
     payload = json.loads(result.manifest.read_text(encoding="utf-8"))
-    assert payload == {
-        "targets": [
-            {
-                "slug": "demo-target",
-                "title": "Demo Target",
-                "description": "Browser demo",
-                "entrypoint": "play/demo-target/index.html",
-                "build_id": result.build_id,
-            }
-        ]
-    }
+    [entry] = payload["targets"]
+    assert entry["slug"] == "demo-target"
+    assert entry["title"] == "Demo Target"
+    assert entry["description"] == "Browser demo"
+    assert entry["entrypoint"] == "play/demo-target/index.html"
+    assert entry["build_id"] == result.build_id
+    assert entry["commit_sha"] == provenance["commit_sha"]
+    assert entry["tatuy_version"] == provenance["tatuy_version"]
+    assert entry["bridge"] == "pygbag"
+    assert entry["bridge_version"] == provenance["bridge_version"]
+    assert entry["python_version"] == provenance["python_version"]
 
 
 def test_build_preserves_other_manifest_entries(tmp_path: Path) -> None:

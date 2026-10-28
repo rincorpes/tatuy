@@ -11,6 +11,7 @@ from typing import Any, Mapping
 
 from tatuy.configuration import ConfigurationLoader, merge_config
 from tatuy.tooling.web.models import WebBuildResult, WebShowcaseMetadata
+from tatuy.tooling.web.provenance import WebBuildProvenance
 from tatuy.tooling.web.pygbag import BrowserPackager, PygbagPackager
 
 DEFAULT_RUNTIME_OVERRIDES: dict[str, Any] = {
@@ -18,6 +19,23 @@ DEFAULT_RUNTIME_OVERRIDES: dict[str, Any] = {
     "capabilities": {"capture": False, "replay": False},
     "storage": {"provider": "ephemeral"},
 }
+
+_PRIVATE_PACKAGE_PARTS = {
+    ".tatuy",
+    ".venv",
+    ".vscode",
+    "recordings",
+    "replays",
+    "screenshots",
+    "venv",
+}
+_PRIVATE_PACKAGE_NAMES = {
+    ".env",
+    "tatuy.local.yml",
+    "tatuy.local.yaml",
+    "tatuy.local.toml",
+}
+_PRIVATE_PACKAGE_SUFFIXES = {".key", ".pem"}
 
 
 class WebTargetBuilder:
@@ -140,7 +158,14 @@ class WebTargetBuilder:
         self._validate_build_output(build_root)
         output = self._normalize_output(build_root, metadata.slug)
         build_id = staging.name.rsplit("-", 1)[-1]
-        manifest = self._update_manifest(metadata, build_id)
+        source = resolved.relative_to(self.repository_root).as_posix()
+        provenance = WebBuildProvenance.current(
+            self.repository_root,
+            build_id=build_id,
+            source=source,
+        )
+        provenance.write(output / "build.json")
+        manifest = self._update_manifest(metadata, provenance)
         return WebBuildResult(
             target=resolved,
             staging=staging,
@@ -247,12 +272,24 @@ class WebTargetBuilder:
         for path in root.rglob("*"):
             if not path.is_file():
                 continue
+            relative = path.relative_to(root)
+            if WebTargetBuilder._is_private_packaged_path(relative):
+                continue
             if "__pycache__" in path.parts or ".mypy_cache" in path.parts:
                 continue
             if path.suffix in {".pyc", ".pyo"}:
                 continue
             files.append(path)
         return sorted(files)
+
+    @staticmethod
+    def _is_private_packaged_path(path: Path) -> bool:
+        if any(part in _PRIVATE_PACKAGE_PARTS for part in path.parts):
+            return True
+        name = path.name.lower()
+        if name in _PRIVATE_PACKAGE_NAMES or name.startswith(".env."):
+            return True
+        return path.suffix.lower() in _PRIVATE_PACKAGE_SUFFIXES
 
     def _copy_target(self, target: Path, staging: Path) -> None:
         for source in self._packaged_files(target):
@@ -349,7 +386,7 @@ asyncio.run(main())
     def _update_manifest(
         self,
         metadata: WebShowcaseMetadata,
-        build_id: str,
+        provenance: WebBuildProvenance,
     ) -> Path:
         self.output_root.mkdir(parents=True, exist_ok=True)
         manifest_path = self.output_root / "manifest.json"
@@ -364,7 +401,7 @@ asyncio.run(main())
         current = {
             **metadata.to_dict(),
             "entrypoint": f"play/{metadata.slug}/index.html",
-            "build_id": build_id,
+            **provenance.to_dict(),
         }
         entries = [
             entry for entry in entries if entry.get("slug") != metadata.slug

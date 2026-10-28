@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import html
 import json
+import os
 import shutil
 from pathlib import Path
 from typing import Any
+
+from tatuy.tooling.web.provenance import WebSiteProvenance
 
 from tatuy.tooling.web.validation import WebOutputBasePathValidator
 
@@ -82,9 +85,76 @@ class ShowcaseSiteBuilder:
             (target_root / "index.html").write_text(
                 self._play_html(entry), encoding="utf-8"
             )
+        self._integrate_docs(entries)
+        WebSiteProvenance.current(self.repository_root).write(
+            self.output_root / "build.json"
+        )
         (self.output_root / ".nojekyll").touch()
         WebOutputBasePathValidator().validate(self.output_root)
         return self.output_root
+
+    def _integrate_docs(self, entries: list[dict[str, Any]]) -> None:
+        """Inject live-demo/source links into generated MkDocs pages from metadata."""
+        grouped: dict[str, list[dict[str, Any]]] = {}
+        for entry in entries:
+            docs = entry.get("docs")
+            if entry.get("playable") is not True or not isinstance(docs, str) or not docs:
+                continue
+            grouped.setdefault(docs, []).append(entry)
+
+        for docs, related in grouped.items():
+            output = self._docs_output_path(docs)
+            if not output.is_file():
+                raise FileNotFoundError(
+                    f"Generated documentation page not found for showcase metadata: {output}"
+                )
+            text = output.read_text(encoding="utf-8")
+            marker = '<section class="tatuy-live-examples" data-tatuy-live-examples>'
+            if marker in text:
+                continue
+            block = self._docs_live_examples_html(output, related)
+            insertion = "</main>" if "</main>" in text else "</body>"
+            if insertion not in text:
+                text += block
+            else:
+                text = text.replace(insertion, f"{block}\n{insertion}", 1)
+            output.write_text(text, encoding="utf-8")
+
+    def _docs_output_path(self, docs: str) -> Path:
+        relative = Path(docs.removeprefix("docs/"))
+        if relative.suffix == ".md":
+            relative = relative.with_suffix("")
+        if relative.name == "index":
+            relative = relative.parent
+        return self.output_root / "docs" / relative / "index.html"
+
+    def _docs_live_examples_html(
+        self,
+        docs_output: Path,
+        entries: list[dict[str, Any]],
+    ) -> str:
+        links: list[str] = []
+        for entry in entries:
+            title = html.escape(str(entry["title"]))
+            source = html.escape(str(entry["source"]), quote=True)
+            showcase = self.output_root / "showcase" / str(entry["slug"])
+            relative_showcase = os.path.relpath(
+                showcase,
+                docs_output.parent,
+            ).replace(os.sep, "/")
+            links.append(
+                '<li><strong>'
+                f"{title}</strong> — "
+                f'<a href="{html.escape(relative_showcase, quote=True)}/">Play live demo</a> · '
+                '<a href="https://github.com/rincorpes/tatuy/tree/main/'
+                f'{source}">View source</a></li>'
+            )
+        return (
+            '<section class="tatuy-live-examples" data-tatuy-live-examples>'
+            "<h2>Live Tatuy examples</h2>"
+            "<p>Generated from showcase metadata for this documentation topic.</p>"
+            f"<ul>{''.join(links)}</ul></section>"
+        )
 
     def _load_catalog(self) -> list[dict[str, Any]]:
         """Load the generated showcase manifest used as the site source of truth.
@@ -133,7 +203,7 @@ class ShowcaseSiteBuilder:
     ) -> str:
         featured_slug = html.escape(str(featured["slug"]), quote=True)
         featured_title = html.escape(str(featured["title"]))
-        cards = "\n".join(cls._card_html(entry) for entry in entries)
+        catalog_sections = cls._catalog_sections_html(entries)
         return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -161,7 +231,7 @@ class ShowcaseSiteBuilder:
   </section>
   <section id="showcase" class="showcase">
     <div class="section-heading"><div><p class="eyebrow">Browser showcase</p><h2>Catalog</h2></div><span class="status">Generated from target metadata</span></div>
-    <div class="catalog-grid">{cards}</div>
+    {catalog_sections}
   </section>
   <section class="project-status"><p class="eyebrow">Project status</p><h2>Experimental by design.</h2><p>Tatuy is alpha software. The Python foundation, browser host, examples, documentation, and future native runtime are evolving together.</p></section>
 </main>
@@ -169,6 +239,44 @@ class ShowcaseSiteBuilder:
 </body>
 </html>
 """
+
+    @classmethod
+    def _catalog_sections_html(cls, entries: list[dict[str, Any]]) -> str:
+        """Group generated cards into stable public showcase categories."""
+        labels = {
+            "fundamental": "Fundamentals",
+            "game": "Games",
+            "experiment": "Experiments",
+        }
+        categories = list(labels)
+        categories.extend(
+            sorted(
+                {
+                    str(entry.get("category", "target"))
+                    for entry in entries
+                    if str(entry.get("category", "target")) not in labels
+                }
+            )
+        )
+        sections: list[str] = []
+        for category in categories:
+            matching = [
+                entry
+                for entry in entries
+                if str(entry.get("category", "target")) == category
+            ]
+            if not matching:
+                continue
+            label = html.escape(labels.get(category, category.title()))
+            cards = "\n".join(cls._card_html(entry) for entry in matching)
+            sections.append(
+                '<section class="catalog-section">'
+                f'<div class="section-heading"><h3>{label}</h3>'
+                f'<span class="status">{len(matching)} targets</span></div>'
+                f'<div class="catalog-grid">{cards}</div>'
+                "</section>"
+            )
+        return "\n".join(sections)
 
     @classmethod
     def _card_html(cls, entry: dict[str, Any]) -> str:
@@ -186,6 +294,10 @@ class ShowcaseSiteBuilder:
             actions.append(
                 f'<a class="button primary" href="./showcase/{slug}/">Play</a>'
             )
+        else:
+            actions.append(
+                '<span class="availability">Browser support pending</span>'
+            )
         source = html.escape(str(entry["source"]), quote=True)
         actions.append(
             '<a class="button" href="https://github.com/rincorpes/tatuy/tree/main/'
@@ -196,8 +308,14 @@ class ShowcaseSiteBuilder:
             actions.append(
                 f'<a class="button" href="{cls._docs_href(docs, prefix="./")}">Docs</a>'
             )
+        screenshot = entry.get("screenshot")
+        preview = (
+            f'<img src="./{html.escape(screenshot, quote=True)}" alt="{title} browser preview">'
+            if isinstance(screenshot, str) and screenshot
+            else f"<span>{title}</span>"
+        )
         return f"""<article class="card">
-  <div class="card-preview"><span>{title}</span></div>
+  <div class="card-preview">{preview}</div>
   <div class="card-body">
     <div class="tags"><span>{category}</span>{tags_html}</div>
     <h3>{title}</h3>
@@ -217,6 +335,7 @@ class ShowcaseSiteBuilder:
         docs_link = ""
         if isinstance(docs, str) and docs:
             docs_link = f'<a class="button" href="{cls._docs_href(docs, prefix="../../")}">Docs</a>'
+        provenance = cls._provenance_html(entry)
         return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -229,15 +348,55 @@ class ShowcaseSiteBuilder:
 <header class="site-header"><a class="brand" href="../../">Tatuy</a><nav><a href="../../docs/">Docs</a><a href="https://github.com/rincorpes/tatuy">GitHub</a></nav></header>
 <main class="play-main">
   <section class="play-heading"><p class="eyebrow">{category}</p><h1>{title}</h1><p>{description} Browser-v0 gates enabled audio until the first game interaction; capture remains disabled and storage is session-only.</p></section>
-  <div class="runtime-frame"><iframe id="tatuy-runtime" title="Tatuy {title} runtime" src="../../{entrypoint}" allow="fullscreen"></iframe></div>
+  <div class="runtime-frame">
+    <div class="runtime-state" data-runtime-state data-state="loading"><strong data-runtime-title>Loading runtime…</strong><span data-runtime-detail>Downloading Python/browser runtime and starting the first frame.</span></div>
+    <iframe id="tatuy-runtime" title="Tatuy {title} runtime" src="../../{entrypoint}" allow="fullscreen" sandbox="allow-scripts allow-same-origin"></iframe>
+  </div>
   <div class="runtime-focus" data-focus-status data-focused="false">Click the game to focus controls</div>
   <div class="play-controls"><button type="button" data-action="restart">Restart</button><button type="button" data-action="fullscreen">Fullscreen</button><span class="status">Audio unlocks on first game interaction when enabled</span></div>
+  <p class="compatibility-note">Public V0 is validated primarily in Chromium desktop. If the runtime fails, try Restart, then open the browser developer console and include the error with the linked source when reporting an issue.</p>
   <div class="actions">{docs_link}<a class="button" href="https://github.com/rincorpes/tatuy/tree/main/{source}">Source</a></div>
+  {provenance}
 </main>
 <script src="../../assets/site.js"></script>
 </body>
 </html>
 """
+
+    @staticmethod
+    def _provenance_html(entry: dict[str, Any]) -> str:
+        """Render build traceability when normalized bundle metadata is available."""
+        values = {
+            "Tatuy": entry.get("tatuy_version"),
+            "Bridge": (
+                f"{entry.get('bridge')} {entry.get('bridge_version')}"
+                if entry.get("bridge") and entry.get("bridge_version")
+                else None
+            ),
+            "Python": entry.get("python_version"),
+            "Build": entry.get("build_id"),
+            "Source": entry.get("source"),
+        }
+        rows = "".join(
+            f"<dt>{html.escape(label)}</dt><dd>{html.escape(str(value))}</dd>"
+            for label, value in values.items()
+            if value
+        )
+        commit = entry.get("commit_sha")
+        if isinstance(commit, str) and commit:
+            escaped_commit = html.escape(commit, quote=True)
+            short_commit = html.escape(commit[:12])
+            rows += (
+                "<dt>Commit</dt><dd>"
+                '<a href="https://github.com/rincorpes/tatuy/commit/'
+                f'{escaped_commit}"><code>{short_commit}</code></a></dd>'
+            )
+        if not rows:
+            return ""
+        return (
+            '<section class="build-info"><p class="eyebrow">Build provenance</p>'
+            f"<dl>{rows}</dl></section>"
+        )
 
     @staticmethod
     def _docs_href(docs: str, *, prefix: str) -> str:
@@ -256,6 +415,9 @@ class ShowcaseSiteBuilder:
   const restart = document.querySelector('[data-action="restart"]');
   const fullscreen = document.querySelector('[data-action="fullscreen"]');
   const focusStatus = document.querySelector('[data-focus-status]');
+  const runtimeState = document.querySelector('[data-runtime-state]');
+  const runtimeTitle = document.querySelector('[data-runtime-title]');
+  const runtimeDetail = document.querySelector('[data-runtime-detail]');
   const scrollKeys = new Set(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " ", "PageUp", "PageDown", "Home", "End"]);
 
   const setFocused = (focused) => {
@@ -272,6 +434,38 @@ class ShowcaseSiteBuilder:
     setFocused(true);
   };
 
+  const setRuntimeState = (state, title, detail) => {
+    if (!runtimeState) return;
+    runtimeState.dataset.state = state;
+    if (runtimeTitle) runtimeTitle.textContent = title;
+    if (runtimeDetail) runtimeDetail.textContent = detail;
+  };
+
+  const awaitRuntimeCanvas = () => {
+    const started = performance.now();
+    const poll = () => {
+      try {
+        const canvas = frame?.contentWindow?.document?.querySelector("canvas");
+        if (canvas) {
+          setRuntimeState("ready", "Runtime ready", "The first browser canvas is available.");
+          return;
+        }
+      } catch (_error) {
+        // Same-origin access is expected, but failure is handled by timeout below.
+      }
+      if (performance.now() - started > 30000) {
+        setRuntimeState(
+          "failed",
+          "Runtime did not become ready",
+          "Use Restart and inspect the browser developer console for the runtime error."
+        );
+        return;
+      }
+      window.setTimeout(poll, 250);
+    };
+    poll();
+  };
+
   const installRuntimeGuards = () => {
     try {
       const runtimeWindow = frame?.contentWindow;
@@ -283,9 +477,24 @@ class ShowcaseSiteBuilder:
       }, { capture: true });
       runtimeDocument.addEventListener("pointerdown", () => setFocused(true), { capture: true });
       runtimeWindow.addEventListener("blur", () => setFocused(false));
+      runtimeWindow.addEventListener("error", (event) => {
+        setRuntimeState(
+          "failed",
+          "Runtime error",
+          event.message || "The embedded runtime reported an uncaught error."
+        );
+      });
+      runtimeWindow.addEventListener("unhandledrejection", (event) => {
+        setRuntimeState(
+          "failed",
+          "Runtime promise rejected",
+          String(event.reason || "Unhandled runtime promise rejection")
+        );
+      });
       runtimeDocument.addEventListener("visibilitychange", () => {
         if (runtimeDocument.hidden) setFocused(false);
       });
+      awaitRuntimeCanvas();
     } catch (_error) {
       // The runtime is expected to be same-origin on GitHub Pages. If a host
       // changes that policy, focus UX still works without same-origin guards.
@@ -293,6 +502,13 @@ class ShowcaseSiteBuilder:
   };
 
   frame?.addEventListener("load", installRuntimeGuards);
+  frame?.addEventListener("error", () => {
+    setRuntimeState(
+      "failed",
+      "Runtime frame failed to load",
+      "Use Restart or inspect the network and browser developer console."
+    );
+  });
   window.addEventListener("blur", () => {
     queueMicrotask(() => setFocused(document.activeElement === frame));
   });
@@ -301,6 +517,11 @@ class ShowcaseSiteBuilder:
   });
 
   restart?.addEventListener("click", () => {
+    setRuntimeState(
+      "loading",
+      "Restarting runtime…",
+      "Reloading the embedded browser target."
+    );
     if (frame) frame.src = frame.src;
     setFocused(false);
   });
@@ -335,14 +556,18 @@ h3 { font-size: 2rem; margin: 14px 0; }
 .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
 .button, button { border: 1px solid #334155; background: #111827; color: #f8fafc; padding: 12px 18px; border-radius: 10px; text-decoration: none; font-weight: 700; cursor: pointer; }
 .button.primary { background: #f8fafc; color: #0f172a; border-color: #f8fafc; }
+.availability { display: inline-flex; align-items: center; padding: 10px 14px; border: 1px dashed #334155; border-radius: 10px; color: #8b9bb0; font-size: .85rem; font-weight: 700; }
 .architecture { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; padding: 64px 0; border-top: 1px solid #273244; border-bottom: 1px solid #273244; }
 pre { margin: 0; padding: 28px; border-radius: 14px; background: #111827; color: #cbd5e1; line-height: 1.65; overflow: auto; }
 .showcase, .project-status { padding: 88px 0 24px; }
 .section-heading { display: flex; align-items: end; justify-content: space-between; gap: 24px; }
 .status { color: #8b9bb0; font-size: .9rem; }
-.catalog-grid { display: grid; gap: 24px; margin-top: 30px; }
+.catalog-section { padding-top: 52px; }
+.catalog-section h3 { margin: 0; }
+.catalog-grid { display: grid; gap: 24px; margin-top: 24px; }
 .card { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); border: 1px solid #273244; border-radius: 18px; overflow: hidden; background: rgba(17,24,39,.82); }
-.card-preview { min-height: 320px; display: grid; place-items: center; background: repeating-linear-gradient(135deg, #111827 0 20px, #172033 20px 40px); font-size: 2rem; font-weight: 800; }
+.card-preview { min-height: 320px; display: grid; place-items: center; overflow: hidden; background: repeating-linear-gradient(135deg, #111827 0 20px, #172033 20px 40px); font-size: 2rem; font-weight: 800; }
+.card-preview img { width: 100%; height: 100%; min-height: 320px; object-fit: cover; display: block; }
 .card-body { padding: 40px; }
 .card-body p { color: #aeb9c8; line-height: 1.65; }
 .tags { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -350,13 +575,23 @@ pre { margin: 0; padding: 28px; border-radius: 14px; background: #111827; color:
 footer { border-top: 1px solid #273244; color: #8b9bb0; }
 .play-main { padding-top: 48px; }
 .play-heading h1 { font-size: clamp(3rem, 7vw, 5rem); }
-.runtime-frame { width: min(100%, 960px); margin: 36px auto 0; border: 1px solid #334155; border-radius: 16px; overflow: hidden; background: #000; aspect-ratio: 4 / 3; }
+.runtime-frame { position: relative; width: min(100%, 960px); margin: 36px auto 0; border: 1px solid #334155; border-radius: 16px; overflow: hidden; background: #000; aspect-ratio: 4 / 3; }
 .runtime-frame iframe { width: 100%; height: 100%; border: 0; display: block; }
+.runtime-state { position: absolute; inset: 0; z-index: 5; display: grid; place-content: center; gap: 10px; padding: 28px; text-align: center; background: rgba(3,7,18,.92); color: #cbd5e1; transition: opacity .2s ease; }
+.runtime-state strong { color: #f8fafc; font-size: 1.15rem; }
+.runtime-state span { max-width: 620px; line-height: 1.55; }
+.runtime-state[data-state="ready"] { opacity: 0; pointer-events: none; }
+.runtime-state[data-state="failed"] { background: rgba(36,10,18,.95); color: #fecdd3; }
 .runtime-frame:fullscreen { width: 100vw; height: 100vh; max-width: none; margin: 0; border: 0; border-radius: 0; aspect-ratio: auto; display: grid; place-items: center; background: #000; }
 .runtime-frame:fullscreen iframe { width: 100%; height: 100%; }
 .runtime-focus { margin-top: 12px; color: #fbbf24; font-size: .9rem; font-weight: 700; }
 .runtime-focus[data-focused="true"] { color: #86efac; }
 .play-controls { display: flex; align-items: center; gap: 12px; margin-top: 16px; }
 .play-controls .status { margin-left: auto; }
-@media (max-width: 760px) { .architecture, .card { grid-template-columns: 1fr; } .site-header { align-items: flex-start; } .site-header nav { gap: 12px; flex-wrap: wrap; justify-content: end; } main { padding-inline: 20px; } h1 { font-size: 3.4rem; } .play-controls { align-items: flex-start; flex-wrap: wrap; } .play-controls .status { width: 100%; margin-left: 0; } }
+.build-info { margin-top: 44px; padding-top: 28px; border-top: 1px solid #273244; }
+.build-info dl { display: grid; grid-template-columns: max-content 1fr; gap: 8px 20px; color: #aeb9c8; }
+.build-info dt { font-weight: 800; color: #f0f6fc; }
+.build-info dd { margin: 0; overflow-wrap: anywhere; }
+.build-info a { color: #7dd3fc; }
+@media (max-width: 760px) { .architecture, .card { grid-template-columns: 1fr; } .site-header { align-items: flex-start; } .site-header nav { gap: 12px; flex-wrap: wrap; justify-content: end; } main { padding-inline: 20px; } h1 { font-size: 3.4rem; } .play-controls { align-items: flex-start; flex-wrap: wrap; } .play-controls .status { width: 100%; margin-left: 0; } .build-info dl { grid-template-columns: 1fr; gap: 4px; } .build-info dd { margin-bottom: 10px; } }
 """

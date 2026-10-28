@@ -50,6 +50,20 @@ def _write_target(
         bundle = repository / "build" / "web" / "play" / slug
         bundle.mkdir(parents=True, exist_ok=True)
         (bundle / "index.html").write_text("runtime", encoding="utf-8")
+        (bundle / "build.json").write_text(
+            json.dumps(
+                {
+                    "build_id": "12345678",
+                    "source": source,
+                    "commit_sha": "abc123",
+                    "tatuy_version": "0.1.0",
+                    "bridge": "pygbag",
+                    "bridge_version": "0.9.3",
+                    "python_version": "3.12.15",
+                }
+            ),
+            encoding="utf-8",
+        )
     return target
 
 
@@ -69,6 +83,17 @@ def test_discover_returns_validated_catalog_entry(tmp_path: Path) -> None:
     assert entry.playable is True
     assert entry.url == "showcase/demo/"
     assert entry.entrypoint == "play/demo/index.html"
+
+
+def test_discover_includes_existing_browser_thumbnail(tmp_path: Path) -> None:
+    _write_target(tmp_path, "examples/fundamentals/demo")
+    thumbnail = tmp_path / "build" / "web" / "assets" / "thumbnails" / "demo.png"
+    thumbnail.parent.mkdir(parents=True)
+    thumbnail.write_bytes(b"png")
+
+    [entry] = ShowcaseCatalogBuilder(tmp_path).discover()
+
+    assert entry.screenshot == "assets/thumbnails/demo.png"
 
 
 def test_build_replaces_manifest_with_deterministic_catalog(tmp_path: Path) -> None:
@@ -166,22 +191,39 @@ def test_non_web_catalog_entry_does_not_require_bundle(tmp_path: Path) -> None:
     assert entry.playable is False
 
 
-def test_repository_browser_candidate_profiles_are_valid(tmp_path: Path) -> None:
-    slugs = {
+def test_repository_public_v0_profiles_are_classified_and_valid(tmp_path: Path) -> None:
+    playable_slugs = {
         "render-queue",
         "scene-on-present",
         "multiple-scenes",
         "controlled-movement",
         "ui-button",
+        "snake",
+        "procedural-tree",
+        "infection-arena",
     }
-    for slug in slugs:
+    for slug in playable_slugs:
         bundle = tmp_path / "play" / slug
         bundle.mkdir(parents=True)
         (bundle / "index.html").write_text("runtime", encoding="utf-8")
+        (bundle / "build.json").write_text(
+            json.dumps(
+                {
+                    "build_id": f"{slug}-build",
+                    "source": "examples/demo",
+                    "commit_sha": "abc123",
+                    "tatuy_version": "0.1.0",
+                    "bridge": "pygbag",
+                    "bridge_version": "0.9.3",
+                    "python_version": "3.12.15",
+                }
+            ),
+            encoding="utf-8",
+        )
 
     entries = ShowcaseCatalogBuilder(
         PROJECT_ROOT,
-        targets_root=PROJECT_ROOT / "examples" / "fundamentals",
+        targets_root=PROJECT_ROOT / "examples",
         output_root=tmp_path,
     ).discover()
     by_id = {entry.id: entry for entry in entries}
@@ -193,9 +235,19 @@ def test_repository_browser_candidate_profiles_are_valid(tmp_path: Path) -> None
         "fundamentals/scenes/multiple-scenes",
         "fundamentals/movement/controlled-movement",
         "fundamentals/ui/button",
+        "games/pong",
+        "games/breakout",
+        "games/snake",
+        "games/asteroids",
+        "experiments/breakout-prototype",
+        "experiments/entities-pressure",
+        "experiments/procedural-fire",
+        "experiments/test-sandbox",
+        "experiments/procedural-tree",
+        "experiments/tree-explorer",
+        "experiments/infection-arena",
     }
-    audio = by_id.pop("fundamentals/audio")
-    assert audio.web is False
-    assert audio.playable is False
-    assert all(entry.web is True for entry in by_id.values())
-    assert all(entry.playable is True for entry in by_id.values())
+    assert {entry.slug for entry in by_id.values() if entry.web} == playable_slugs
+    assert all(entry.playable is entry.web for entry in by_id.values())
+    assert sum(entry.category == "game" for entry in by_id.values()) == 4
+    assert sum(entry.category == "experiment" for entry in by_id.values()) == 7

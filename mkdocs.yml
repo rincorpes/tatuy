@@ -96,6 +96,7 @@ nav:
       - Internals: internals/index.md
       - Runtime Dependencies: internals/runtime-dependencies.md
       - Dependency Constraints: internals/dependency-constraints.md
+      - Publication Policy: internals/publication-policy.md
       - Engine:
           - Engine Internals: internals/engine/index.md
           - Engine: internals/engine/engine.md

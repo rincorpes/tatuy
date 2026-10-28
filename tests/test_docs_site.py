@@ -82,6 +82,15 @@ def test_private_ai_and_mcp_docs_are_excluded_from_public_build() -> None:
     nav_paths = list(_nav_paths(config["nav"]))
     assert all(not path.startswith("ai/") for path in nav_paths)
     assert all(not path.startswith("internals/mcp/") for path in nav_paths)
+    assert "internals/publication-policy.md" in nav_paths
+
+    policy = (DOCS_ROOT / "internals" / "publication-policy.md").read_text(
+        encoding="utf-8"
+    )
+    assert "Repository-only documentation" in policy
+    assert "docs/ai/" in policy
+    assert "docs/internals/mcp/" in policy
+    assert ".tatuy/" in policy
 
 
 def test_public_docs_do_not_use_root_absolute_markdown_links() -> None:

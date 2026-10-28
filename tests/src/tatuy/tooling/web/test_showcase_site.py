@@ -15,9 +15,18 @@ def _prepared_output(tmp_path: Path) -> Path:
     output = tmp_path / "build" / "web"
     docs = output / "docs"
     play = output / "play" / "render-queue"
+    thumbnail = output / "assets" / "thumbnails" / "render-queue.png"
     docs.mkdir(parents=True)
     play.mkdir(parents=True)
+    thumbnail.parent.mkdir(parents=True)
+    thumbnail.write_bytes(b"png")
+    rendering_docs = docs / "learn" / "rendering"
+    rendering_docs.mkdir(parents=True)
     (docs / "index.html").write_text("docs", encoding="utf-8")
+    (rendering_docs / "index.html").write_text(
+        "<html><body><main><h1>Rendering</h1></main></body></html>",
+        encoding="utf-8",
+    )
     (play / "index.html").write_text("runtime", encoding="utf-8")
     (output / "manifest.json").write_text(
         """{
@@ -34,7 +43,14 @@ def _prepared_output(tmp_path: Path) -> Path:
       "web": true,
       "playable": true,
       "url": "showcase/render-queue/",
-      "entrypoint": "play/render-queue/index.html"
+      "entrypoint": "play/render-queue/index.html",
+      "build_id": "12345678",
+      "commit_sha": "abcdef1234567890",
+      "tatuy_version": "0.1.0",
+      "bridge": "pygbag",
+      "bridge_version": "0.9.3",
+      "python_version": "3.12.15",
+      "screenshot": "assets/thumbnails/render-queue.png"
     }
   ]
 }
@@ -85,6 +101,8 @@ def test_home_links_docs_featured_showcase_source_and_docs(
     assert 'href="./showcase/render-queue/"' in home
     assert "examples/fundamentals/009_rendering/002_render_queue" in home
     assert 'href="./docs/learn/rendering/"' in home
+    assert 'src="./assets/thumbnails/render-queue.png"' in home
+    assert 'alt="Render Queue browser preview"' in home
 
 
 def test_play_page_embeds_raw_runtime_and_exposes_controls(
@@ -101,20 +119,50 @@ def test_play_page_embeds_raw_runtime_and_exposes_controls(
     assert 'data-action="restart"' in play_page
     assert 'data-action="fullscreen"' in play_page
     assert 'data-focus-status' in play_page
+    assert 'data-runtime-state' in play_page
+    assert 'sandbox="allow-scripts allow-same-origin"' in play_page
     assert "Click the game to focus controls" in play_page
     assert "Audio unlocks on first game interaction when enabled" in play_page
+    assert "Public V0 is validated primarily in Chromium desktop" in play_page
+    assert "Build provenance" in play_page
+    assert "0.1.0" in play_page
+    assert "pygbag 0.9.3" in play_page
+    assert "abcdef123456" in play_page
 
     site_js = (output / "assets" / "site.js").read_text(encoding="utf-8")
     assert "event.preventDefault()" in site_js
     assert 'scrollKeys' in site_js
     assert 'requestFullscreen' in site_js
     assert 'focusRuntime' in site_js
+    assert 'awaitRuntimeCanvas' in site_js
+    assert 'unhandledrejection' in site_js
+    assert 'Runtime did not become ready' in site_js
 
     site_css = (output / "assets" / "site.css").read_text(encoding="utf-8")
     assert "aspect-ratio: 4 / 3" in site_css
     assert ".runtime-frame:fullscreen" in site_css
+    assert ".runtime-state[data-state=\"failed\"]" in site_css
     assert "width: 100vw" in site_css
     assert "height: 100vh" in site_css
+
+
+def test_build_injects_live_demo_links_into_related_docs_idempotently(
+    tmp_path: Path,
+) -> None:
+    output = _prepared_output(tmp_path)
+    builder = ShowcaseSiteBuilder(tmp_path, output_root=output)
+
+    builder.build()
+    builder.build()
+
+    rendered = (
+        output / "docs" / "learn" / "rendering" / "index.html"
+    ).read_text(encoding="utf-8")
+    assert rendered.count("data-tatuy-live-examples") == 1
+    assert "Live Tatuy examples" in rendered
+    assert "Play live demo" in rendered
+    assert "../../../showcase/render-queue/" in rendered
+    assert "examples/fundamentals/009_rendering/002_render_queue" in rendered
 
 
 def test_relative_links_resolve_beneath_github_pages_project_path(
@@ -171,7 +219,57 @@ def test_home_catalog_expands_from_manifest_without_new_site_code(
     assert "Entities" in home
     assert "Inspect ECS entities." in home
     assert "004_ecs/002_entities" in home
+    assert "Browser support pending" in home
     assert not (output / "showcase" / "entities" / "index.html").exists()
+
+
+def test_home_groups_games_and_experiments_into_public_galleries(
+    tmp_path: Path,
+) -> None:
+    output = _prepared_output(tmp_path)
+    manifest = output / "manifest.json"
+    payload = json.loads(manifest.read_text(encoding="utf-8"))
+    payload["targets"].extend(
+        [
+            {
+                "id": "games/snake",
+                "slug": "snake",
+                "title": "Snake",
+                "description": "Grid game.",
+                "category": "game",
+                "tags": ["game"],
+                "source": "examples/games/003_snake",
+                "docs": "docs/examples/games.md",
+                "web": False,
+                "playable": False,
+                "url": "showcase/snake/",
+                "entrypoint": "play/snake/index.html",
+            },
+            {
+                "id": "experiments/procedural-tree",
+                "slug": "procedural-tree",
+                "title": "Procedural Tree",
+                "description": "Tree experiment.",
+                "category": "experiment",
+                "tags": ["experiment"],
+                "source": "examples/experiments/005_procedural_tree",
+                "docs": "docs/examples/experiments.md",
+                "web": False,
+                "playable": False,
+                "url": "showcase/procedural-tree/",
+                "entrypoint": "play/procedural-tree/index.html",
+            },
+        ]
+    )
+    manifest.write_text(json.dumps(payload), encoding="utf-8")
+
+    ShowcaseSiteBuilder(tmp_path, output_root=output).build()
+
+    home = (output / "index.html").read_text(encoding="utf-8")
+    assert "<h3>Fundamentals</h3>" in home
+    assert "<h3>Games</h3>" in home
+    assert "<h3>Experiments</h3>" in home
+    assert "Snake" in home and "Procedural Tree" in home
 
 
 def test_build_requires_docs_output(tmp_path: Path) -> None:
