@@ -109,6 +109,12 @@ def test_play_page_embeds_raw_runtime_and_exposes_controls(
     assert 'requestFullscreen' in site_js
     assert 'focusRuntime' in site_js
 
+    site_css = (output / "assets" / "site.css").read_text(encoding="utf-8")
+    assert "aspect-ratio: 4 / 3" in site_css
+    assert ".runtime-frame:fullscreen" in site_css
+    assert "width: 100vw" in site_css
+    assert "height: 100vh" in site_css
+
 
 def test_home_catalog_expands_from_manifest_without_new_site_code(
     tmp_path: Path,

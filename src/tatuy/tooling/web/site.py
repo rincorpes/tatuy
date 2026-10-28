@@ -347,8 +347,10 @@ pre { margin: 0; padding: 28px; border-radius: 14px; background: #111827; color:
 footer { border-top: 1px solid #273244; color: #8b9bb0; }
 .play-main { padding-top: 48px; }
 .play-heading h1 { font-size: clamp(3rem, 7vw, 5rem); }
-.runtime-frame { margin-top: 36px; border: 1px solid #334155; border-radius: 16px; overflow: hidden; background: #000; aspect-ratio: 4 / 3; }
+.runtime-frame { width: min(100%, 960px); margin: 36px auto 0; border: 1px solid #334155; border-radius: 16px; overflow: hidden; background: #000; aspect-ratio: 4 / 3; }
 .runtime-frame iframe { width: 100%; height: 100%; border: 0; display: block; }
+.runtime-frame:fullscreen { width: 100vw; height: 100vh; max-width: none; margin: 0; border: 0; border-radius: 0; aspect-ratio: auto; display: grid; place-items: center; background: #000; }
+.runtime-frame:fullscreen iframe { width: 100%; height: 100%; }
 .runtime-focus { margin-top: 12px; color: #fbbf24; font-size: .9rem; font-weight: 700; }
 .runtime-focus[data-focused="true"] { color: #86efac; }
 .play-controls { display: flex; align-items: center; gap: 12px; margin-top: 16px; }

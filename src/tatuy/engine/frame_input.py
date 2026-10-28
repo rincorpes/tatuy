@@ -21,6 +21,7 @@ class FrameInputCollector:
 
         with profiler.span("window.sync", "events"):
             self._services.window.sync_events(events.get(EventCategory.WINDOW))
+            self._services.viewport.resize(self._services.window.size)
 
         with profiler.span("input.sync", "events"):
             self._services.input.sync_events(

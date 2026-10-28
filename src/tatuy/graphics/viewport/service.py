@@ -30,7 +30,20 @@ class ViewportService:
         )
 
     def resize(self, size: Size) -> None:
+        """Resize the host window while preserving the initialized logical size."""
         if self._state is None:
             self.initialize(size)
             return
-        self._state.update(size)
+        self._state.resize_window(size)
+
+    def contains_window_point(self, x: int, y: int) -> bool:
+        """Return whether a host-window point lies inside the logical viewport."""
+        if self._state is None:
+            return False
+        return self._state.contains_window_point(x, y)
+
+    def window_to_virtual(self, x: int, y: int) -> tuple[int, int]:
+        """Map host-window pixels into logical game coordinates."""
+        if self._state is None:
+            return (x, y)
+        return self._state.window_to_virtual(x, y)

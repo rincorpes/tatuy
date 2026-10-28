@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from tatuy.backend.backend import Backend
 from tatuy.events import Event, EventType
+from tatuy.graphics.viewport.service import ViewportService
 from tatuy.input.frame import ButtonState, InputFrame
 from tatuy.input.keys import Key
 from tatuy.input.pointer import PointerState
@@ -10,10 +11,15 @@ from tatuy.input.pointer import PointerState
 class InputService:
     """Maintain input state and publish a snapshot for each engine step."""
 
-    def __init__(self, backend: Backend):
+    def __init__(
+        self,
+        backend: Backend,
+        viewport: ViewportService | None = None,
+    ):
         # Backend components are created during backend.init().
         # Keep the backend reference and resolve input when needed.
         self._backend = backend
+        self._viewport = viewport
 
         self._keys_down: set[Key] = set()
         self._mouse_down: set[int] = set()
@@ -146,16 +152,27 @@ class InputService:
             else PointerState()
         )
 
-        if pointer.inside:
-            self._mouse_pos = pointer.position
+        pointer_inside = pointer.inside
+        pointer_position = pointer.position
+        if pointer_inside and self._viewport is not None:
+            pointer_inside = self._viewport.contains_window_point(*pointer.position)
+            if pointer_inside:
+                pointer_position = self._viewport.window_to_virtual(*pointer.position)
+
+        previous_mouse_pos = self._mouse_pos
+        if pointer_inside:
+            self._mouse_pos = pointer_position
+            if self._mouse_inside:
+                mouse_dx = self._mouse_pos[0] - previous_mouse_pos[0]
+                mouse_dy = self._mouse_pos[1] - previous_mouse_pos[1]
 
         # Preserve the current policy: suppress relative movement when
-        # outside the window and during the first frame back inside.
-        if not pointer.inside or not self._mouse_inside:
+        # outside the viewport and during the first frame back inside.
+        if not pointer_inside or not self._mouse_inside:
             mouse_dx = 0
             mouse_dy = 0
 
-        self._mouse_inside = pointer.inside
+        self._mouse_inside = pointer_inside
 
         observed_buttons = self._mouse_down | mouse_pressed | mouse_released
 

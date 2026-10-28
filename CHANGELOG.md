@@ -13,12 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 
 - Add gesture-gated runtime audio readiness with deferred sound loads, mute state, visible unlock errors, and user-input activation through the normal Tatuy input frame.
 - Add declarative `web_package.files` support so browser targets can stage repository assets outside their source directory and include those files in deterministic build fingerprints.
+- Add logical viewport resize mapping so host-window changes preserve game resolution, center/scale the rendered viewport, and map pointer input back into game coordinates.
 
 #### Changed
 
 - Promote the four representative W12 browser-input fundamentals to public browser playables after successful Chromium smoke verification of focus, keyboard, pointer, scene-transition, and scroll-suppression behavior.
 - Preserve each browser target's audio enablement while forcing deferred `auto_init: false`, and prepare the game-facing audio fundamental for browser verification with packaged audio plus `SPACE`/`M` controls.
 - Verify Chromium audio unlock, repeated playback, and mute/unmute behavior; keep strict Pygbag sound-format validation as the default while exposing an explicit local-smoke override for the temporary WAV asset until it is replaced by OGG.
+- Keep showcase game-space independent from browser/CSS dimensions by using logical viewport sizes in fundamentals and a responsive/fullscreen runtime wrapper; verify resize, letterboxing, pointer alignment, fullscreen entry/exit, and unchanged gameplay behavior in Chromium.
 
 ### - 2026-10-27
 

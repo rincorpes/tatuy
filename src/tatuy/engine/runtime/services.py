@@ -33,7 +33,7 @@ def _default_scene_service() -> SceneService:
 @dataclass
 class RuntimeServices:
     scene: SceneService = field(default_factory=_default_scene_service)
-    viewport: ViewportService = field(default=ViewportService())
+    viewport: ViewportService = field(default_factory=ViewportService)
     events: EventsService = field(kw_only=True)
     window: WindowService = field(kw_only=True)
     input: InputService = field(kw_only=True)
@@ -58,11 +58,13 @@ class RuntimeServices:
             enabled=capture_enabled,
         )
         replay = create_replay_capability(enabled=replay_enabled)
+        viewport = ViewportService()
 
         return cls(
+            viewport=viewport,
             events=EventsService(backend),
             window=WindowService(backend),
-            input=InputService(backend),
+            input=InputService(backend, viewport),
             capture=capture,
             replay=replay,
             audio=AudioService(backend),

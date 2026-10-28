@@ -240,7 +240,8 @@ class TatuyApp:
 
         events_service = EventsService(backend)
         window_service = WindowService(backend)
-        input_service = InputService(backend)
+        viewport_service = ViewportService()
+        input_service = InputService(backend, viewport_service)
         capture_service = self.create_capture(backend)
         replay_service = self.create_replay()
         audio_service = AudioService(backend)
@@ -255,7 +256,7 @@ class TatuyApp:
                     create_default_system_pipeline_factory(),
                     DefaultSceneInitializer().initialize,
                 ),
-                ViewportService(),
+                viewport_service,
                 events=events_service,
                 window=window_service,
                 input=input_service,

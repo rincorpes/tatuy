@@ -119,7 +119,7 @@ class MyGameScene(Scene[MyGameWorld, MyGameIntent, MyGameSceneTickContext]):
 
     def on_enter(self, ctx):
         self.world.add_resource(MyGameStateResource())
-        window_size = (ctx.viewport.window_w, ctx.viewport.window_h)
+        window_size = (ctx.viewport.virtual_w, ctx.viewport.virtual_h)
         self.factory.create("entity", window_size=window_size)
         self.systems = (MyGameSimSystem(), MyGamePresentationSystem())
         settings = self.world.get_resource(MyGameSettings)

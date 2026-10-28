@@ -51,7 +51,7 @@ class MyGameScene(Scene[MyGameWorld, MyGameIntent, MyGameSceneTickContext]):
         kwargs = {
             "position": Vec2(
                 100,
-                ctx.scene_context.viewport.window_h / 2 - 20,
+                ctx.scene_context.viewport.virtual_h / 2 - 20,
             ),
             "text": f"The mouse has been inside the canvas {state.mouse_inside_count} times",
             "font_size": 40,

@@ -8,6 +8,8 @@ import pytest
 
 from tatuy.backend.config import InputConfig
 from tatuy.events import Event, EventCategory, EventType
+from tatuy.geometry.size import Size
+from tatuy.graphics.viewport.service import ViewportService
 from tatuy.input.frame import ButtonState, InputFrame
 from tatuy.input.keys import Key
 from tatuy.input.pointer import PointerState
@@ -87,6 +89,44 @@ def test_focus_loss_releases_held_keyboard_and_mouse_state():
     assert frame.focused
     assert not frame.keys_down and not frame.keys_released
     assert not frame.buttons
+
+
+def test_pointer_uses_logical_viewport_coordinates_after_resize():
+    port = Mock()
+    port.get_pointer_state.return_value = PointerState((500, 500), True)
+    backend = SimpleNamespace(
+        initialized=True,
+        input=port,
+        config=SimpleNamespace(input=InputConfig()),
+    )
+    viewport = ViewportService()
+    viewport.initialize(Size(800, 600))
+    viewport.resize(Size(1000, 1000))
+    service = InputService(backend, viewport)
+
+    service.sync_events([])
+    frame = service.get_input_frame()
+
+    assert frame.mouse_inside
+    assert frame.mouse_pos == (400, 300)
+
+
+def test_pointer_in_letterbox_is_outside_logical_viewport():
+    port = Mock()
+    port.get_pointer_state.return_value = PointerState((500, 50), True)
+    backend = SimpleNamespace(
+        initialized=True,
+        input=port,
+        config=SimpleNamespace(input=InputConfig()),
+    )
+    viewport = ViewportService()
+    viewport.initialize(Size(800, 600))
+    viewport.resize(Size(1000, 1000))
+    service = InputService(backend, viewport)
+
+    service.sync_events([])
+
+    assert not service.get_input_frame().mouse_inside
 
 
 def test_disabling_devices_clears_held_state():

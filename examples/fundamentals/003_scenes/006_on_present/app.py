@@ -44,7 +44,7 @@ class MyGameScene(Scene[MyGameWorld, MyGameIntent, MyGameSceneTickContext]):
         kwargs = {
             "position": Vec2(
                 100,
-                ctx.scene_context.viewport.window_h / 2 - 20,
+                ctx.scene_context.viewport.virtual_h / 2 - 20,
             ),
             "text": f"Mouse is {status} Canvas | {focus_status}",
             "font_size": 40,

@@ -150,7 +150,6 @@ class Engine:
             if live_input.has_user_gesture():
                 self.services.audio.unlock()
 
-            self.services.viewport.resize(self.services.window.size)
             live_input = self.capture_input_processor.process(live_input)
 
             if not self.running:
