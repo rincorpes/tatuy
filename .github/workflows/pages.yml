@@ -10,6 +10,10 @@ on:
 permissions:
   contents: read
 
+env:
+  PLAYWRIGHT_VERSION: "1.64.1"
+  PYTEST_VERSION: "8.3.5"
+
 concurrency:
   group: pages-${{ github.ref }}
   cancel-in-progress: true
@@ -27,13 +31,33 @@ jobs:
           python-version: "3.12"
 
       - name: Install Poetry
-        run: python -m pip install "poetry>=2.0,<3.0"
+        run: python -m pip install "poetry==2.3.4"
 
       - name: Install Tatuy web and docs dependencies
         run: poetry install -E web -E docs --no-interaction
 
       - name: Build and validate Tatuy showcase
         run: poetry run python scripts/build_showcase.py
+
+      - name: Install browser smoke dependencies
+        run: >-
+          python -m pip install
+          "playwright==${PLAYWRIGHT_VERSION}"
+          "pytest==${PYTEST_VERSION}"
+
+      - name: Install Chromium for browser smoke
+        run: python -m playwright install --with-deps chromium
+
+      - name: Run browser smoke test
+        run: python -m pytest tests/browser/test_browser_smoke.py -q
+
+      - name: Capture public showcase thumbnails
+        run: python scripts/capture_showcase_thumbnails.py
+
+      - name: Refresh showcase with captured thumbnails
+        run: |
+          poetry run python scripts/build_showcase_site.py
+          poetry run python scripts/validate_web_output.py
 
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v4

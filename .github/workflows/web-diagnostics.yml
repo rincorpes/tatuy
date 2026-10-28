@@ -1,0 +1,94 @@
+name: Web compatibility and performance diagnostics
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PLAYWRIGHT_VERSION: "1.64.1"
+  PYTEST_VERSION: "8.3.5"
+  POETRY_VERSION: "2.3.4"
+
+jobs:
+  compatibility:
+    strategy:
+      fail-fast: false
+      matrix:
+        browser:
+          - chromium
+          - firefox
+          - webkit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: python -m pip install "poetry==${POETRY_VERSION}"
+
+      - name: Install Tatuy web and docs dependencies
+        run: poetry install -E web -E docs --no-interaction
+
+      - name: Build Tatuy showcase
+        run: poetry run python scripts/build_showcase.py
+
+      - name: Install browser diagnostics dependencies
+        run: >-
+          python -m pip install
+          "playwright==${PLAYWRIGHT_VERSION}"
+          "pytest==${PYTEST_VERSION}"
+
+      - name: Install selected browser
+        run: python -m playwright install --with-deps "${{ matrix.browser }}"
+
+      - name: Run representative browser smoke
+        env:
+          TATUY_BROWSER: "${{ matrix.browser }}"
+        run: python -m pytest tests/browser/test_browser_smoke.py -q
+
+  performance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: python -m pip install "poetry==${POETRY_VERSION}"
+
+      - name: Install Tatuy web and docs dependencies
+        run: poetry install -E web -E docs --no-interaction
+
+      - name: Build public showcase targets
+        run: poetry run python scripts/build_showcase.py
+
+      - name: Build non-public entities pressure target
+        run: >-
+          poetry run python scripts/build_web_target.py
+          examples/experiments/002_entities
+
+      - name: Install Chromium diagnostics runtime
+        run: |
+          python -m pip install "playwright==${PLAYWRIGHT_VERSION}"
+          python -m playwright install --with-deps chromium
+
+      - name: Measure representative targets
+        run: python scripts/measure_web_performance.py
+
+      - name: Upload performance report
+        uses: actions/upload-artifact@v4
+        with:
+          name: tatuy-web-performance
+          path: build/diagnostics/web-performance.json
+          if-no-files-found: error
