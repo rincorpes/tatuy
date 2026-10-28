@@ -9,7 +9,9 @@ import pytest
 from tatuy.tooling.web.validation import WebOutputBasePathValidator
 
 
-def test_validator_accepts_relative_external_and_anchor_urls(tmp_path: Path) -> None:
+def test_validator_accepts_relative_external_anchor_and_project_urls(
+    tmp_path: Path,
+) -> None:
     output = tmp_path / "web"
     output.mkdir()
     (output / "index.html").write_text(
@@ -17,6 +19,8 @@ def test_validator_accepts_relative_external_and_anchor_urls(tmp_path: Path) -> 
 <a href="./docs/">Docs</a>
 <a href="#showcase">Showcase</a>
 <a href="https://github.com/rincorpes/tatuy">GitHub</a>
+<a href="/tatuy/docs/learn/runtime/">Runtime docs</a>
+<link href="/tatuy/docs/css/base.css">
 <iframe src="./play/demo/index.html"></iframe>
 """,
         encoding="utf-8",

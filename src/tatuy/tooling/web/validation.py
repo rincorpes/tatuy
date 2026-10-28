@@ -20,7 +20,17 @@ class BasePathViolation:
 
 
 class WebOutputBasePathValidator:
-    """Reject root-absolute internal URLs in generated static web output."""
+    """Reject internal URLs that escape the configured Project Pages base path."""
+
+    def __init__(self, project_base_path: str = "/tatuy/") -> None:
+        """Configure the GitHub Project Pages path allowed for root URLs.
+
+        Args:
+            project_base_path: Repository subpath served by GitHub Pages.
+        """
+        normalized = f"/{project_base_path.strip('/')}/"
+        self._project_base_path = normalized
+        self._project_root = normalized.rstrip("/")
 
     def validate(self, output_root: Path) -> None:
         """Validate HTML and CSS references beneath ``output_root``.
@@ -60,8 +70,12 @@ class WebOutputBasePathValidator:
                     )
         return tuple(violations)
 
-    @staticmethod
-    def _is_root_absolute_internal(url: str) -> bool:
+    def _is_root_absolute_internal(self, url: str) -> bool:
         if not url or url.startswith(_EXTERNAL_PREFIXES):
             return False
-        return url.startswith("/")
+        if not url.startswith("/"):
+            return False
+        return not (
+            url == self._project_root
+            or url.startswith(self._project_base_path)
+        )

@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Add a metadata-driven GitHub Pages workflow that validates showcase declarations, builds all browser-enabled targets and strict docs, validates the composed static output, uploads `build/web`, and deploys from `main` while keeping pull requests build-only.
 - Add a shared showcase build orchestrator with `--serve` local preview so local and GitHub Actions publication paths use the same metadata, browser-target, docs, shell, and validation stages.
 - Fix strict MkDocs publication by removing stale `reference/` links and using canonical GitHub URLs for contributor-only `AGENTS.md` links outside the docs tree.
+- Allow canonical `/tatuy/...` root URLs produced by MkDocs while continuing to reject root-absolute links that escape the GitHub Project Pages base path.
 
 ### - 2026-10-27
 
