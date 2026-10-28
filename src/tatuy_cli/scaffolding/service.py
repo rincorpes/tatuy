@@ -20,6 +20,7 @@ from tatuy_cli.scaffolding.templates import (
     render_manifest,
     render_pyproject,
     render_readme,
+    render_web_profile,
 )
 
 
@@ -112,6 +113,13 @@ class TargetScaffolder:
                 ),
             )
 
+            if request.showcase:
+                self._write_showcase_profile(
+                    request=request,
+                    destination=destination,
+                    title=title,
+                )
+
             if request.kind == "project":
                 self._write(
                     destination / "pyproject.toml",
@@ -160,6 +168,11 @@ class TargetScaffolder:
                 "for example procedural_fire."
             )
 
+        if request.showcase and request.kind == "project":
+            raise ValueError(
+                "Showcase metadata is only supported for workspace games and experiments."
+            )
+
         if request.kind != "project":
             if request.destination is not None:
                 raise ValueError(
@@ -174,6 +187,37 @@ class TargetScaffolder:
                     "Experiments and games always use the "
                     "Tatuy workspace source."
                 )
+
+    def _write_showcase_profile(
+        self,
+        *,
+        request: CreateTargetRequest,
+        destination: Path,
+        title: str,
+    ) -> None:
+        """Write opt-in showcase metadata for a workspace game or experiment."""
+        category = "game" if request.kind == "game" else "experiment"
+        slug = request.name.replace("_", "-")
+        source = destination.relative_to(self.engine_root).as_posix()
+        docs = (
+            "docs/examples/games.md"
+            if request.kind == "game"
+            else "docs/examples/experiments.md"
+        )
+        tags = tuple(dict.fromkeys((category, *request.tags)))
+        self._write(
+            destination / "tatuy.web.yml",
+            render_web_profile(
+                target_id=f"{category}s/{slug}",
+                slug=slug,
+                title=title,
+                description=request.description,
+                category=category,
+                tags=tags,
+                source=source,
+                docs=docs,
+            ),
+        )
 
     def _resolve_tatuy_source(
         self,

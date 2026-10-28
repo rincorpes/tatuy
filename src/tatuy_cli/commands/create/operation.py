@@ -25,6 +25,7 @@ class CreateTargetOperation:
             destination=destination,
             tatuy_source=input_data.tatuy_source,
             tatuy_version=input_data.tatuy_version,
+            showcase=input_data.showcase,
         )
 
         try:

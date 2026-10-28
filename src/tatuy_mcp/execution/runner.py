@@ -114,7 +114,8 @@ def build_subprocess_environment() -> dict[str, str]:
     return environment
 
 
-def truncate_output(value: str, limit: int) -> tuple[str, bool]:
-    if len(value) <= limit:
-        return value, False
-    return value[:limit], True
+def truncate_output(value: str | None, limit: int) -> tuple[str, bool]:
+    normalized = value or ""
+    if len(normalized) <= limit:
+        return normalized, False
+    return normalized[:limit], True

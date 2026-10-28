@@ -18,6 +18,7 @@ class CreateTargetRequest:
     destination: Path | None = None
     tatuy_source: TatuySource | None = None
     tatuy_version: str | None = None
+    showcase: bool = False
 
 
 @dataclass(frozen=True, slots=True)

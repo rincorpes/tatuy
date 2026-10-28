@@ -18,6 +18,7 @@ def register_scaffolding_tools(
         tags: list[str] | None = None,
         tatuy_source: ProjectTatuySource | None = None,
         tatuy_version: str | None = None,
+        showcase: bool = False,
     ) -> dict[str, object]:
         """Create a Tatuy experiment, reference game, or project."""
         return context.scaffolding.create_target(
@@ -27,4 +28,5 @@ def register_scaffolding_tools(
             tags=tags or (),
             tatuy_source=tatuy_source,
             tatuy_version=tatuy_version,
+            showcase=showcase,
         )

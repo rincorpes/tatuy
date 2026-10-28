@@ -63,6 +63,14 @@ class BaseCreateCommand(BaseCommand):
             required=False,
             help_text=("Tatuy PyPI version for standalone projects."),
         ),
+        ArgumentType(
+            name="showcase",
+            data_type=bool,
+            required=False,
+            help_text=(
+                "Generate showcase metadata for a workspace game or experiment."
+            ),
+        ),
     ]
 
     def build_input(self, **kwargs):
@@ -80,6 +88,7 @@ class BaseCreateCommand(BaseCommand):
             path=kwargs.get("path"),
             tatuy_source=kwargs.get("tatuy_source"),
             tatuy_version=kwargs.get("tatuy_version"),
+            showcase=bool(kwargs.get("showcase", False)),
         )
 
 

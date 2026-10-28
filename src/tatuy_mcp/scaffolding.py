@@ -27,6 +27,7 @@ class TatuyScaffolding:
         tags: Sequence[str] = (),
         tatuy_source: ProjectTatuySource | None = None,
         tatuy_version: str | None = None,
+        showcase: bool = False,
     ) -> dict[str, object]:
         expected_key = f"{kind}:{name}"
         if self._registry.contains(expected_key):
@@ -44,6 +45,7 @@ class TatuyScaffolding:
             tags=tuple(tags),
             tatuy_source=source,
             tatuy_version=tatuy_version,
+            showcase=showcase,
         )
         result = TargetScaffolder(
             engine_root=self._config.engine_root.resolve(strict=True),

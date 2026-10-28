@@ -14,7 +14,7 @@ def render_app() -> str:
         """\
         from __future__ import annotations
 
-        from tatuy.app import TatuyApp
+        from tatuy import TatuyApp, TatuyConfigDict
         from tatuy.ecs.world import World
         from tatuy.scenes.context import Intent, SceneTickContext
         from tatuy.scenes.registry import SceneRegistry
@@ -40,8 +40,13 @@ def render_app() -> str:
             tick_context_type = MainContext
 
 
+        def create_app(config: TatuyConfigDict | None = None) -> TatuyApp:
+            '''Create the reusable Tatuy application.'''
+            return TatuyApp(config)
+
+
         def main() -> None:
-            TatuyApp().run()
+            create_app().run()
 
 
         if __name__ == "__main__":
@@ -129,6 +134,38 @@ def render_manifest(
         lines.append(f"version = {_quote(tatuy_version)}")
 
     return "\n".join(lines) + "\n"
+
+
+def render_web_profile(
+    *,
+    target_id: str,
+    slug: str,
+    title: str,
+    description: str,
+    category: str,
+    tags: tuple[str, ...],
+    source: str,
+    docs: str,
+) -> str:
+    """Render opt-in showcase metadata without promoting browser support."""
+    rendered_tags = "\n".join(f"    - {_quote(tag)}" for tag in tags)
+    if not rendered_tags:
+        rendered_tags = f"    - {_quote(category)}"
+    return (
+        "showcase:\n"
+        f"  id: {_quote(target_id)}\n"
+        f"  slug: {_quote(slug)}\n"
+        f"  title: {_quote(title)}\n"
+        f"  description: {_quote(description.strip() or title)}\n"
+        f"  category: {_quote(category)}\n"
+        "  tags:\n"
+        f"{rendered_tags}\n"
+        f"  source: {_quote(source)}\n"
+        f"  docs: {_quote(docs)}\n"
+        "  web: false\n"
+        "app:\n"
+        "  loop: asyncio\n"
+    )
 
 
 def render_pyproject(
