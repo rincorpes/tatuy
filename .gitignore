@@ -152,9 +152,6 @@ examples/fundamentals/*
 
 examples/games/*
 !examples/games/__init__.py
-!examples/games/001_pong/
-examples/games/001_pong/*
-!examples/games/001_pong/tatuy.web.yml
 !examples/games/003_snake/
 !examples/games/003_snake/app.py
 !examples/games/003_snake/tatuy.web.yml

@@ -235,7 +235,6 @@ def test_repository_public_v0_profiles_are_classified_and_valid(tmp_path: Path) 
         "fundamentals/scenes/multiple-scenes",
         "fundamentals/movement/controlled-movement",
         "fundamentals/ui/button",
-        "games/pong",
         "games/breakout",
         "games/snake",
         "games/asteroids",
@@ -249,5 +248,5 @@ def test_repository_public_v0_profiles_are_classified_and_valid(tmp_path: Path) 
     }
     assert {entry.slug for entry in by_id.values() if entry.web} == playable_slugs
     assert all(entry.playable is entry.web for entry in by_id.values())
-    assert sum(entry.category == "game" for entry in by_id.values()) == 4
+    assert sum(entry.category == "game" for entry in by_id.values()) == 3
     assert sum(entry.category == "experiment" for entry in by_id.values()) == 7
