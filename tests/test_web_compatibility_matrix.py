@@ -34,8 +34,9 @@ def test_web_compatibility_matrix_tracks_every_runnable_fundamental() -> None:
     assert _matrix_targets() == _runnable_targets()
 
 
-def test_web_compatibility_matrix_keeps_current_scope_fundamentals_only() -> None:
+def test_web_compatibility_matrix_keeps_detailed_table_fundamentals_focused() -> None:
     content = MATRIX_PATH.read_text(encoding="utf-8")
 
-    assert "current showcase scope is **fundamentals only**" in content
-    assert "does not include experiments or games" in content
+    assert "detailed matrix above remains focused on fundamentals" in content
+    assert "Snake, Procedural Tree, and Infection Arena" in content
+    assert "remaining active games and experiments" in content
