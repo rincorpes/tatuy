@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import threading
+import time
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -64,6 +65,17 @@ def _collect_fatal_errors(page: Page) -> list[str]:
     return errors
 
 
+def _wait_for_runtime_ready(page: Page, runtime_frame, timeout_ms: int = 60_000) -> None:
+    """Wait for the generated Tatuy launcher to report its first completed frame."""
+    html = runtime_frame.locator("html")
+    deadline = time.monotonic() + (timeout_ms / 1000)
+    while time.monotonic() < deadline:
+        if html.evaluate("() => window.__tatuy_ready__ === true"):
+            return
+        page.wait_for_timeout(250)
+    pytest.fail("Tatuy browser runtime did not report first-frame readiness")
+
+
 def test_controlled_movement_renders_and_responds_to_keyboard(
     showcase_url: str,
 ) -> None:
@@ -86,7 +98,8 @@ def test_controlled_movement_renders_and_responds_to_keyboard(
             runtime_frame = page.frame_locator("#tatuy-runtime")
             canvas = runtime_frame.locator("canvas").first
             canvas.wait_for(state="visible", timeout=60_000)
-            page.wait_for_timeout(1_500)
+            _wait_for_runtime_ready(page, runtime_frame)
+            page.wait_for_timeout(250)
 
             canvas.click(position={"x": 400, "y": 300})
             before = canvas.screenshot()

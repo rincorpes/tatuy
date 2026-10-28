@@ -40,22 +40,22 @@ def _playable_slugs() -> list[str]:
     return sorted(slugs)
 
 
-def _wait_for_rendered_canvas(
+def _wait_for_runtime_ready(
     page: Any,
-    canvas: Any,
+    runtime_frame: Any,
     *,
     timeout_ms: int = 20_000,
     poll_ms: int = 250,
 ) -> None:
-    """Wait until Pygbag replaces its initial loading frame with runtime output."""
-    initial = canvas.screenshot()
+    """Wait until Tatuy reports that its first browser frame completed."""
+    html = runtime_frame.locator("html")
     deadline = time.monotonic() + (timeout_ms / 1000)
     while time.monotonic() < deadline:
-        page.wait_for_timeout(poll_ms)
-        if canvas.screenshot() != initial:
+        if html.evaluate("() => window.__tatuy_ready__ === true"):
             page.wait_for_timeout(500)
             return
-    raise TimeoutError("Runtime canvas did not advance beyond its loading frame")
+        page.wait_for_timeout(poll_ms)
+    raise TimeoutError("Tatuy browser runtime did not report first-frame readiness")
 
 
 def main() -> None:
@@ -89,11 +89,10 @@ def main() -> None:
                             wait_until="domcontentloaded",
                             timeout=60_000,
                         )
-                        canvas = page.frame_locator("#tatuy-runtime").locator(
-                            "canvas"
-                        ).first
+                        runtime_frame = page.frame_locator("#tatuy-runtime")
+                        canvas = runtime_frame.locator("canvas").first
                         canvas.wait_for(state="visible", timeout=60_000)
-                        _wait_for_rendered_canvas(page, canvas)
+                        _wait_for_runtime_ready(page, runtime_frame)
                         canvas.screenshot(path=str(THUMBNAIL_ROOT / f"{slug}.png"))
                         print(f"Captured thumbnail: {slug}")
                     finally:

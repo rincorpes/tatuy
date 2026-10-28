@@ -61,6 +61,25 @@ def test_normal_exit_steps_yields_and_stops(monkeypatch):
     engine.stop.assert_called_once_with()
 
 
+def test_first_frame_callback_runs_once_after_first_step(monkeypatch):
+    engine = Mock(running=True)
+    sleeper = AsyncMock()
+    callback = Mock()
+    monkeypatch.setattr(module, "sleep", sleeper)
+
+    def stop_after_second_step(*_):
+        if engine.step.call_count == 2:
+            engine.running = False
+
+    engine.step.side_effect = stop_after_second_step
+    loop = module.AsyncioLoop()
+    loop.set_first_frame_callback(callback)
+
+    asyncio.run(loop.run(engine))
+
+    callback.assert_called_once_with()
+
+
 def test_cleanup_failure_after_normal_exit_propagates(monkeypatch):
     engine = Mock(running=False)
     error = RuntimeError("cleanup")

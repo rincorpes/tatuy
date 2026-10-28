@@ -342,6 +342,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import sys
 from pathlib import Path
 
 # Pygbag discovers WASM package dependencies from top-level imports in main.py.
@@ -354,10 +355,20 @@ PYGAME_PRELOAD = pygame
 WEB_CONFIG = {dict(config)!r}
 
 
+def mark_runtime_ready() -> None:
+    if sys.platform != "emscripten":
+        return
+    import platform
+
+    platform.window.__tatuy_ready__ = True
+
+
 async def main() -> None:
     os.chdir(Path(__file__).resolve().parent)
     app = create_app(WEB_CONFIG)
-    await AsyncRuntimeHost().run(app.build())
+    runtime = app.build()
+    runtime.loop.set_first_frame_callback(mark_runtime_ready)
+    await AsyncRuntimeHost().run(runtime)
 
 
 asyncio.run(main())

@@ -91,7 +91,9 @@ def test_prepare_stages_target_source_assets_and_host_config(
     assert "'storage': {'provider': 'ephemeral'}" in launcher
     assert "showcase" not in launcher
     assert "web_package" not in launcher
-    assert "await AsyncRuntimeHost().run(app.build())" in launcher
+    assert "platform.window.__tatuy_ready__ = True" in launcher
+    assert "runtime.loop.set_first_frame_callback(mark_runtime_ready)" in launcher
+    assert "await AsyncRuntimeHost().run(runtime)" in launcher
 
 
 @pytest.mark.parametrize(
