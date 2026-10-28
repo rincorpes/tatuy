@@ -152,9 +152,24 @@ examples/fundamentals/*
 
 examples/games/*
 !examples/games/__init__.py
+!examples/games/001_pong/
+!examples/games/001_pong/tatuy.web.yml
+!examples/games/003_snake/
+!examples/games/003_snake/app.py
+!examples/games/003_snake/tatuy.web.yml
 
 examples/experiments/*
 !examples/experiments/__init__.py
+!examples/experiments/002_entities/
+!examples/experiments/002_entities/app.py
+!examples/experiments/002_entities/tatuy.web.yml
+!examples/experiments/005_procedural_tree/
+!examples/experiments/005_procedural_tree/app.py
+!examples/experiments/005_procedural_tree/tatuy.web.yml
+!examples/experiments/007_infection_arena/
+!examples/experiments/007_infection_arena/app.py
+!examples/experiments/007_infection_arena/ecology.py
+!examples/experiments/007_infection_arena/tatuy.web.yml
 
 recordings/
 replays/

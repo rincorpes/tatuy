@@ -1,0 +1,14 @@
+schema_version = 1
+
+name = "procedural_tree"
+title = "Procedural Tree"
+kind = "experiment"
+description = "Explore procedural generation of 2D trees with a trunk, branching structure, and configurable generation parameters."
+status = "idea"
+created_at = "2026-10-21T18:10:18+00:00"
+
+entrypoint = "app.py"
+tags = ["procedural-generation", "tree", "2d"]
+
+[tatuy]
+source = "workspace"

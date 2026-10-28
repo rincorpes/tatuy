@@ -1,23 +1,18 @@
 # Games
 
-Larger games and prototypes demonstrate how several Tatuy features work together.
+Larger games demonstrate how several Tatuy features work together while keeping the same game-facing APIs used by fundamentals.
 
-Game examples should help answer:
+## Public showcase status
 
-```text
-How are scenes organized?
-How are game systems divided?
-How are entities spawned?
-How are engine features reused?
-Where does game-specific behavior live?
-```
+| Game | Browser status | Notes |
+| --- | --- | --- |
+| [Pong](https://github.com/rincorpes/tatuy/tree/main/examples/games/001_pong) | Pending | Browser-safe OGG audio assets are still required before promotion. |
+| [Breakout](https://github.com/rincorpes/tatuy/tree/main/examples/games/002_breakout) | Candidate | Tracked for a later browser migration pass. |
+| [Snake](https://github.com/rincorpes/tatuy/tree/main/examples/games/003_snake) | Playable | Public V0 game; use WASD to change direction. |
+| [Asteroids](https://github.com/rincorpes/tatuy/tree/main/examples/games/004_asteroids) | Candidate | Tracked for a later browser migration pass. |
 
-As stable games are added, document them here with:
+Snake is intentionally the first browser game because it is self-contained and exercises ECS, lifecycle, grid placement, rendering, and discrete keyboard input without adding browser-only game code.
 
-- purpose
-- controls
-- architecture highlights
-- run command
-- source location
+Pong and Breakout remain canonical reference games even while their browser promotion is pending; browser support is tracked independently through their showcase metadata.
 
 ---

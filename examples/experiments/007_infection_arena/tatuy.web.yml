@@ -1,0 +1,18 @@
+showcase:
+  id: experiments/infection-arena
+  slug: infection-arena
+  title: Infection Arena
+  description: Test Shatterphase ecology, aiming, colony spread, spores, and fungus-versus-bacteria systems.
+  category: experiment
+  tags:
+    - experiment
+    - shatterphase
+    - ecology
+    - pointer
+    - keyboard
+    - browser-playable
+  source: examples/experiments/007_infection_arena
+  docs: docs/examples/experiments.md
+  web: true
+app:
+  loop: asyncio

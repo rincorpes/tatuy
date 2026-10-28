@@ -1,0 +1,16 @@
+showcase:
+  id: experiments/entities-pressure
+  slug: entities-pressure
+  title: Entities Pressure Experiment
+  description: High-density Shatterphase systems experiment reserved for browser performance validation after V0.
+  category: experiment
+  tags:
+    - experiment
+    - performance
+    - ecs
+    - browser-candidate
+  source: examples/experiments/002_entities
+  docs: docs/examples/experiments.md
+  web: false
+app:
+  loop: asyncio

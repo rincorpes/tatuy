@@ -1,0 +1,15 @@
+showcase:
+  id: games/pong
+  slug: pong
+  title: Pong
+  description: Tatuy's Pong reference game, classified for browser promotion after its audio assets are made browser-safe.
+  category: game
+  tags:
+    - game
+    - collision
+    - keyboard
+    - audio
+    - browser-candidate
+  source: examples/games/001_pong
+  docs: docs/examples/games.md
+  web: false

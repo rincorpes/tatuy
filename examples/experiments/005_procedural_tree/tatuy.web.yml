@@ -1,0 +1,17 @@
+showcase:
+  id: experiments/procedural-tree
+  slug: procedural-tree
+  title: Procedural Tree
+  description: Explore seeded procedural tree growth, regeneration, foliage, and depth controls.
+  category: experiment
+  tags:
+    - experiment
+    - procedural-generation
+    - rendering
+    - keyboard
+    - browser-playable
+  source: examples/experiments/005_procedural_tree
+  docs: docs/examples/experiments.md
+  web: true
+app:
+  loop: asyncio

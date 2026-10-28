@@ -1,0 +1,16 @@
+showcase:
+  id: games/snake
+  slug: snake
+  title: Snake
+  description: Play the grid-based Snake reference game with keyboard controls in the browser.
+  category: game
+  tags:
+    - game
+    - ecs
+    - keyboard
+    - browser-playable
+  source: examples/games/003_snake
+  docs: docs/examples/games.md
+  web: true
+app:
+  loop: asyncio

@@ -123,6 +123,18 @@ The composed showcase is intentionally base-path agnostic: internal shell, docs,
 
 `ShowcaseSiteBuilder` also validates the generated HTML/CSS tree and rejects root-absolute internal references such as `/assets/...` or `/play/...`. External URLs and in-page anchors remain allowed. MkDocs declares the canonical documentation URL as `https://rincorpes.github.io/tatuy/docs/`.
 
+## Desktop compatibility diagnostics
+
+Public V0 is manually verified in Chromium desktop. The manual `Web compatibility and performance diagnostics` GitHub Actions workflow runs the same controlled-movement behavioral smoke test under Chromium, Firefox, and Playwright WebKit. WebKit is useful cross-engine coverage but is not a substitute for a final Safari-on-macOS smoke pass.
+
+The diagnostic test requires the showcase shell to load, the embedded runtime canvas to appear, keyboard input to change visible output, and no fatal page/console error to be reported. Mobile Chrome Android and Safari iOS remain manual follow-up targets.
+
+## Performance diagnostics
+
+The same manual workflow builds the non-public `002_entities` pressure experiment alongside the public site and records representative browser metrics for Render Queue, Snake, and Entities Pressure. The JSON report includes bundle bytes, first-load-to-canvas time, cached-load-to-canvas time, requestAnimationFrame cadence average/p95/p99, and JavaScript heap usage where the browser exposes it.
+
+Frame cadence is a browser-presentation proxy, not Tatuy profiler FPS. Performance numbers should be recorded from the generated workflow artifact rather than guessed or copied from desktop profiling.
+
 ## Promotion rules
 
 A `Candidate` target is not automatically public. Before adding `showcase` metadata with `web: true`, the target should:
@@ -133,4 +145,4 @@ A `Candidate` target is not automatically public. Before adding `showcase` metad
 4. have a useful title, description, category, tags, source path, and related docs;
 5. avoid capture/replay or other browser-v0-disabled capabilities unless the corresponding browser support exists.
 
-The matrix intentionally does not include experiments or games. The current showcase scope is fundamentals; those categories can be audited later if they are explicitly promoted.
+The detailed matrix above remains focused on fundamentals. Public V0 also promotes Snake, Procedural Tree, and Infection Arena; the remaining active games and experiments are deliberately visible as pending/excluded cards rather than disappearing from the catalog. See [Games](games.md) and [Experiments](experiments.md) for those classifications.
