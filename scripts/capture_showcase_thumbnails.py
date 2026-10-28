@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import shutil
 import threading
+import time
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -37,6 +38,24 @@ def _playable_slugs() -> list[str]:
     if not slugs:
         raise ValueError("Showcase manifest has no playable targets")
     return sorted(slugs)
+
+
+def _wait_for_rendered_canvas(
+    page: Any,
+    canvas: Any,
+    *,
+    timeout_ms: int = 20_000,
+    poll_ms: int = 250,
+) -> None:
+    """Wait until Pygbag replaces its initial loading frame with runtime output."""
+    initial = canvas.screenshot()
+    deadline = time.monotonic() + (timeout_ms / 1000)
+    while time.monotonic() < deadline:
+        page.wait_for_timeout(poll_ms)
+        if canvas.screenshot() != initial:
+            page.wait_for_timeout(500)
+            return
+    raise TimeoutError("Runtime canvas did not advance beyond its loading frame")
 
 
 def main() -> None:
@@ -74,7 +93,7 @@ def main() -> None:
                             "canvas"
                         ).first
                         canvas.wait_for(state="visible", timeout=60_000)
-                        page.wait_for_timeout(1_000)
+                        _wait_for_rendered_canvas(page, canvas)
                         canvas.screenshot(path=str(THUMBNAIL_ROOT / f"{slug}.png"))
                         print(f"Captured thumbnail: {slug}")
                     finally:
