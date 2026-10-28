@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Verify Chromium audio unlock, repeated playback, and mute/unmute behavior; keep strict Pygbag sound-format validation as the default while exposing an explicit local-smoke override for the temporary WAV asset until it is replaced by OGG.
 - Keep showcase game-space independent from browser/CSS dimensions by using logical viewport sizes in fundamentals and a responsive/fullscreen runtime wrapper; verify resize, letterboxing, pointer alignment, fullscreen entry/exit, and unchanged gameplay behavior in Chromium.
 - Make generated showcase output safe for GitHub Project Pages by keeping internal links relative, validating HTML/CSS against root-absolute internal URLs, and testing representative navigation beneath the canonical `/tatuy/` path.
+- Add a metadata-driven GitHub Pages workflow that validates showcase declarations, builds all browser-enabled targets and strict docs, validates the composed static output, uploads `build/web`, and deploys from `main` while keeping pull requests build-only.
 
 ### - 2026-10-27
 

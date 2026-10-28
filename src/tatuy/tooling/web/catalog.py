@@ -77,8 +77,14 @@ class ShowcaseCatalogBuilder:
             output_root or self.repository_root / "build" / "web"
         ).resolve()
 
-    def discover(self) -> list[ShowcaseCatalogEntry]:
+    def discover(
+        self, *, require_playable_bundles: bool = True
+    ) -> list[ShowcaseCatalogEntry]:
         """Discover and validate all declared showcase targets.
+
+        Args:
+            require_playable_bundles: Whether ``web: true`` targets must already
+                have generated browser bundles beneath ``build/web/play``.
 
         Returns:
             Catalog entries sorted by stable target ID.
@@ -107,7 +113,11 @@ class ShowcaseCatalogBuilder:
                 raise TypeError(
                     f"showcase metadata must be a mapping: {profile}"
                 )
-            entry = self._entry_from_mapping(showcase, profile=profile)
+            entry = self._entry_from_mapping(
+                showcase,
+                profile=profile,
+                require_playable_bundle=require_playable_bundles,
+            )
             if entry.id in ids:
                 raise ValueError(f"Duplicate showcase id: {entry.id}")
             if entry.slug in slugs:
@@ -143,6 +153,7 @@ class ShowcaseCatalogBuilder:
         mapping: Mapping[str, Any],
         *,
         profile: Path,
+        require_playable_bundle: bool,
     ) -> ShowcaseCatalogEntry:
         target_id = self._required_string(mapping, "id", profile)
         slug = self._required_string(mapping, "slug", profile)
@@ -194,11 +205,11 @@ class ShowcaseCatalogBuilder:
         playable = False
         if web:
             bundle = self.output_root / entrypoint
-            if not bundle.is_file():
+            if require_playable_bundle and not bundle.is_file():
                 raise FileNotFoundError(
                     f"Web showcase bundle not found for {target_id}: {bundle}"
                 )
-            playable = True
+            playable = bundle.is_file()
 
         return ShowcaseCatalogEntry(
             id=target_id,

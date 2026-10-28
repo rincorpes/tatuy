@@ -130,6 +130,20 @@ def test_web_target_requires_built_bundle(tmp_path: Path) -> None:
         ShowcaseCatalogBuilder(tmp_path).discover()
 
 
+def test_metadata_only_discovery_does_not_require_built_bundle(tmp_path: Path) -> None:
+    _write_target(tmp_path, "examples/fundamentals/demo")
+    bundle = tmp_path / "build" / "web" / "play" / "demo" / "index.html"
+    bundle.unlink()
+
+    [entry] = ShowcaseCatalogBuilder(tmp_path).discover(
+        require_playable_bundles=False
+    )
+
+    assert entry.web is True
+    assert entry.playable is False
+    assert entry.source == "examples/fundamentals/demo"
+
+
 def test_related_docs_must_exist(tmp_path: Path) -> None:
     _write_target(tmp_path, "examples/fundamentals/demo")
     (tmp_path / "docs" / "learn" / "rendering.md").unlink()
