@@ -5,6 +5,7 @@ from tatuy.tooling.web.catalog import ShowcaseCatalogBuilder, ShowcaseCatalogEnt
 from tatuy.tooling.web.models import WebBuildResult, WebShowcaseMetadata
 from tatuy.tooling.web.pygbag import PygbagPackager
 from tatuy.tooling.web.site import ShowcaseSiteBuilder
+from tatuy.tooling.web.validation import WebOutputBasePathValidator
 
 __all__ = [
     "PygbagPackager",
@@ -12,6 +13,7 @@ __all__ = [
     "ShowcaseCatalogEntry",
     "ShowcaseSiteBuilder",
     "WebBuildResult",
+    "WebOutputBasePathValidator",
     "WebShowcaseMetadata",
     "WebTargetBuilder",
 ]

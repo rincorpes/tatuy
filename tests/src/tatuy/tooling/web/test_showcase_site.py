@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from urllib.parse import urljoin
 
 import pytest
 
@@ -114,6 +115,30 @@ def test_play_page_embeds_raw_runtime_and_exposes_controls(
     assert ".runtime-frame:fullscreen" in site_css
     assert "width: 100vw" in site_css
     assert "height: 100vh" in site_css
+
+
+def test_relative_links_resolve_beneath_github_pages_project_path(
+    tmp_path: Path,
+) -> None:
+    output = _prepared_output(tmp_path)
+    ShowcaseSiteBuilder(tmp_path, output_root=output).build()
+
+    home_base = "https://rincorpes.github.io/tatuy/"
+    showcase_base = "https://rincorpes.github.io/tatuy/showcase/render-queue/"
+
+    assert urljoin(home_base, "./docs/") == "https://rincorpes.github.io/tatuy/docs/"
+    assert urljoin(home_base, "./showcase/render-queue/") == (
+        "https://rincorpes.github.io/tatuy/showcase/render-queue/"
+    )
+    assert urljoin(showcase_base, "../../play/render-queue/index.html") == (
+        "https://rincorpes.github.io/tatuy/play/render-queue/index.html"
+    )
+    assert urljoin(showcase_base, "../../assets/site.css") == (
+        "https://rincorpes.github.io/tatuy/assets/site.css"
+    )
+    assert urljoin(showcase_base, "../../docs/learn/rendering/") == (
+        "https://rincorpes.github.io/tatuy/docs/learn/rendering/"
+    )
 
 
 def test_home_catalog_expands_from_manifest_without_new_site_code(

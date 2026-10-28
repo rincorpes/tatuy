@@ -8,6 +8,8 @@ import shutil
 from pathlib import Path
 from typing import Any
 
+from tatuy.tooling.web.validation import WebOutputBasePathValidator
+
 
 class ShowcaseSiteBuilder:
     """Compose the public Tatuy showcase around existing web build outputs.
@@ -81,6 +83,7 @@ class ShowcaseSiteBuilder:
                 self._play_html(entry), encoding="utf-8"
             )
         (self.output_root / ".nojekyll").touch()
+        WebOutputBasePathValidator().validate(self.output_root)
         return self.output_root
 
     def _load_catalog(self) -> list[dict[str, Any]]:

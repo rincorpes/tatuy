@@ -117,6 +117,12 @@ The manual pass confirmed that the game starts before audio unlock, `SPACE` unlo
 
 Strict Pygbag packaging correctly rejects the current WAV as a common unsupported browser format. The override above exists only for local W13 runtime smoke testing; normal builds remain strict. Before `018_audio` can change to `showcase.web: true`, replace the staged WAV with a browser-safe OGG, update the target to load the OGG logical asset, and repeat the strict build/browser smoke test without the override.
 
+## W15 GitHub Pages base-path safety
+
+The composed showcase is intentionally base-path agnostic: internal shell, docs, assets, and runtime links are relative rather than rooted at `/`. Tests resolve those links beneath `https://rincorpes.github.io/tatuy/` and verify that home, docs, showcase pages, raw playables, and shared assets remain inside the `/tatuy/` project path.
+
+`ShowcaseSiteBuilder` also validates the generated HTML/CSS tree and rejects root-absolute internal references such as `/assets/...` or `/play/...`. External URLs and in-page anchors remain allowed. MkDocs declares the canonical documentation URL as `https://rincorpes.github.io/tatuy/docs/`.
+
 ## Promotion rules
 
 A `Candidate` target is not automatically public. Before adding `showcase` metadata with `web: true`, the target should:
