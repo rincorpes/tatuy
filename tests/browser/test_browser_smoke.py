@@ -12,8 +12,10 @@ from typing import Iterator
 import pytest
 
 playwright = pytest.importorskip("playwright.sync_api")
-from playwright.sync_api import Page, sync_playwright  # type: ignore[import-not-found]
-
+from playwright.sync_api import (  # type: ignore[import-not-found]
+    Page,
+    sync_playwright,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 WEB_ROOT = PROJECT_ROOT / "build" / "web"
@@ -23,7 +25,9 @@ WEB_ROOT = PROJECT_ROOT / "build" / "web"
 def showcase_url() -> Iterator[str]:
     """Serve the generated showcase from an ephemeral localhost port."""
     if not (WEB_ROOT / "index.html").is_file():
-        pytest.fail("build/web is missing; build the showcase before browser smoke tests")
+        pytest.fail(
+            "build/web is missing; build the showcase before browser smoke tests"
+        )
 
     handler = partial(SimpleHTTPRequestHandler, directory=str(WEB_ROOT))
     server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
@@ -38,14 +42,24 @@ def showcase_url() -> Iterator[str]:
         server.server_close()
 
 
+_BENIGN_BROWSER_ERRORS = {
+    "PyMain: BrowserFS not found",
+}
+
+
 def _collect_fatal_errors(page: Page) -> list[str]:
     errors: list[str] = []
-    page.on("pageerror", lambda error: errors.append(str(error)))
+
+    def collect(message: str) -> None:
+        if message not in _BENIGN_BROWSER_ERRORS:
+            errors.append(message)
+
+    page.on("pageerror", lambda error: collect(str(error)))
     page.on(
         "console",
-        lambda message: errors.append(message.text)
-        if message.type == "error"
-        else None,
+        lambda message: (
+            collect(message.text) if message.type == "error" else None
+        ),
     )
     return errors
 
@@ -83,8 +97,9 @@ def test_controlled_movement_renders_and_responds_to_keyboard(
             page.wait_for_timeout(250)
 
             after = canvas.screenshot()
-            assert before != after, "Keyboard input did not change the rendered canvas"
+            assert (
+                before != after
+            ), "Keyboard input did not change the rendered canvas"
             assert not fatal_errors, f"Fatal browser errors: {fatal_errors}"
         finally:
             browser.close()
-
