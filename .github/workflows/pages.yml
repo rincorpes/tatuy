@@ -32,20 +32,8 @@ jobs:
       - name: Install Tatuy web and docs dependencies
         run: poetry install -E web -E docs --no-interaction
 
-      - name: Validate showcase metadata
-        run: poetry run python scripts/build_showcase_catalog.py --metadata-only
-
-      - name: Build browser showcase targets
-        run: poetry run python scripts/build_showcase_targets.py
-
-      - name: Build documentation
-        run: poetry run mkdocs build --strict
-
-      - name: Compose showcase shell and catalog
-        run: poetry run python scripts/build_showcase_site.py
-
-      - name: Validate publication output
-        run: poetry run python scripts/validate_web_output.py
+      - name: Build and validate Tatuy showcase
+        run: poetry run python scripts/build_showcase.py
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5

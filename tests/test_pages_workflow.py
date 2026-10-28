@@ -11,11 +11,7 @@ def test_pages_workflow_builds_from_showcase_metadata_before_deploy() -> None:
     text = WORKFLOW.read_text(encoding="utf-8")
 
     expected_steps = [
-        "scripts/build_showcase_catalog.py --metadata-only",
-        "scripts/build_showcase_targets.py",
-        "mkdocs build --strict",
-        "scripts/build_showcase_site.py",
-        "scripts/validate_web_output.py",
+        "scripts/build_showcase.py",
         "actions/upload-pages-artifact@v4",
         "actions/deploy-pages@v4",
     ]

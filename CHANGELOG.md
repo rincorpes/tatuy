@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Keep showcase game-space independent from browser/CSS dimensions by using logical viewport sizes in fundamentals and a responsive/fullscreen runtime wrapper; verify resize, letterboxing, pointer alignment, fullscreen entry/exit, and unchanged gameplay behavior in Chromium.
 - Make generated showcase output safe for GitHub Project Pages by keeping internal links relative, validating HTML/CSS against root-absolute internal URLs, and testing representative navigation beneath the canonical `/tatuy/` path.
 - Add a metadata-driven GitHub Pages workflow that validates showcase declarations, builds all browser-enabled targets and strict docs, validates the composed static output, uploads `build/web`, and deploys from `main` while keeping pull requests build-only.
+- Add a shared showcase build orchestrator with `--serve` local preview so local and GitHub Actions publication paths use the same metadata, browser-target, docs, shell, and validation stages.
 
 ### - 2026-10-27
 

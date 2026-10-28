@@ -122,6 +122,14 @@ poetry run python scripts/validate_web_output.py
 
 `build_showcase_targets.py` derives its target list from `showcase.web: true` declarations, so adding a public playable does not require editing the CI workflow. `build_showcase_site.py` regenerates the validated showcase catalog before rendering the shell. The composed static site lives under `build/web/`, with docs in `docs/`, raw browser runtimes in `play/`, generated catalog metadata in `manifest.json`, and human-facing iframe wrappers in `showcase/`.
 
+For a one-command local preview using the same build sequence as GitHub Actions:
+
+```bash
+poetry run python scripts/build_showcase.py --serve
+```
+
+The preview serves `build/web/` on `http://127.0.0.1:8000/` by default; use `--host` and `--port` to override the bind address or port.
+
 The minimal `tatuy` install intentionally excludes the Pygame backend, browser packaging, documentation-site tooling, capture, CLI, and MCP dependencies. See [`docs/internals/runtime-dependencies.md`](docs/internals/runtime-dependencies.md) for the extras model.
 
 A desktop environment is required for interactive Pygame examples.
