@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Add gesture-gated runtime audio readiness with deferred sound loads, mute state, visible unlock errors, and user-input activation through the normal Tatuy input frame.
 - Add declarative `web_package.files` support so browser targets can stage repository assets outside their source directory and include those files in deterministic build fingerprints.
 - Add logical viewport resize mapping so host-window changes preserve game resolution, center/scale the rendered viewport, and map pointer input back into game coordinates.
+- Add Playwright browser smoke coverage, automated showcase thumbnails, manual Chromium/Firefox/WebKit diagnostics, and representative browser performance reporting.
+- Add per-target and site build provenance with commit, Tatuy/Pygbag/MkDocs/Python versions, target build fingerprints, and Poetry lockfile hashing.
+- Add optional showcase metadata generation to game/experiment scaffolding across the CLI and Tatuy Development MCP paths.
 
 #### Changed
 
@@ -27,6 +30,10 @@ and this project adheres to [Semantic Versioning](https://semver.org).
 - Fix strict MkDocs publication by removing stale `reference/` links and using canonical GitHub URLs for contributor-only `AGENTS.md` links outside the docs tree.
 - Allow canonical `/tatuy/...` root URLs produced by MkDocs while continuing to reject root-absolute links that escape the GitHub Project Pages base path.
 - Configure GitHub Pages only in the deployment job so pull-request/build validation does not require a pre-existing Pages site; document the one-time repository setting to use GitHub Actions as the Pages source.
+- Verify the hosted GitHub Actions deployment and live `https://rincorpes.github.io/tatuy/` showcase, including a browser-playable controlled-movement target under the real `/tatuy/` project path.
+- Promote Snake, Procedural Tree, and Infection Arena as the first non-fundamental browser targets while classifying the remaining active games/experiments with explicit pending or V0-excluded status.
+- Group showcase cards into Fundamentals, Games, and Experiments; add loading/failure UX, sandboxed runtime iframes, build metadata, metadata-driven docs/live-demo links, and private-file publication guards.
+- Pin the Pages bootstrap Poetry version and record publication toolchain metadata so browser builds are traceable to the producing checkout and lockfile.
 
 ### - 2026-10-27
 

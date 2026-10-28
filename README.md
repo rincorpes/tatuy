@@ -130,6 +130,10 @@ poetry run python scripts/build_showcase.py --serve
 
 The preview serves `build/web/` on `http://127.0.0.1:8000/` by default; use `--host` and `--port` to override the bind address or port.
 
+The Pages workflow adds browser-only validation after the shared build: pinned Playwright/Chromium runs the controlled-movement smoke test, captures thumbnails for every public playable, regenerates the catalog/site with those images, and validates the final publication before upload. A separate manual **Web compatibility and performance diagnostics** workflow runs the same behavioral smoke under Chromium, Firefox, and WebKit and records representative performance metrics without slowing every deployment.
+
+New game/experiment scaffolds use the reusable `create_app(config)` seam automatically. The CLI and Tatuy Development MCP creation paths also accept an optional `showcase` flag; when enabled they generate a safe `tatuy.web.yml` classified in the public catalog with `web: false` until browser promotion is explicitly validated.
+
 Before the first deployment, enable GitHub Pages once in the repository settings and choose **GitHub Actions** as the build source. Pull requests can still build and validate the site without Pages being enabled because the workflow only configures Pages in the deployment job.
 
 The minimal `tatuy` install intentionally excludes the Pygame backend, browser packaging, documentation-site tooling, capture, CLI, and MCP dependencies. See [`docs/internals/runtime-dependencies.md`](docs/internals/runtime-dependencies.md) for the extras model.
