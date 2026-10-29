@@ -76,6 +76,28 @@ RenderPacket / FramePacket
 RenderPipeline
 ```
 
+### Current pass order
+
+The default Python `RenderPipeline` runs prepared frame data through this pass
+sequence:
+
+1. `BeginFramePass`
+2. `WorldPass`
+3. `LightingPass`
+4. `UIPass` for normal UI
+5. `WorldPass` configured as `EffectsPass`
+6. `PostFXPass`
+7. `UIPass` configured as `OverlayPass`
+8. `UIPass` configured as `DebugPass`
+9. `DebugOverlayPass`
+10. `EndFramePass`
+
+`render_frame_content()` runs every pass except `EndFramePass`. Presentation is
+then completed by `present_frame()`, which runs the configured `EndFramePass` or
+falls back to `backend.renderer.end_frame()` when no end-frame pass is present.
+This split lets overlay scenes add presentation work before the frame is finally
+presented.
+
 ## Python fallback
 
 Tatuy also supports an explicit Python-only escape hatch:
