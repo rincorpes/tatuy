@@ -103,6 +103,8 @@ def test_home_links_docs_featured_showcase_source_and_docs(
     assert 'href="./docs/learn/rendering/"' in home
     assert 'src="./assets/thumbnails/render-queue.png"' in home
     assert 'alt="Render Queue browser preview"' in home
+    assert 'href="https://rincorpes.github.io/portfolio/tatuy/"' in home
+    assert 'href="https://rincorpes.github.io/portfolio/"' in home
 
 
 def test_play_page_embeds_raw_runtime_and_exposes_controls(
@@ -118,10 +120,11 @@ def test_play_page_embeds_raw_runtime_and_exposes_controls(
     assert 'src="../../play/render-queue/index.html"' in play_page
     assert 'data-action="restart"' in play_page
     assert 'data-action="fullscreen"' in play_page
-    assert 'data-focus-status' in play_page
-    assert 'data-runtime-state' in play_page
+    assert "data-focus-status" in play_page
+    assert "data-runtime-state" in play_page
     assert 'sandbox="allow-scripts allow-same-origin"' in play_page
     assert "Click the game to focus controls" in play_page
+    assert 'href="https://rincorpes.github.io/portfolio/tatuy/"' in play_page
     assert "Audio unlocks on first game interaction when enabled" in play_page
     assert "Public V0 is validated primarily in Chromium desktop" in play_page
     assert "Build provenance" in play_page
@@ -131,17 +134,17 @@ def test_play_page_embeds_raw_runtime_and_exposes_controls(
 
     site_js = (output / "assets" / "site.js").read_text(encoding="utf-8")
     assert "event.preventDefault()" in site_js
-    assert 'scrollKeys' in site_js
-    assert 'requestFullscreen' in site_js
-    assert 'focusRuntime' in site_js
-    assert 'awaitRuntimeCanvas' in site_js
-    assert 'unhandledrejection' in site_js
-    assert 'Runtime did not become ready' in site_js
+    assert "scrollKeys" in site_js
+    assert "requestFullscreen" in site_js
+    assert "focusRuntime" in site_js
+    assert "awaitRuntimeCanvas" in site_js
+    assert "unhandledrejection" in site_js
+    assert "Runtime did not become ready" in site_js
 
     site_css = (output / "assets" / "site.css").read_text(encoding="utf-8")
     assert "aspect-ratio: 4 / 3" in site_css
     assert ".runtime-frame:fullscreen" in site_css
-    assert ".runtime-state[data-state=\"failed\"]" in site_css
+    assert '.runtime-state[data-state="failed"]' in site_css
     assert "width: 100vw" in site_css
     assert "height: 100vh" in site_css
 
@@ -174,7 +177,10 @@ def test_relative_links_resolve_beneath_github_pages_project_path(
     home_base = "https://rincorpes.github.io/tatuy/"
     showcase_base = "https://rincorpes.github.io/tatuy/showcase/render-queue/"
 
-    assert urljoin(home_base, "./docs/") == "https://rincorpes.github.io/tatuy/docs/"
+    assert (
+        urljoin(home_base, "./docs/")
+        == "https://rincorpes.github.io/tatuy/docs/"
+    )
     assert urljoin(home_base, "./showcase/render-queue/") == (
         "https://rincorpes.github.io/tatuy/showcase/render-queue/"
     )

@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Any
 
 from tatuy.tooling.web.provenance import WebSiteProvenance
-
 from tatuy.tooling.web.validation import WebOutputBasePathValidator
 
 
@@ -98,7 +97,11 @@ class ShowcaseSiteBuilder:
         grouped: dict[str, list[dict[str, Any]]] = {}
         for entry in entries:
             docs = entry.get("docs")
-            if entry.get("playable") is not True or not isinstance(docs, str) or not docs:
+            if (
+                entry.get("playable") is not True
+                or not isinstance(docs, str)
+                or not docs
+            ):
                 continue
             grouped.setdefault(docs, []).append(entry)
 
@@ -143,7 +146,7 @@ class ShowcaseSiteBuilder:
                 docs_output.parent,
             ).replace(os.sep, "/")
             links.append(
-                '<li><strong>'
+                "<li><strong>"
                 f"{title}</strong> — "
                 f'<a href="{html.escape(relative_showcase, quote=True)}/">Play live demo</a> · '
                 '<a href="https://github.com/rincorpes/tatuy/tree/main/'
@@ -216,14 +219,18 @@ class ShowcaseSiteBuilder:
 <body>
 <header class="site-header">
   <a class="brand" href="./">Tatuy</a>
-  <nav><a href="./docs/">Docs</a><a href="#showcase">Showcase</a><a href="https://github.com/rincorpes/tatuy">GitHub</a></nav>
+  <nav aria-label="Tatuy site"><a href="./docs/">Docs</a><a href="#showcase">Showcase</a><a href="https://rincorpes.github.io/portfolio/tatuy/">Behind Tatuy</a><a href="https://github.com/rincorpes/tatuy">GitHub</a></nav>
 </header>
 <main>
   <section class="hero">
     <p class="eyebrow">Python-first · 2D · explicit architecture</p>
     <h1>Build games in Python without hiding how the engine works.</h1>
     <p class="lede">Scenes, ECS, explicit system phases, reusable gameplay features, and replaceable runtime boundaries.</p>
-    <div class="actions"><a class="button primary" href="./showcase/{featured_slug}/">Play {featured_title}</a><a class="button" href="./docs/">Read the docs</a></div>
+    <div class="actions">
+      <a class="button primary" href="./showcase/{featured_slug}/">Play {featured_title}</a>
+      <a class="button" href="./docs/">Read the docs</a>
+      <a class="button" href="https://rincorpes.github.io/portfolio/tatuy/">Why I built Tatuy</a>
+    </div>
   </section>
   <section class="architecture">
     <div><p class="eyebrow">Architecture</p><h2>Game code stays separate from the host.</h2></div>
@@ -235,7 +242,7 @@ class ShowcaseSiteBuilder:
   </section>
   <section class="project-status"><p class="eyebrow">Project status</p><h2>Experimental by design.</h2><p>Tatuy is alpha software. The Python foundation, browser host, examples, documentation, and future native runtime are evolving together.</p></section>
 </main>
-<footer><span>Tatuy · MIT licensed</span><a href="https://github.com/rincorpes/tatuy">GitHub</a></footer>
+<footer><span>Tatuy · MIT licensed</span><a href="https://rincorpes.github.io/portfolio/">More of my work</a><a href="https://github.com/rincorpes/tatuy">GitHub</a></footer>
 </body>
 </html>
 """
@@ -345,17 +352,27 @@ class ShowcaseSiteBuilder:
   <link rel="stylesheet" href="../../assets/site.css">
 </head>
 <body class="play-page">
-<header class="site-header"><a class="brand" href="../../">Tatuy</a><nav><a href="../../docs/">Docs</a><a href="https://github.com/rincorpes/tatuy">GitHub</a></nav></header>
+<header class="site-header"><a class="brand" href="../../">Tatuy</a><nav aria-label="Tatuy site"><a href="../../docs/">Docs</a><a href="https://rincorpes.github.io/portfolio/tatuy/">Behind Tatuy</a><a href="https://github.com/rincorpes/tatuy">GitHub</a></nav></header>
 <main class="play-main">
-  <section class="play-heading"><p class="eyebrow">{category}</p><h1>{title}</h1><p>{description} Browser-v0 gates enabled audio until the first game interaction; capture remains disabled and storage is session-only.</p></section>
+  <section class="play-heading">
+    <p class="eyebrow">{category}</p>
+    <h1>{title}</h1>
+    <p>{description} Browser-v0 gates enabled audio until the first game interaction;
+       capture remains disabled and storage is session-only.</p>
+  </section>
   <div class="runtime-frame">
     <div class="runtime-state" data-runtime-state data-state="loading"><strong data-runtime-title>Loading runtime…</strong><span data-runtime-detail>Downloading Python/browser runtime and starting the first frame.</span></div>
-    <iframe id="tatuy-runtime" title="Tatuy {title} runtime" src="../../{entrypoint}" allow="fullscreen" sandbox="allow-scripts allow-same-origin"></iframe>
+    <iframe id="tatuy-runtime" title="Tatuy {title} runtime"
+            src="../../{entrypoint}" allow="fullscreen"
+            sandbox="allow-scripts allow-same-origin"></iframe>
   </div>
   <div class="runtime-focus" data-focus-status data-focused="false">Click the game to focus controls</div>
   <div class="play-controls"><button type="button" data-action="restart">Restart</button><button type="button" data-action="fullscreen">Fullscreen</button><span class="status">Audio unlocks on first game interaction when enabled</span></div>
   <p class="compatibility-note">Public V0 is validated primarily in Chromium desktop. If the runtime fails, try Restart, then open the browser developer console and include the error with the linked source when reporting an issue.</p>
-  <div class="actions">{docs_link}<a class="button" href="https://github.com/rincorpes/tatuy/tree/main/{source}">Source</a></div>
+  <div class="actions">
+    {docs_link}
+    <a class="button" href="https://github.com/rincorpes/tatuy/tree/main/{source}">Source</a>
+  </div>
   {provenance}
 </main>
 <script src="../../assets/site.js"></script>

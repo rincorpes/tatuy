@@ -4,6 +4,8 @@ Tatuy is a Python-first 2D game engine built around scenes, ECS, explicit system
 
 The documentation is organized around **what you are trying to accomplish**, not around the order in which Tatuy's source code was implemented.
 
+Curious about the decisions behind the engine? [Read the Tatuy case study](https://rincorpes.github.io/portfolio/tatuy/) on my portfolio.
+
 ## Choose your path
 
 ### Understand the project
