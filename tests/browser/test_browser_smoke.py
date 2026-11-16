@@ -65,7 +65,9 @@ def _collect_fatal_errors(page: Page) -> list[str]:
     return errors
 
 
-def _wait_for_runtime_ready(page: Page, runtime_frame, timeout_ms: int = 60_000) -> None:
+def _wait_for_runtime_ready(
+    page: Page, runtime_frame, timeout_ms: int = 60_000
+) -> None:
     """Wait for the generated Tatuy launcher to report its first completed frame."""
     html = runtime_frame.locator("html")
     deadline = time.monotonic() + (timeout_ms / 1000)
@@ -113,6 +115,76 @@ def test_controlled_movement_renders_and_responds_to_keyboard(
             assert (
                 before != after
             ), "Keyboard input did not change the rendered canvas"
+            assert not fatal_errors, f"Fatal browser errors: {fatal_errors}"
+        finally:
+            browser.close()
+
+
+@pytest.mark.parametrize(
+    ("slug", "title", "action"),
+    [
+        ("procedural-tree", "Procedural Tree", "r"),
+        ("infection-arena", "Infection Arena", "t"),
+        ("snake", "Snake", None),
+    ],
+)
+def test_portfolio_showcase_candidates_start_in_browser(
+    showcase_url: str,
+    slug: str,
+    title: str,
+    action: str | None,
+) -> None:
+    """Smoke-test first-frame readiness for the three portfolio candidates.
+
+    Tree regeneration and Infection Arena's reproduction toggle must visibly
+    change the canvas. Snake's automatic movement means startup alone cannot
+    prove directional keyboard control; that needs a dedicated gameplay check.
+    """
+    browser_name = os.environ.get("TATUY_BROWSER", "chromium").strip().lower()
+    if browser_name not in {"chromium", "firefox", "webkit"}:
+        pytest.fail(f"Unsupported TATUY_BROWSER: {browser_name}")
+
+    with sync_playwright() as runtime:
+        browser = getattr(runtime, browser_name).launch(headless=True)
+        page = browser.new_page(viewport={"width": 1280, "height": 900})
+        fatal_errors = _collect_fatal_errors(page)
+        try:
+            page.goto(
+                f"{showcase_url}/showcase/{slug}/",
+                wait_until="domcontentloaded",
+                timeout=60_000,
+            )
+            assert page.locator("h1").inner_text() == title
+
+            runtime_frame = page.frame_locator("#tatuy-runtime")
+            canvas = runtime_frame.locator("canvas").first
+            canvas.wait_for(state="visible", timeout=60_000)
+            _wait_for_runtime_ready(page, runtime_frame)
+            canvas.click(position={"x": 400, "y": 300})
+            page.wait_for_timeout(300)
+
+            first_frame = canvas.screenshot()
+            assert first_frame.startswith(b"\x89PNG\r\n\x1a\n")
+
+            if action == "r":
+                # Allow some initial branches to grow before restarting.
+                page.wait_for_timeout(1000)
+                before = canvas.screenshot()
+            elif action == "t":
+                # Pause simulation so only the HUD toggle changes.
+                page.keyboard.press("p")
+                page.wait_for_timeout(250)
+                before = canvas.screenshot()
+            else:
+                before = None
+
+            if action is not None:
+                page.keyboard.press(action)
+                page.wait_for_timeout(350)
+                assert (
+                    canvas.screenshot() != before
+                ), f"{title} did not visibly respond to '{action}'"
+
             assert not fatal_errors, f"Fatal browser errors: {fatal_errors}"
         finally:
             browser.close()

@@ -129,6 +129,8 @@ Public V0 is manually verified in Chromium desktop. The manual `Web compatibilit
 
 The diagnostic test requires the showcase shell to load, the embedded runtime canvas to appear, keyboard input to change visible output, and no fatal page/console error to be reported. Mobile Chrome Android and Safari iOS remain manual follow-up targets.
 
+The existing Playwright smoke suite now also targets the three portfolio candidates (`procedural-tree`, `infection-arena`, and `snake`) through the generated local `build/web` shell. It checks each runtime's first-frame readiness and fatal browser errors; Tree regeneration (`R`) and Infection Arena reproduction toggling (`T`) must visibly affect their canvases. Snake's startup smoke does **not** prove directional control. Run after building the showcase with Playwright and browser binaries installed; missing Playwright causes pytest to **skip**, which is not a pass. A local browser smoke is also not proof that the separately deployed Pages site or mobile browsers work.
+
 ## Performance diagnostics
 
 The same manual workflow builds the non-public `002_entities` pressure experiment alongside the public site and records representative browser metrics for Render Queue, Snake, and Entities Pressure. The JSON report includes bundle bytes, first-load-to-canvas time, cached-load-to-canvas time, requestAnimationFrame cadence average/p95/p99, and JavaScript heap usage where the browser exposes it.
