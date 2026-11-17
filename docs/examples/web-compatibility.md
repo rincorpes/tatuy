@@ -129,7 +129,18 @@ Public V0 is manually verified in Chromium desktop. The manual `Web compatibilit
 
 The diagnostic test requires the showcase shell to load, the embedded runtime canvas to appear, keyboard input to change visible output, and no fatal page/console error to be reported. Mobile Chrome Android and Safari iOS remain manual follow-up targets.
 
-The existing Playwright smoke suite now also targets the three portfolio candidates (`procedural-tree`, `infection-arena`, and `snake`) through the generated local `build/web` shell. It checks each runtime's first-frame readiness and fatal browser errors; Tree regeneration (`R`) and Infection Arena reproduction toggling (`T`) must visibly affect their canvases. Snake's startup smoke does **not** prove directional control. Run after building the showcase with Playwright and browser binaries installed; missing Playwright causes pytest to **skip**, which is not a pass. A local browser smoke is also not proof that the separately deployed Pages site or mobile browsers work.
+The existing Playwright smoke suite now also targets the three portfolio candidates (`procedural-tree`, `infection-arena`, and `snake`) through the generated local `build/web` shell. It checks each runtime's first-frame readiness and fatal browser errors; Tree regeneration (`R`) and Infection Arena reproduction toggling (`T`) must visibly affect their canvases. Snake's startup smoke does **not** prove directional control. A local browser smoke is also not proof that the separately deployed Pages site or mobile browsers work.
+
+To run the browser suite explicitly, build the showcase and install Playwright and the selected browser in the same Python environment used for pytest:
+
+```powershell
+poetry run python scripts/build_showcase.py
+python -m pip install playwright
+python -m playwright install chromium
+python -m pytest tests/browser/test_browser_smoke.py -q
+```
+
+For `TATUY_BROWSER=firefox` or `webkit`, install that browser instead. Directly selecting `tests/browser` or its smoke test without Playwright now produces an actionable pytest error (exit code 4), not a misleading skip / exit code 5. General test-suite collection (`python -m pytest tests`) still skips the optional browser module when Playwright is absent; such a skip is **not** a browser pass. Both GitHub Actions workflows already install Playwright and selected browser binaries before running browser smoke tests; this local diagnostic issue was not a verified CI failure.
 
 ## Performance diagnostics
 
